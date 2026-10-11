@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+logs/
+
+# Runtime files
+pids/
+*.pid
+*.pid.lock
+*.seed
+socket.io/
+
+# Build output and coverage
+dist/
+build/
+coverage/
+.nyc_output/
+jest-cache/
+*.tsbuildinfo
+
+# Caches and package manager data
+.cache/
+.parcel-cache/
+.yarn/
+.yarn-cache/
+.pnpm-store/
+
+# Local data and uploads
+prisma/dev.db
+prisma/dev.db-journal
+uploads/
+tmp/
+temp/
+
+# Deployment tooling
+.render/
+.railway/
+
+# Editor files
+.vscode/
+.idea/
+.history/
+*.swp
+*.swo
+
+# Operating system files
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride

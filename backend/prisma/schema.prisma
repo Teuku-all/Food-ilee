@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+
+  id        String   @id @default(cuid())
+
+  email     String   @unique
+
+  password  String
+
+  name String?
+
+  username String? @unique
+
+  role      String   @default("user")
+
+  avatar String?
+
+  bio String?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  store      Store?
+
+  products   WasteProduct[]
+
+  messages   Message[]
+
+  buyerChats Chat[] @relation("BuyerChats")
+
+  sellerChats Chat[] @relation("SellerChats")
+
+  orders Order[]
+
+  reviews Review[]
+
+  notifications Notification[]
+
+  isBanned Boolean @default(false)
+}
+
+model WasteProduct {
+
+  id          String   @id @default(cuid())
+
+  title       String
+
+  description String
+
+  price       Int @default(0)
+
+  stock       Int @default(1)
+
+  image       String?
+
+  category    String?
+
+  createdAt   DateTime @default(now())
+
+  sellerId String?
+
+  seller User? @relation(fields: [sellerId], references: [id])
+
+  storeId String?
+
+  store Store? @relation(fields: [storeId], references: [id])
+
+  orders Order[]
+
+  reviews Review[]
+}
+
+model Store {
+
+  id          String   @id @default(cuid())
+
+  name        String
+
+  description String?
+
+  image       String?
+
+  createdAt   DateTime @default(now())
+
+  ownerId String @unique
+
+  owner User @relation(fields: [ownerId], references: [id])
+
+  products WasteProduct[]
+}
+
+model Chat {
+
+  id String @id @default(cuid())
+
+  createdAt DateTime @default(now())
+
+  buyerId String
+
+  sellerId String
+
+  buyer User @relation("BuyerChats", fields: [buyerId], references: [id])
+
+  seller User @relation("SellerChats", fields: [sellerId], references: [id])
+
+  messages Message[]
+}
+
+model Message {
+
+  id String @id @default(cuid())
+
+  text String
+
+  createdAt DateTime @default(now())
+
+  senderId String
+
+  sender User @relation(fields: [senderId], references: [id])
+
+  chatId String
+
+  chat Chat @relation(fields: [chatId], references: [id])
+}
+
+model Order {
+
+  id String @id @default(cuid())
+
+  quantity Int
+
+  total Int
+
+  status String @default("pending")
+
+  createdAt DateTime @default(now())
+
+  buyerId String
+
+  buyer User @relation(fields: [buyerId], references: [id])
+
+  wasteId String
+
+  waste WasteProduct @relation(fields: [wasteId], references: [id])
+
+  paymentToken String?
+  paymentStatus String @default("pending")
+}
+
+model Review {
+
+  id String @id @default(cuid())
+
+  rating Int
+
+  comment String
+
+  createdAt DateTime @default(now())
+
+  reviewerId String
+
+  reviewer User @relation(fields: [reviewerId], references: [id])
+
+  wasteId String
+
+  waste WasteProduct @relation(fields: [wasteId], references: [id])
+}
+
+model Notification {
+
+  id String @id @default(cuid())
+
+  title String
+
+  message String
+
+  isRead Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  userId String
+
+  user User @relation(fields: [userId], references: [id])
+}
