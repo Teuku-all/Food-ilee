@@ -2,6 +2,7 @@ import {
   getWastes
 }
 from '../../services/waste.js';
+import { escapeHtml } from '../../utils/html.js';
 
 export async function renderMarketplace() {
 
@@ -50,33 +51,33 @@ export async function renderMarketplace() {
               <div class="market-card">
 
                 <img
-                  src="${waste.image}"
+                  src="${escapeHtml(waste.image)}"
                 />
 
                 <div class="market-content">
 
                   <h3>
-                    ${waste.title}
+                    ${escapeHtml(waste.title)}
                   </h3>
 
                   <p>
-                    ${waste.description}
+                    ${escapeHtml(waste.description)}
                   </p>
 
                   <div class="market-price">
 
-                    Rp ${waste.price}
+                    Rp ${escapeHtml(waste.price)}
                   </div>
 
                   <div class="market-store">
 
                     🏪
-                    ${waste.store.name}
+                    ${escapeHtml(waste.store?.name || waste.seller?.email || 'Penjual')}
                   </div>
 
                   <button
                     class="market-btn"
-                    data-id="${waste.id}"
+                    data-id="${escapeHtml(waste.id)}"
                   >
                     Lihat Detail
                   </button>

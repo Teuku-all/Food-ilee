@@ -36,11 +36,8 @@ async function getAllWastes(
   query
 ) {
 
-  const page =
-    parseInt(query.page) || 1;
-
-  const limit =
-    parseInt(query.limit) || 10;
+  const page = Math.max(1, Number.parseInt(query.page, 10) || 1);
+  const limit = Math.min(100, Math.max(1, Number.parseInt(query.limit, 10) || 10));
 
   const skip =
     (page - 1) * limit;
@@ -54,15 +51,8 @@ async function getAllWastes(
   const sort =
     query.sort;
 
-  const minPrice =
-    query.minPrice
-      ? parseInt(query.minPrice)
-      : undefined;
-
-  const maxPrice =
-    query.maxPrice
-      ? parseInt(query.maxPrice)
-      : undefined;
+  const minPrice = query.minPrice !== undefined ? Number.parseInt(query.minPrice, 10) : undefined;
+  const maxPrice = query.maxPrice !== undefined ? Number.parseInt(query.maxPrice, 10) : undefined;
 
   const where = {
 
@@ -74,6 +64,10 @@ async function getAllWastes(
     }
   };
 
+  if (query.mine === 'true' && query.userId) {
+    where.sellerId = query.userId;
+  }
+
   // filter category
   if (category) {
 
@@ -82,20 +76,17 @@ async function getAllWastes(
   }
 
   // filter harga
-  if (
-    minPrice ||
-    maxPrice
-  ) {
+  if (minPrice !== undefined || maxPrice !== undefined) {
 
     where.price = {};
 
-    if (minPrice) {
+    if (minPrice !== undefined) {
 
       where.price.gte =
         minPrice;
     }
 
-    if (maxPrice) {
+    if (maxPrice !== undefined) {
 
       where.price.lte =
         maxPrice;

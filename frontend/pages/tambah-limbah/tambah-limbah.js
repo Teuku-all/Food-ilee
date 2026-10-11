@@ -32,6 +32,9 @@ export function renderTambahLimbah() {
           required
         ></textarea>
 
+        <input type="number" id="price" min="0" step="1" placeholder="Harga (Rp)" required />
+        <input type="number" id="stock" min="1" step="1" value="1" placeholder="Stok" required />
+
         <div class="upload-zone">
 
           <input
@@ -150,6 +153,8 @@ function setupSubmit() {
     const title = document.getElementById("title").value;
 
     const description = document.getElementById("description").value;
+    const price = document.getElementById("price").value;
+    const stock = document.getElementById("stock").value;
 
     const image = document.getElementById("image").files[0];
 
@@ -171,11 +176,11 @@ function setupSubmit() {
 
     formData.append("description", description);
 
-    formData.append("price", price);
+    formData.append("price", String(price));
 
     formData.append("stock", stock);
 
-    formData.append("image", imageFile);
+    formData.append("image", image);
 
     const result = await createWaste(formData);
 

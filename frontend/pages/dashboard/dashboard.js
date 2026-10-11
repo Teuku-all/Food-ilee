@@ -7,6 +7,7 @@ import { showLoading, hideLoading, injectLoadingStyle } from "../../utils/loadin
 import { toggleTheme, getTheme } from '../../utils/theme.js';
 import { getAIRecommendation } from '../../services/ai.js';
 import { askAI } from '../../services/ai.js';
+import { escapeHtml } from '../../utils/html.js';
 
 let searchValue = "";
 let currentPage = 1;
@@ -30,7 +31,7 @@ export async function renderDashboard() {
   const user = result.data;
 
   // get wastes
-  const wasteResult = await getWastes();
+  const wasteResult = await getWastes({ mine: true });
 
   const wastes = wasteResult.data || [];
 
@@ -98,17 +99,17 @@ export async function renderDashboard() {
             <div class="waste-card">
 
               <img
-                src="${waste.image}"
+                src="${escapeHtml(waste.image)}"
               />
 
               <div class="waste-content">
 
                 <h3>
-                  ${waste.title}
+                  ${escapeHtml(waste.title)}
                 </h3>
 
                 <p>
-                  ${waste.description}
+                  ${escapeHtml(waste.description)}
                 </p>
 
                 <div class="ai-box">
@@ -116,27 +117,27 @@ export async function renderDashboard() {
                   <p class="ai-category">
 
                     Kategori:
-                    ${ai.category}
+                    ${escapeHtml(ai.category)}
 
                   </p>
 
                   <p class="ai-recommendation">
 
-                    ${ai.recommendation}
+                    ${escapeHtml(ai.recommendation)}
 
                   </p>
 
                   <p class="ai-recommendation">
 
                     Tingkat Bahaya:
-                    ${ai.danger_level}
+                    ${escapeHtml(ai.danger_level)}
 
                   </p>
 
                   <p class="ai-recommendation">
 
                     Tips Daur Ulang:
-                    ${ai.recycle_tip}
+                    ${escapeHtml(ai.recycle_tip)}
 
                   </p>
 
@@ -145,8 +146,8 @@ export async function renderDashboard() {
                 <button
                   class="edit-btn"
                   data-id="${waste.id}"
-                  data-title="${waste.title}"
-                  data-description="${waste.description}"
+                  data-title="${escapeHtml(waste.title)}"
+                  data-description="${escapeHtml(waste.description)}"
                 >
                   Edit
                 </button>
@@ -183,7 +184,7 @@ export async function renderDashboard() {
         </h1>
 
         <p class="sidebar-user">
-          ${user.email}
+          ${escapeHtml(user.email)}
         </p>
 
       </div>
@@ -247,7 +248,7 @@ export async function renderDashboard() {
               type="text"
               class="search-input"
               placeholder="Cari limbah..."
-              value="${searchValue}"
+              value="${escapeHtml(searchValue)}"
             />
 
           </div>
@@ -741,12 +742,6 @@ function generatePDF(wastes) {
 }
 
 function setupChatbot() {
-  if (
-    window.chatbotInitialized
-  ) return;
-
-  window.chatbotInitialized = true;
-
   const toggle =
     document.querySelector(
       '.chatbot-toggle'
@@ -796,7 +791,7 @@ function setupChatbot() {
       messages.innerHTML += `
 
         <div class="user-message">
-          ${text}
+          ${escapeHtml(text)}
         </div>
       `;
 
@@ -822,7 +817,7 @@ function setupChatbot() {
       messages.innerHTML += `
 
         <div class="bot-message">
-          ${result.data}
+          ${escapeHtml(result.data)}
         </div>
       `;
 

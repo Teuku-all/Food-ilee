@@ -16,10 +16,14 @@ const createWasteSchema =
 
     price:
       Joi.number()
+        .integer()
+        .min(0)
         .required(),
 
     stock:
       Joi.number()
+        .integer()
+        .min(1)
         .required()
   });
 

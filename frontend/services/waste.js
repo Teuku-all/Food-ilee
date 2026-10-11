@@ -4,12 +4,12 @@ import { API_BASE_URL }
 import { getToken }
   from '../utils/storage.js';
 
-export async function getWastes() {
+export async function getWastes({ mine = false } = {}) {
 
   const token = getToken();
 
   const response = await fetch(
-    `${API_BASE_URL}/wastes`,
+    `${API_BASE_URL}/wastes${mine ? '?mine=true' : ''}`,
     {
       headers: {
         Authorization: `Bearer ${token}`

@@ -21,6 +21,8 @@ async function createWaste(req, res) {
           req.body.description,
 
         image: req.file.path,
+        price: Number(req.body.price),
+        stock: Number(req.body.stock),
 
         sellerId: req.user.id
       });
@@ -51,7 +53,7 @@ async function getAllWastes(
     const result =
       await wasteService
         .getAllWastes(
-          req.query
+          { ...req.query, userId: req.user.id }
         );
 
     res.status(200).json({
@@ -80,7 +82,7 @@ async function deleteWaste(req, res) {
     const { id } = req.params;
 
     await wasteService.deleteWaste(
-      Number(id),
+      id,
       req.user.id
     );
 
@@ -106,7 +108,7 @@ async function updateWaste(req, res) {
     const updatedWaste =
       await wasteService.updateWaste(
 
-        Number(req.params.id),
+        req.params.id,
 
         req.user.id,
 
@@ -116,10 +118,7 @@ async function updateWaste(req, res) {
           description:
             req.body.description,
 
-          image:
-            req.file
-              ? req.file.filename
-              : null
+          image: req.file ? req.file.path : undefined
         }
       );
 

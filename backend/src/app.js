@@ -17,11 +17,6 @@ const paymentRoutes = require("./routes/payment.routes");
 const rateLimit = require("express-rate-limit");
 const userRoutes = require("./routes/user.routes");
 
-app.use(
-  '/api/users',
-  userRoutes
-);
-
 app.use(cors());
 app.use(
   helmet({
@@ -29,9 +24,18 @@ app.use(
   }),
 );
 app.use(morgan("dev"));
-app.use("/api/stores", storeRoutes);
-
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { success: false, message: "Terlalu banyak request" },
+});
+app.use("/api", limiter);
+
+app.use('/api/users', userRoutes);
+app.use("/api/stores", storeRoutes);
 
 app.use("/api/admin", adminRoutes);
 
@@ -40,14 +44,6 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/reviews", reviewRoutes);
 
 app.use("/api/orders", orderRoutes);
-
-app.use(
-  express.urlencoded({
-    extended: true,
-  }),
-);
-
-app.use("/uploads", express.static("src/uploads"));
 
 app.use("/api/auth", authRoutes);
 
@@ -65,20 +61,6 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/chat", chatRoutes);
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-
-  max: 100,
-
-  message: {
-    success: false,
-
-    message: "Terlalu banyak request",
-  },
-});
-
-app.use(limiter);
 
 const PORT = process.env.PORT || 5000;
 
@@ -110,9 +92,9 @@ io.on("connection", (socket) => {
   });
 });
 
+const errorMiddleware = require("./middlewares/error.middleware");
+app.use(errorMiddleware);
+
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-const errorMiddleware = require("./middlewares/error.middleware");
-app.use(errorMiddleware);

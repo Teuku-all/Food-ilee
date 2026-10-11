@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middlewares/auth.middleware");
-const upload = require("../config/multer");
+const upload = require("../middlewares/upload.middleware");
 const wasteController = require("../controllers/waste.controller");
 const validate = require("../middlewares/validation.middleware");
 const { createWasteSchema } = require("../validations/waste.validation");
@@ -9,12 +9,8 @@ const { createWasteSchema } = require("../validations/waste.validation");
 router.post(
   '/',
   authMiddleware,
-
-  validate(
-    createWasteSchema
-  ),
-
   upload.single('image'),
+  validate(createWasteSchema),
 
   wasteController.createWaste
 );
