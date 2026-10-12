@@ -2,9 +2,12 @@ import { createStore, getMyStore } from '../../services/store.js';
 import { escapeHtml } from '../../utils/html.js';
 import { renderShell, showToast } from '../../ui/shell.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
+import { skeleton } from '../../ui/skeleton.js';
 
 export async function renderCreateStore() {
   const navigationRevision = getNavigationRevision();
+  injectCreateStoreStyles();
+  renderShell('', createStoreLoadingSkeleton());
   try {
     const result = await getMyStore();
     if (!isRouteCurrent('#buat-toko', navigationRevision)) return;
@@ -51,6 +54,10 @@ export async function renderCreateStore() {
       button.innerHTML = previous;
     }
   });
+}
+
+function createStoreLoadingSkeleton() {
+  return `<section class="cs-page" aria-busy="true"><div class="cs-layout"><div class="cs-story">${skeleton('145px', '10px')}<div style="height:15px"></div>${skeleton('85%', '34px')}${skeleton('70%', '34px')}<div style="height:15px"></div>${skeleton('95%', '13px')}${skeleton('80%', '13px')}</div><div class="cs-form fi-card">${skeleton('100px', '10px')}<div style="height:10px"></div>${skeleton('180px', '27px')}<div style="height:8px"></div>${skeleton('95%', '12px')}<div style="height:22px"></div>${Array.from({ length: 4 }, () => `<div>${skeleton('125px', '11px')}<div style="height:8px"></div>${skeleton('100%', '44px', 'pill')}</div>`).join('')}${skeleton('100%', '42px', 'pill')}</div></div></section>`;
 }
 
 function injectCreateStoreStyles() {

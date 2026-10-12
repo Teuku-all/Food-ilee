@@ -4,6 +4,7 @@ import { getCurrentUser } from '../../services/user.js';
 import { getChats, getMessages, sendChatMessage } from '../../services/chat.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { connectSocket, getSocket } from '../../services/socket.js';
+import { skeleton } from '../../ui/skeleton.js';
 
 let chats = [];
 let selectedChatId = '';
@@ -22,7 +23,7 @@ export async function renderChat() {
   const revision = getNavigationRevision();
   renderShell(
     'chat',
-    '<section class="ch-page"><div class="ch-state fi-card">Memuat pesan…</div></section>',
+    chatLoadingSkeleton(),
   );
   injectStyles();
   try {
@@ -42,6 +43,10 @@ export async function renderChat() {
     injectStyles();
     document.querySelector('[data-chat-retry]')?.addEventListener('click', renderChat);
   }
+}
+
+function chatLoadingSkeleton() {
+  return `<section class="ch-page" aria-busy="true"><header class="ch-heading">${skeleton('145px', '10px')}<div style="height:9px"></div>${skeleton('120px', '30px')}<div style="height:8px"></div>${skeleton('270px', '13px')}</header><div class="ch-layout fi-card"><aside class="ch-inbox">${Array.from({ length: 5 }, () => `<div class="ch-chat-item">${skeleton('39px', '39px', 'circle')}<div class="ch-chat-copy">${skeleton('130px', '12px')}${skeleton('100px', '10px')}</div></div>`).join('')}</aside><section class="ch-conversation"><header class="ch-person">${skeleton('39px', '39px', 'circle')}<div>${skeleton('120px', '12px')}${skeleton('170px', '10px')}</div></header><div class="ch-messages">${skeleton('48%', '39px', 'pill')}${skeleton('60%', '52px', 'pill')}<div style="align-self:flex-end;width:47%">${skeleton('100%', '43px', 'pill')}</div></div><div class="ch-compose">${skeleton('100%', '43px', 'pill')}${skeleton('75px', '43px', 'pill')}</div></section></div></section>`;
 }
 
 function renderChatView(revision) {

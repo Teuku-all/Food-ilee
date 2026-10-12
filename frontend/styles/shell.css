@@ -20,6 +20,13 @@ body {
   font-family: Inter, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+.fi-skeleton{position:relative;display:block;flex:none;overflow:hidden;border-radius:9px;background:#e7efeb}
+.fi-skeleton::after{position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,#ffffffaa,transparent);animation:fi-skeleton-shimmer 1.35s ease-in-out infinite;content:""}
+.fi-skeleton.circle{border-radius:50%}
+.fi-skeleton.pill{border-radius:999px}
+@keyframes fi-skeleton-shimmer{100%{transform:translateX(100%)}}
+@media(prefers-reduced-motion:reduce){.fi-skeleton::after{animation:none}}
+
 .fi-app {
   min-height: 100vh;
   background: #dce8e6;

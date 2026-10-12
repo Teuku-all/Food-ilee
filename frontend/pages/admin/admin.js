@@ -10,6 +10,7 @@ import {
 import { escapeHtml } from '../../utils/html.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { formatRupiah, renderShell, showToast } from '../../ui/shell.js';
+import { skeleton } from '../../ui/skeleton.js';
 
 let adminData = { users: [], wastes: [], orders: [] };
 let activePanel = 'users';
@@ -19,7 +20,7 @@ export async function renderAdmin() {
   const revision = getNavigationRevision();
   renderShell(
     '',
-    '<section class="ad-page"><div class="ad-state fi-card">Memuat ringkasan admin…</div></section>',
+    adminLoadingSkeleton(),
   );
   injectStyles();
   try {
@@ -57,6 +58,10 @@ export async function renderAdmin() {
     injectStyles();
     document.querySelector('[data-admin-retry]')?.addEventListener('click', renderAdmin);
   }
+}
+
+function adminLoadingSkeleton() {
+  return `<section class="ad-page" aria-busy="true"><header class="ad-heading"><div>${skeleton('120px', '10px')}<div style="height:10px"></div>${skeleton('220px', '30px')}<div style="height:8px"></div>${skeleton('310px', '13px')}</div>${skeleton('130px', '28px', 'pill')}</header><section class="ad-stats">${Array.from({ length: 4 }, () => `<article class="fi-card">${skeleton('90px', '12px')}<div style="height:12px"></div>${skeleton('80px', '27px')}</article>`).join('')}</section><div class="ad-tabs">${skeleton('120px', '38px', 'pill')}${skeleton('100px', '38px', 'pill')}${skeleton('100px', '38px', 'pill')}</div><section class="ad-panel fi-card"><div class="ad-table-wrap"><table><thead><tr><th>${skeleton('80px', '10px')}</th><th>${skeleton('90px', '10px')}</th><th>${skeleton('80px', '10px')}</th><th>${skeleton('70px', '10px')}</th></tr></thead><tbody>${Array.from({ length: 5 }, () => `<tr><td>${skeleton('125px', '13px')}</td><td>${skeleton('180px', '13px')}</td><td>${skeleton('70px', '20px', 'pill')}</td><td>${skeleton('75px', '30px', 'pill')}</td></tr>`).join('')}</tbody></table></div></section></section>`;
 }
 
 function renderAdminView(analytics, currentUser, revision) {

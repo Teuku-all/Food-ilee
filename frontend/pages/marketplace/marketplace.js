@@ -6,6 +6,7 @@ import { createOrder } from '../../services/order.js';
 import { bindSharedHeader, dashboardFooter, dashboardHeader } from '../../ui/shell.js';
 import { startChat } from '../../services/chat.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
+import { skeleton } from '../../ui/skeleton.js';
 
 let marketplaceProducts = [];
 let activeCategory = 'Semua';
@@ -22,7 +23,7 @@ export async function renderMarketplace() {
       <main class="mp-main">
         <section class="mp-intro"><div><p class="mp-eyebrow">TEMUKAN NILAI BARU DARI SISA PANGAN</p><h1>Marketplace Limbah Organik</h1><p>Temukan limbah organik terbaik untuk pakan ternak dan bahan kompos dari sumber terpercaya di sekitar Anda.</p></div><div class="mp-product-count" id="mp-product-count"></div></section>
         <div class="mp-categories" role="group" aria-label="Kategori produk"><button type="button" class="active" aria-pressed="true" data-category="Semua">Semua</button><button type="button" aria-pressed="false" data-category="Pakan Ternak">Pakan Ternak</button><button type="button" aria-pressed="false" data-category="Kompos">Kompos</button></div>
-        <section class="mp-grid" id="mp-grid" aria-live="polite"><div class="mp-loading">Memuat produk…</div></section>
+        <section class="mp-grid" id="mp-grid" aria-live="polite" aria-busy="true">${marketplaceLoadingSkeleton()}</section>
       </main>
       ${dashboardFooter()}
     </div>`;
@@ -35,15 +36,21 @@ export async function renderMarketplace() {
     const [result] = await Promise.all([getWastes(), loadUser(revision)]);
     if (!isRouteCurrent('#marketplace', revision)) return;
     if (result.success === false) throw new Error(result.message || 'Produk belum dapat dimuat.');
+    document.getElementById('mp-grid')?.removeAttribute('aria-busy');
     marketplaceProducts = result.data || [];
     renderProducts();
   } catch (error) {
     if (!isRouteCurrent('#marketplace', revision)) return;
+    document.getElementById('mp-grid')?.removeAttribute('aria-busy');
     const grid = document.getElementById('mp-grid');
     if (grid)
       grid.innerHTML = `<div class="mp-empty"><h2>Marketplace belum dapat dimuat</h2><p>${escapeHtml(error.message || 'Periksa koneksi server Anda.')}</p><button type="button" id="mp-retry">Coba lagi</button></div>`;
     document.getElementById('mp-retry')?.addEventListener('click', renderMarketplace);
   }
+}
+
+function marketplaceLoadingSkeleton() {
+  return Array.from({ length: 6 }, () => `<article class="mp-card" aria-hidden="true"><div class="mp-card-image-wrap">${skeleton('100%', '205px')}</div><div class="mp-card-body">${skeleton('75px', '18px', 'pill')}<div style="height:12px"></div>${skeleton('70%', '18px')}<div style="height:12px"></div>${skeleton('80%', '11px')}<div style="height:14px"></div>${skeleton('100%', '39px', 'pill')}</div></article>`).join('');
 }
 
 function bindMarketplaceControls() {

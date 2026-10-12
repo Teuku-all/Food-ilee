@@ -5,12 +5,15 @@ import { getToken } from '../../utils/storage.js';
 import { escapeHtml } from '../../utils/html.js';
 import { formatRupiah, renderShell, showToast } from '../../ui/shell.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
+import { skeleton } from '../../ui/skeleton.js';
 
 const draftKey = 'foodilee_waste_draft_v1';
 let insightRequestRevision = 0;
 
 export async function renderTambahLimbah() {
   const navigationRevision = getNavigationRevision();
+  renderShell('add', wasteLoadingSkeleton());
+  injectWasteStyles();
   let draft = {};
   let scopedDraftKey = getToken()
     ? `${draftKey}:session-${hashToken(getToken())}`
@@ -42,6 +45,10 @@ export async function renderTambahLimbah() {
   );
   injectWasteStyles();
   bindWasteForm(scopedDraftKey);
+}
+
+function wasteLoadingSkeleton() {
+  return `<section class="wa-page" aria-busy="true"><div class="wa-heading"><div>${skeleton('145px', '10px')}<div style="height:10px"></div>${skeleton('275px', '31px')}<div style="height:8px"></div>${skeleton('340px', '13px')}</div>${skeleton('130px', '38px', 'pill')}</div><div class="wa-layout"><div class="wa-form fi-card">${Array.from({ length: 6 }, (_, index) => `<div style="margin-bottom:${index === 0 ? '20px' : '17px'}">${skeleton(index === 0 ? '100%' : '150px', index === 0 ? '140px' : '11px', index === 0 ? '' : '')}${index > 0 ? `<div style="height:8px"></div>${skeleton('100%', '42px', 'pill')}` : ''}</div>`).join('')}${skeleton('100%', '43px', 'pill')}</div><aside class="wa-aside"><section class="wa-ai-card">${skeleton('175px', '14px')}<div style="height:15px"></div>${skeleton('100%', '120px')}</section><section class="wa-impact-card">${skeleton('110px', '12px')}${skeleton('120px', '25px')}</section></aside></div></section>`;
 }
 
 function bindWasteForm(scopedDraftKey) {

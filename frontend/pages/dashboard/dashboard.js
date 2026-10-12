@@ -5,13 +5,15 @@ import { removeToken } from '../../utils/storage.js';
 import { escapeHtml } from '../../utils/html.js';
 import { formatRupiah, renderShell, showToast } from '../../ui/shell.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
+import { skeleton } from '../../ui/skeleton.js';
 
 export async function renderDashboard() {
   const navigationRevision = getNavigationRevision();
   let userResult;
   let wasteResult;
   let orderResult = { data: [] };
-  renderShell('', '<div class="db-loading"><span></span>Memuat ringkasan akun Anda…</div>');
+  renderShell('', dashboardLoadingSkeleton());
+  injectDashboardStyles();
   try {
     [userResult, wasteResult] = await Promise.all([getCurrentUser(), getWastes({ mine: true })]);
     orderResult = await getMyOrders();
@@ -48,6 +50,10 @@ export async function renderDashboard() {
   );
   injectDashboardStyles();
   bindProductActions(products);
+}
+
+function dashboardLoadingSkeleton() {
+  return `<section class="db-page" aria-busy="true"><div class="db-heading"><div>${skeleton('145px', '10px')}<div style="height:12px"></div>${skeleton('min(370px, 90vw)', '35px')}<div style="height:9px"></div>${skeleton('min(460px, 90vw)', '14px')}</div><div class="db-heading-actions">${skeleton('175px', '42px', 'pill')}${skeleton('145px', '42px', 'pill')}</div></div><div class="db-stats">${Array.from({ length: 3 }, () => `<article class="db-stat">${skeleton('95px', '11px')}<div style="height:15px"></div>${skeleton('65px', '33px')}<div style="height:12px"></div>${skeleton('150px', '10px')}</article>`).join('')}</div><div class="db-overview"><section class="db-chart fi-card"><div class="db-card-heading"><div>${skeleton('155px', '18px')}<div style="height:8px"></div>${skeleton('220px', '10px')}</div>${skeleton('65px', '24px', 'pill')}</div><div class="db-bars">${Array.from({ length: 6 }, (_, index) => `<div class="db-bar-item">${skeleton('30px', `${30 + (index % 3) * 18}px`)}</div>`).join('')}</div></section><aside class="db-tip">${skeleton('36px', '36px', 'circle')}<div style="height:14px"></div>${skeleton('125px', '10px')}<div style="height:12px"></div>${skeleton('90%', '20px')}${skeleton('90%', '12px')}${skeleton('75%', '12px')}</aside></div><section class="db-listing"><div class="db-listing-head">${skeleton('190px', '22px')}${skeleton('110px', '14px')}</div><div class="db-product-grid">${Array.from({ length: 3 }, () => `<article class="db-product fi-card">${skeleton('100%', '145px')}<div class="db-product-body">${skeleton('80px', '18px', 'pill')}<div style="height:12px"></div>${skeleton('70%', '17px')}<div style="height:15px"></div>${skeleton('100%', '12px')}</div></article>`).join('')}</div></section></section>`;
 }
 
 function productCard(product) {

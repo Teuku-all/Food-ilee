@@ -5,10 +5,12 @@ import { removeToken } from '../../utils/storage.js';
 import { escapeHtml } from '../../utils/html.js';
 import { formatRupiah, icon, renderShell, showToast } from '../../ui/shell.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
+import { skeleton } from '../../ui/skeleton.js';
 
 export async function renderProfile() {
   const navigationRevision = getNavigationRevision();
-  renderShell('', '<div class="pr-loading">Memuat profil Anda…</div>');
+  renderShell('', profileLoadingSkeleton());
+  injectProfileStyles();
   try {
     const [profileResult, wastesResult, ordersResult] = await Promise.all([
       getCurrentUser(),
@@ -58,6 +60,10 @@ export async function renderProfile() {
     );
     document.querySelector('[data-retry]').addEventListener('click', renderProfile);
   }
+}
+
+function profileLoadingSkeleton() {
+  return `<section class="pr-page" aria-busy="true"><section class="pr-hero fi-card"><div class="pr-avatar">${skeleton('100%', '100%', 'circle')}</div><div class="pr-identity">${skeleton('150px', '25px')}<div style="height:10px"></div>${skeleton('min(360px, 90%)', '13px')}<div style="height:12px"></div>${skeleton('125px', '22px', 'pill')}</div>${skeleton('130px', '42px', 'pill')}</section><section class="pr-impact"><div class="pr-section-title"><div>${skeleton('90px', '10px')}<div style="height:8px"></div>${skeleton('190px', '22px')}</div></div><div class="pr-impact-grid">${Array.from({ length: 3 }, () => `<article class="pr-impact-card">${skeleton('34px', '34px', 'circle')}<div style="height:13px"></div>${skeleton('68px', '28px')}<div style="height:7px"></div>${skeleton('120px', '10px')}</article>`).join('')}</div></section><div class="pr-detail-grid">${Array.from({ length: 2 }, () => `<section>${skeleton('100px', '20px')}<div style="height:12px"></div><div class="pr-details fi-card">${Array.from({ length: 3 }, () => `<div>${skeleton('25px', '25px', 'circle')}<div style="flex:1">${skeleton('90px', '8px')}<div style="height:5px"></div>${skeleton('65%', '12px')}</div></div>`).join('')}</div></section>`).join('')}</div></section>`;
 }
 
 function openEditProfile(user) {

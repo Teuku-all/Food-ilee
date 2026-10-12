@@ -4,6 +4,7 @@ import { getMySales, updateOrderStatus } from '../../services/order.js';
 import { escapeHtml } from '../../utils/html.js';
 import { formatRupiah, renderShell, showToast } from '../../ui/shell.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
+import { skeleton } from '../../ui/skeleton.js';
 
 const statusNames = {
   pending: 'Menunggu Pembayaran',
@@ -15,7 +16,7 @@ const statusNames = {
 
 export async function renderStore() {
   const navigationRevision = getNavigationRevision();
-  renderShell('', '<div class="st-loading">Memuat informasi toko…</div>');
+  renderShell('', storeLoadingSkeleton());
   injectStoreStyles();
   try {
     const [storeResult, salesResult, wasteResult] = await Promise.all([
@@ -58,6 +59,10 @@ export async function renderStore() {
     );
     document.querySelector('[data-retry]').addEventListener('click', renderStore);
   }
+}
+
+function storeLoadingSkeleton() {
+  return `<section class="st-page" aria-busy="true"><div class="st-title"><div>${skeleton('130px', '10px')}<div style="height:10px"></div>${skeleton('260px', '30px')}<div style="height:8px"></div>${skeleton('320px', '13px')}</div><div class="st-title-actions">${skeleton('115px', '40px', 'pill')}${skeleton('145px', '40px', 'pill')}</div></div><section class="st-profile fi-card">${skeleton('104px', '104px', 'circle')}<div class="st-store-info">${skeleton('190px', '23px')}<div style="height:8px"></div>${skeleton('125px', '12px')}${skeleton('85%', '12px')}<div style="height:13px"></div>${skeleton('220px', '20px', 'pill')}</div></section><section class="st-metrics">${Array.from({ length: 3 }, () => `<article>${skeleton('95px', '9px')}<div style="height:10px"></div>${skeleton('75px', '26px')}<div style="height:8px"></div>${skeleton('90px', '10px')}</article>`).join('')}</section><section class="st-tabs">${skeleton('105px', '38px', 'pill')}${skeleton('105px', '38px', 'pill')}${skeleton('105px', '38px', 'pill')}</section><div class="st-products">${Array.from({ length: 2 }, () => `<article class="st-product fi-card">${skeleton('150px', '165px')}<div class="st-product-main">${skeleton('85px', '16px', 'pill')}<div style="height:10px"></div>${skeleton('65%', '18px')}<div style="height:11px"></div>${skeleton('100%', '12px')}${skeleton('80%', '12px')}</div></article>`).join('')}</div></section>`;
 }
 
 function renderProducts(products) {

@@ -2,12 +2,13 @@
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { renderShell, showToast } from '../../ui/shell.js';
 import { getNotifications, markNotificationRead } from '../../services/notification.js';
+import { skeleton } from '../../ui/skeleton.js';
 
 export async function renderNotifications() {
   const revision = getNavigationRevision();
   renderShell(
     '',
-    '<section class="nt-page"><div class="nt-state">Memuat notifikasi…</div></section>',
+    notificationsLoadingSkeleton(),
   );
   injectStyles();
   try {
@@ -54,6 +55,10 @@ export async function renderNotifications() {
       .querySelector('[data-retry-notifications]')
       ?.addEventListener('click', renderNotifications);
   }
+}
+
+function notificationsLoadingSkeleton() {
+  return `<section class="nt-page" aria-busy="true"><header class="nt-heading"><div>${skeleton('125px', '10px')}<div style="height:9px"></div>${skeleton('190px', '30px')}<div style="height:8px"></div>${skeleton('250px', '13px')}</div>${skeleton('95px', '28px', 'pill')}</header><div class="nt-list">${Array.from({ length: 4 }, () => `<article class="nt-item fi-card">${skeleton('36px', '36px', 'circle')}<div>${skeleton('55%', '14px')}<div style="height:8px"></div>${skeleton('90%', '12px')}<div style="height:6px"></div>${skeleton('75px', '10px')}</div>${skeleton('105px', '34px', 'pill')}</article>`).join('')}</div></section>`;
 }
 
 function notificationCard(item) {

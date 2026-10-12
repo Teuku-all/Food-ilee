@@ -3,6 +3,7 @@ import { escapeHtml } from '../../utils/html.js';
 import { showToast, injectToastStyle } from '../../utils/toast.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { bindSharedHeader, dashboardFooter, dashboardHeader } from '../../ui/shell.js';
+import { skeleton } from '../../ui/skeleton.js';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1518843875459-f738682238a6?w=200&q=60';
 const PAGE_SIZE = 5;
@@ -40,7 +41,7 @@ ${dashboardHeader('orders')}
           <button class="tx-filter" type="button" aria-pressed="false" data-status="cancelled">Dibatalkan</button>
         </div>
         <div class="tx-results-note" id="tx-results-note"></div>
-        <section id="tx-order-list" class="tx-order-list" aria-live="polite"><div class="tx-loading"><span></span>Memuat transaksi Anda…</div></section>
+        <section id="tx-order-list" class="tx-order-list" aria-live="polite" aria-busy="true">${transactionsLoadingSkeleton()}</section>
         <div class="tx-more-wrap" id="tx-more-wrap" hidden><button class="tx-more-button" id="tx-more" type="button">Tampilkan Lebih Banyak <span>↓</span></button></div>
       </main>
 
@@ -53,6 +54,10 @@ ${dashboardHeader('orders')}
   bindSharedHeader();
   bindControls();
   await loadOrders(revision);
+}
+
+function transactionsLoadingSkeleton() {
+  return Array.from({ length: 3 }, () => `<article class="tx-order-card" aria-hidden="true"><header class="tx-order-heading"><div class="tx-order-merchant"><span class="tx-merchant-icon">${skeleton('38px', '38px', 'circle')}</span><div>${skeleton('145px', '13px')}<div style="height:7px"></div>${skeleton('190px', '10px')}</div></div>${skeleton('110px', '24px', 'pill')}</header><div class="tx-order-content">${skeleton('82px', '82px')}<div class="tx-item-info">${skeleton('170px', '17px')}<div style="height:10px"></div>${skeleton('110px', '12px')}${skeleton('160px', '10px')}</div><div class="tx-total">${skeleton('85px', '10px')}<div style="height:7px"></div>${skeleton('90px', '18px')}</div></div><footer class="tx-order-actions">${skeleton('105px', '34px', 'pill')}${skeleton('95px', '34px', 'pill')}</footer></article>`).join('');
 }
 
 function bindControls() {
@@ -77,17 +82,25 @@ function bindControls() {
 }
 
 async function loadOrders(revision) {
+  const list = document.getElementById('tx-order-list');
+  if (list) {
+    list.setAttribute('aria-busy', 'true');
+    list.innerHTML = transactionsLoadingSkeleton();
+  }
   try {
     const result = await getMyOrders();
     if (!isRouteCurrent('#transaksi', revision)) return;
     if (!result.success) throw new Error(result.message || 'Gagal memuat transaksi.');
+    document.getElementById('tx-order-list')?.removeAttribute('aria-busy');
     allOrders = Array.isArray(result.data) ? result.data : Array.isArray(result) ? result : [];
     renderOrders();
   } catch (error) {
     if (!isRouteCurrent('#transaksi', revision)) return;
     const list = document.getElementById('tx-order-list');
-    if (list)
+    if (list) {
+      list.removeAttribute('aria-busy');
       list.innerHTML = `<div class="tx-state"><div class="tx-state-icon">!</div><h2>Transaksi belum dapat dimuat</h2><p>${escapeHtml(error.message || 'Periksa koneksi Anda dan pastikan server berjalan.')}</p><button class="tx-button tx-button-outline" id="tx-retry" type="button">Coba lagi</button></div>`;
+    }
     document
       .getElementById('tx-retry')
       ?.addEventListener('click', () => loadOrders(getNavigationRevision()));
