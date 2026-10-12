@@ -1,86 +1,57 @@
-const aiService =
-  require('../services/ai.service');
+const aiService = require('../services/ai.service');
 
 async function askAI(req, res) {
-
   try {
-
-    const message =
-      req.body.message;
+    const message = req.body.message;
 
     if (!message) {
-
       return res.status(400).json({
         success: false,
-        message: 'Message wajib diisi'
+        message: 'Message wajib diisi',
       });
     }
 
-    const response =
-      await aiService.askAI(
-        message
-      );
+    const response = await aiService.askAI(message);
 
     res.status(200).json({
       success: true,
-      data: response
+      data: response,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
-
   }
 }
 
-async function recommendWaste(
-  req,
-  res
-) {
-
+async function recommendWaste(req, res) {
   try {
+    const { title, description } = req.body;
 
-    const {
-      title,
-      description
-    } = req.body;
-
-    const response =
-      await aiService.recommendWaste(
-        title,
-        description
-      );
+    const response = await aiService.recommendWaste(title, description);
 
     // Bersihkan response AI
-    const cleanResponse =
-      response
-        .replace(/```json/g, '')
-        .replace(/```/g, '')
-        .trim();
+    const cleanResponse = response
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
 
     res.status(200).json({
-
       success: true,
 
-      data:
-        JSON.parse(cleanResponse)
+      data: JSON.parse(cleanResponse),
     });
-
   } catch (error) {
-
     res.status(500).json({
-
       success: false,
 
-      message: error.message
+      message: error.message,
     });
-
   }
 }
 
 module.exports = {
-  askAI, recommendWaste
+  askAI,
+  recommendWaste,
 };

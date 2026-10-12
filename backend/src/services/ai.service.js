@@ -1,23 +1,16 @@
-const Groq =
-  require('groq-sdk');
+const Groq = require('groq-sdk');
 
-const groq =
-  new Groq({
-    apiKey:
-      process.env.GROQ_API_KEY
-  });
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
 async function askAI(message) {
+  const completion = await groq.chat.completions.create({
+    messages: [
+      {
+        role: 'system',
 
-  const completion =
-    await groq.chat.completions.create({
-
-      messages: [
-
-        {
-          role: 'system',
-
-          content: `
+        content: `
 
           Kamu adalah AI assistant
           untuk aplikasi Food Ilee.
@@ -31,31 +24,23 @@ async function askAI(message) {
 
           Jawab dalam bahasa Indonesia
           yang jelas dan singkat.
-          `
-        },
+          `,
+      },
 
-        {
-          role: 'user',
+      {
+        role: 'user',
 
-          content: message
-        }
-      ],
+        content: message,
+      },
+    ],
 
-      model:
-        'llama-3.3-70b-versatile'
-    });
+    model: 'llama-3.3-70b-versatile',
+  });
 
-  return completion
-    .choices[0]
-    .message
-    .content;
+  return completion.choices[0].message.content;
 }
 
-async function recommendWaste(
-  title,
-  description
-) {
-
+async function recommendWaste(title, description) {
   const prompt = `
 
   Kamu adalah AI ahli limbah makanan.
@@ -88,29 +73,23 @@ async function recommendWaste(
   Gunakan bahasa Indonesia.
   `;
 
-  const completion =
-    await groq.chat.completions.create({
+  const completion = await groq.chat.completions.create({
+    messages: [
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ],
 
-      messages: [
+    model: 'llama-3.3-70b-versatile',
 
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
+    temperature: 0.5,
+  });
 
-      model:
-        'llama-3.3-70b-versatile',
-
-      temperature: 0.5
-    });
-
-  return completion
-    .choices[0]
-    .message
-    .content;
+  return completion.choices[0].message.content;
 }
 
 module.exports = {
-  askAI, recommendWaste
+  askAI,
+  recommendWaste,
 };

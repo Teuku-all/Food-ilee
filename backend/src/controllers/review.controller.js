@@ -1,77 +1,50 @@
-const reviewService =
-  require('../services/review.service');
+const reviewService = require('../services/review.service');
 
-async function createReview(
-  req,
-  res
-) {
-
+async function createReview(req, res) {
   try {
+    const review = await reviewService.createReview(
+      req.user.id,
 
-    const review =
-      await reviewService.createReview(
+      req.body.wasteId,
 
-        req.user.id,
+      req.body.rating,
 
-        req.body.wasteId,
-
-        req.body.rating,
-
-        req.body.comment
-      );
+      req.body.comment,
+    );
 
     res.status(201).json({
-
       success: true,
 
-      data: review
+      data: review,
     });
-
   } catch (error) {
-
-    res.status(500).json({
-
+    res.status(error.message === 'Produk tidak ditemukan' ? 404 : 400).json({
       success: false,
 
-      message:
-        error.message
+      message: error.message,
     });
   }
 }
 
-async function getWasteReviews(
-  req,
-  res
-) {
-
+async function getWasteReviews(req, res) {
   try {
-
-    const data =
-      await reviewService.getWasteReviews(
-        req.params.wasteId
-      );
+    const data = await reviewService.getWasteReviews(req.params.wasteId);
 
     res.status(200).json({
-
       success: true,
 
-      data
+      data,
     });
-
   } catch (error) {
-
     res.status(500).json({
-
       success: false,
 
-      message:
-        error.message
+      message: error.message,
     });
   }
 }
 
 module.exports = {
-
   createReview,
-  getWasteReviews
+  getWasteReviews,
 };

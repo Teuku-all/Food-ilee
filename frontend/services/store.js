@@ -1,57 +1,28 @@
-import { API_BASE_URL }
-  from './api.js';
+import { apiRequest } from './api.js';
+import { getToken } from '../utils/storage.js';
 
-import { getToken }
-  from '../utils/storage.js';
+export async function createStore(formData) {
+  const token = getToken();
 
-export async function createStore(
-  formData
-) {
-
-  const token =
-    getToken();
-
-  const response =
-    await fetch(
-
-      `${API_BASE_URL}/stores`,
-
-      {
-
-        method: 'POST',
-
-        headers: {
-
-          Authorization:
-            `Bearer ${token}`
-        },
-
-        body: formData
-      }
-    );
-
-  return response.json();
+  return apiRequest('/stores', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
 }
 
 export async function getMyStore() {
+  const token = getToken();
 
-  const token =
-    getToken();
+  return apiRequest('/stores/me', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
 
-  const response =
-    await fetch(
-
-      `${API_BASE_URL}/stores/me`,
-
-      {
-
-        headers: {
-
-          Authorization:
-            `Bearer ${token}`
-        }
-      }
-    );
-
-  return response.json();
+export async function updateMyStore(formData) {
+  return apiRequest('/stores/me', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${getToken()}` },
+    body: formData,
+  });
 }

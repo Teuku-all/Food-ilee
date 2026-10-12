@@ -1,17 +1,9 @@
-const express =
-  require('express');
+const express = require('express');
 
-const router =
-  express.Router();
+const router = express.Router();
 
-const paymentController =
-  require(
-    '../controllers/payment.controller'
-  );
+const paymentController = require('../controllers/payment.controller');
 
-router.post(
-  '/midtrans/webhook',
-  paymentController.midtransWebhook
-);
+router.post('/midtrans/webhook', paymentController.midtransWebhook);
 
 module.exports = router;

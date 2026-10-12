@@ -1,71 +1,24 @@
-import { API_BASE_URL }
-  from './api.js';
+import { apiRequest } from './api.js';
+import { getToken } from '../utils/storage.js';
 
-import { getToken }
-  from '../utils/storage.js';
-
-export async function askAI(
-  message
-) {
-
-  const token =
-    getToken();
-
-  const response =
-    await fetch(
-      `${API_BASE_URL}/ai/chat`,
-      {
-        method: 'POST',
-
-        headers: {
-
-          'Content-Type':
-            'application/json',
-
-          Authorization:
-            `Bearer ${token}`
-        },
-
-        body:
-          JSON.stringify({
-            message
-          })
-      }
-    );
-
-  return response.json();
+export async function askAI(message) {
+  return apiRequest('/ai/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify({ message }),
+  });
 }
 
-export async function getAIRecommendation(
-  title,
-  description
-) {
-
-  const token =
-    getToken();
-
-  const response =
-    await fetch(
-      `${API_BASE_URL}/ai/recommend`,
-      {
-        method: 'POST',
-
-        headers: {
-
-          'Content-Type':
-            'application/json',
-
-          Authorization:
-            `Bearer ${token}`
-        },
-
-        body:
-          JSON.stringify({
-            title,
-            description
-          })
-      }
-    );
-
-  return response.json();
+export async function getAIRecommendation(title, description) {
+  return apiRequest('/ai/recommend', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify({ title, description }),
+  });
 }

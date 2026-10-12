@@ -1,67 +1,55 @@
-const prisma =
-  require('../config/prisma');
+const prisma = require('../config/prisma');
 
 async function createWaste(data) {
+  const store = data.sellerId
+    ? await prisma.store.findUnique({ where: { ownerId: data.sellerId }, select: { id: true } })
+    : null;
+  const waste = await prisma.wasteProduct.create({
+    data: {
+      title: data.title,
 
-  const waste =
-    await prisma.wasteProduct.create({
+      description: data.description,
 
-      data: {
+      image: data.image,
 
-        title: data.title,
+      price: data.price,
 
-        description:
-          data.description,
+      stock: data.stock,
 
-        image: data.image,
+      sellerId: data.sellerId,
 
-        price:
-          data.price,
+      storeId: data.storeId || store?.id,
 
-        stock:
-          data.stock,
+      category: data.category,
 
-        sellerId:
-          data.sellerId,
-
-        storeId:
-          data.storeId
-      }
-    });
+      location: data.location,
+    },
+  });
 
   return waste;
 }
 
-async function getAllWastes(
-  query
-) {
-
+async function getAllWastes(query) {
   const page = Math.max(1, Number.parseInt(query.page, 10) || 1);
   const limit = Math.min(100, Math.max(1, Number.parseInt(query.limit, 10) || 10));
 
-  const skip =
-    (page - 1) * limit;
+  const skip = (page - 1) * limit;
 
-  const search =
-    query.search || '';
+  const search = query.search || '';
 
-  const category =
-    query.category;
+  const category = query.category;
 
-  const sort =
-    query.sort;
+  const sort = query.sort;
 
   const minPrice = query.minPrice !== undefined ? Number.parseInt(query.minPrice, 10) : undefined;
   const maxPrice = query.maxPrice !== undefined ? Number.parseInt(query.maxPrice, 10) : undefined;
 
   const where = {
-
     title: {
-
       contains: search,
 
-      mode: 'insensitive'
-    }
+      mode: 'insensitive',
+    },
   };
 
   if (query.mine === 'true' && query.userId) {
@@ -70,212 +58,156 @@ async function getAllWastes(
 
   // filter category
   if (category) {
-
-    where.category =
-      category;
+    where.category = category;
   }
 
   // filter harga
   if (minPrice !== undefined || maxPrice !== undefined) {
-
     where.price = {};
 
     if (minPrice !== undefined) {
-
-      where.price.gte =
-        minPrice;
+      where.price.gte = minPrice;
     }
 
     if (maxPrice !== undefined) {
-
-      where.price.lte =
-        maxPrice;
+      where.price.lte = maxPrice;
     }
   }
 
   let orderBy = {
-
-    createdAt: 'desc'
+    createdAt: 'desc',
   };
 
   // sorting
-  if (
-    sort === 'price_asc'
-  ) {
-
+  if (sort === 'price_asc') {
     orderBy = {
-      price: 'asc'
+      price: 'asc',
     };
   }
 
-  if (
-    sort === 'price_desc'
-  ) {
-
+  if (sort === 'price_desc') {
     orderBy = {
-      price: 'desc'
+      price: 'desc',
     };
   }
 
-  const wastes =
-    await prisma.wasteProduct.findMany({
+  const wastes = await prisma.wasteProduct.findMany({
+    where,
 
-      where,
+    include: {
+      seller: {
+        select: {
+          id: true,
 
-      include: {
-
-        seller: {
-
-          select: {
-
-            id: true,
-
-            email: true
-          }
+          email: true,
         },
-
-        store: true
       },
 
-      orderBy,
+      store: true,
+    },
 
-      skip,
+    orderBy,
 
-      take: limit
-    });
+    skip,
 
-  const total =
-    await prisma.wasteProduct.count({
-      where
-    });
+    take: limit,
+  });
+
+  const total = await prisma.wasteProduct.count({
+    where,
+  });
 
   return {
-
     page,
 
     limit,
 
     total,
 
-    totalPages:
-      Math.ceil(
-        total / limit
-      ),
+    totalPages: Math.ceil(total / limit),
 
-    data: wastes
+    data: wastes,
   };
 }
 
-async function deleteWaste(
-  id,
-  sellerId
-) {
-
-  const waste =
-    await prisma.wasteProduct.findFirst({
-
-      where: {
-        id,
-        sellerId
-      }
-    });
+async function deleteWaste(id, sellerId) {
+  const waste = await prisma.wasteProduct.findFirst({
+    where: {
+      id,
+      sellerId,
+    },
+  });
 
   if (!waste) {
-
-    throw new Error(
-      'Produk tidak ditemukan'
-    );
+    throw new Error('Produk tidak ditemukan');
   }
 
   await prisma.wasteProduct.delete({
     where: {
-      id
-    }
+      id,
+    },
   });
 
   return true;
 }
 
-async function updateWaste(
-  id,
-  sellerId,
-  data
-) {
-
-  const waste =
-    await prisma.wasteProduct.findFirst({
-
-      where: {
-        id,
-        sellerId
-      }
-    });
+async function updateWaste(id, sellerId, data) {
+  const waste = await prisma.wasteProduct.findFirst({
+    where: {
+      id,
+      sellerId,
+    },
+  });
 
   if (!waste) {
-
-    throw new Error(
-      'Produk tidak ditemukan'
-    );
+    throw new Error('Produk tidak ditemukan');
   }
 
-  const updatedWaste =
-    await prisma.wasteProduct.update({
+  const updatedWaste = await prisma.wasteProduct.update({
+    where: {
+      id,
+    },
 
-      where: {
-        id
-      },
+    data: {
+      title: data.title,
 
-      data: {
+      description: data.description,
 
-        title:
-          data.title,
+      image: data.image || waste.image,
 
-        description:
-          data.description,
+      price: data.price,
 
-        image:
-          data.image || waste.image,
+      stock: data.stock,
 
-        price:
-          data.price,
+      category: data.category,
 
-        stock:
-          data.stock
-      }
-    });
+      location: data.location,
+    },
+  });
 
   return updatedWaste;
 }
 
 async function getWasteById(id) {
+  const waste = await prisma.wasteProduct.findUnique({
+    where: {
+      id,
+    },
 
-  const waste =
-    await prisma.wasteProduct.findUnique({
-
-      where: {
-        id
+    include: {
+      seller: {
+        select: {
+          id: true,
+          email: true,
+        },
       },
 
-      include: {
-
-        seller: {
-
-          select: {
-
-            id: true,
-            email: true
-          }
-        },
-
-        store: true
-      }
-    });
+      store: true,
+    },
+  });
 
   if (!waste) {
-
-    throw new Error(
-      'Produk tidak ditemukan'
-    );
+    throw new Error('Produk tidak ditemukan');
   }
 
   return waste;
@@ -286,5 +218,5 @@ module.exports = {
   getAllWastes,
   deleteWaste,
   updateWaste,
-  getWasteById
+  getWasteById,
 };

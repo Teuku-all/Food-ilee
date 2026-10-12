@@ -1,11 +1,47 @@
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 18px;
+}
+
+body {
+  font-family: Inter, Arial, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid #42aaa3;
+  outline-offset: 3px;
+}
+
+img {
+  height: auto;
+}
+
+dialog {
+  max-width: calc(100vw - 24px);
+}
+
 /* ========================================
    TABLET
 ======================================== */
 
 @media (max-width: 992px) {
-
   .container {
     padding: 16px;
+  }
+
+  .fi-page {
+    width: min(100% - 40px, 900px);
+    margin-inline: auto;
   }
 }
 
@@ -14,8 +50,171 @@
 ======================================== */
 
 @media (max-width: 768px) {
-
   .container {
     padding: 14px;
+  }
+
+  .fi-page {
+    width: auto;
+    margin-inline: 18px;
+  }
+
+  .fi-button {
+    min-height: 42px;
+  }
+
+  .fi-input {
+    min-width: 0;
+  }
+
+  .fi-footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+  }
+
+  dialog {
+    border-radius: 18px;
+  }
+
+  .fi-footer-grid {
+    gap: 22px 14px;
+  }
+}
+
+@keyframes fi-content-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mp-main,
+.tx-main {
+  animation: fi-content-enter 360ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
+}
+
+.mp-card {
+  animation: fi-content-enter 380ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
+}
+
+.mp-card:nth-child(2) {
+  animation-delay: 45ms;
+}
+
+.mp-card:nth-child(3) {
+  animation-delay: 90ms;
+}
+
+.mp-card:nth-child(4) {
+  animation-delay: 135ms;
+}
+
+.tx-order-card {
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    border-color 200ms ease;
+  animation: fi-content-enter 340ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
+}
+
+.tx-order-card:hover {
+  transform: translateY(-2px);
+  border-color: #c8dcd4;
+  box-shadow: 0 16px 38px #153d2d10;
+}
+
+.tx-order-card:nth-child(2) {
+  animation-delay: 45ms;
+}
+
+.tx-order-card:nth-child(3) {
+  animation-delay: 90ms;
+}
+
+.fi-nav-link,
+.fi-account-toggle,
+.fi-button,
+.mp-card-action,
+.tx-button,
+.landing-join,
+.landing-category,
+.landing-values article {
+  transition-timing-function: cubic-bezier(0.2, 0.7, 0.25, 1);
+}
+
+.fi-nav-link:hover {
+  transform: translateY(-1px);
+}
+
+.fi-button:active,
+.mp-card-action:active,
+.tx-button:active,
+.landing-join:active {
+  transform: scale(0.98);
+}
+
+.mp-categories button,
+.tx-filter {
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.mp-categories button:hover,
+.tx-filter:hover {
+  transform: translateY(-1px);
+}
+
+@keyframes fi-dialog-enter {
+  from {
+    opacity: 0;
+    transform: translateY(7px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fi-backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+dialog[open] {
+  animation: fi-dialog-enter 200ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
+}
+
+dialog[open]::backdrop {
+  animation: fi-backdrop-enter 180ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }

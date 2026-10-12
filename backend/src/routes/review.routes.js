@@ -1,24 +1,13 @@
-const express =
-  require('express');
+const express = require('express');
 
-const router =
-  express.Router();
+const router = express.Router();
 
-const authMiddleware =
-  require('../middlewares/auth.middleware');
+const authMiddleware = require('../middlewares/auth.middleware');
 
-const reviewController =
-  require('../controllers/review.controller');
+const reviewController = require('../controllers/review.controller');
 
-router.post(
-  '/',
-  authMiddleware,
-  reviewController.createReview
-);
+router.post('/', authMiddleware, reviewController.createReview);
 
-router.get(
-  '/:wasteId',
-  reviewController.getWasteReviews
-);
+router.get('/:wasteId', reviewController.getWasteReviews);
 
 module.exports = router;

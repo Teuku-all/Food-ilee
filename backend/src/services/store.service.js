@@ -1,60 +1,66 @@
-const prisma =
-  require('../config/prisma');
+const prisma = require('../config/prisma');
 
 async function createStore(data) {
-
-  const existingStore =
-    await prisma.store.findUnique({
-
-      where: {
-        ownerId: data.ownerId
-      }
-    });
+  const existingStore = await prisma.store.findUnique({
+    where: {
+      ownerId: data.ownerId,
+    },
+  });
 
   if (existingStore) {
-
-    throw new Error(
-      'User sudah punya toko'
-    );
+    throw new Error('User sudah punya toko');
   }
 
-  const store =
-    await prisma.store.create({
+  const store = await prisma.store.create({
+    data: {
+      name: data.name,
 
-      data: {
+      description: data.description,
 
-        name:
-          data.name,
+      location: data.location,
 
-        description:
-          data.description,
+      image: data.image,
 
-        image:
-          data.image,
-
-        ownerId:
-          data.ownerId
-      }
-    });
+      ownerId: data.ownerId,
+    },
+  });
 
   return store;
 }
 
 async function getMyStore(ownerId) {
-
   return prisma.store.findUnique({
-
     where: {
-      ownerId
+      ownerId,
     },
 
     include: {
-      products: true
-    }
+      products: {
+        include: {
+          reviews: true,
+          orders: true,
+        },
+      },
+    },
+  });
+}
+
+async function updateStore(ownerId, data) {
+  const existing = await prisma.store.findUnique({ where: { ownerId } });
+  if (!existing) throw new Error('Toko belum dibuat');
+  return prisma.store.update({
+    where: { ownerId },
+    data: {
+      ...(data.name !== undefined ? { name: data.name } : {}),
+      ...(data.description !== undefined ? { description: data.description } : {}),
+      ...(data.location !== undefined ? { location: data.location } : {}),
+      ...(data.image !== undefined ? { image: data.image } : {}),
+    },
   });
 }
 
 module.exports = {
   createStore,
-  getMyStore
+  getMyStore,
+  updateStore,
 };

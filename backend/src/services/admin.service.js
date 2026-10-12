@@ -1,106 +1,94 @@
 const prisma = require('../config/prisma');
 
 async function getAllUsers() {
-
   return prisma.user.findMany({
-
-    include: {
-
-      store: true
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      email: true,
+      role: true,
+      isBanned: true,
+      createdAt: true,
+      store: { select: { id: true, name: true } },
     },
-
     orderBy: {
-      createdAt: 'desc'
-    }
+      createdAt: 'desc',
+    },
   });
 }
 
 async function getAllWastes() {
-
   return prisma.wasteProduct.findMany({
-
     include: {
-
-      seller: true,
-
-      store: true
+      seller: { select: { id: true, name: true, username: true, email: true } },
+      store: { select: { id: true, name: true, location: true } },
     },
 
     orderBy: {
-      createdAt: 'desc'
-    }
+      createdAt: 'desc',
+    },
   });
 }
 
 async function getAllOrders() {
-
   return prisma.order.findMany({
-
     include: {
-
-      buyer: true,
-
-      waste: true
+      buyer: { select: { id: true, name: true, username: true, email: true } },
+      waste: { include: { store: { select: { id: true, name: true } } } },
     },
 
     orderBy: {
-      createdAt: 'desc'
-    }
+      createdAt: 'desc',
+    },
   });
 }
 
-async function banUser(
-  userId
-) {
-
+async function banUser(userId) {
   return prisma.user.update({
-
     where: {
-      id: userId
+      id: userId,
     },
 
     data: {
-      isBanned: true
-    }
+      isBanned: true,
+    },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      email: true,
+      role: true,
+      isBanned: true,
+    },
   });
 }
 
-async function deleteWaste(
-  wasteId
-) {
-
+async function deleteWaste(wasteId) {
   return prisma.wasteProduct.delete({
-
     where: {
-      id: wasteId
-    }
+      id: wasteId,
+    },
   });
 }
 
 async function getAnalytics() {
+  const totalUsers = await prisma.user.count();
 
-  const totalUsers =
-    await prisma.user.count();
+  const totalWastes = await prisma.wasteProduct.count();
 
-  const totalWastes =
-    await prisma.wasteProduct.count();
+  const totalOrders = await prisma.order.count();
 
-  const totalOrders =
-    await prisma.order.count();
+  const totalStores = await prisma.store.count();
 
-  const totalStores =
-    await prisma.store.count();
-
-  const totalRevenue =
-    await prisma.order.aggregate({
-
-      _sum: {
-        total: true
-      }
-    });
+  const totalRevenue = await prisma.order.aggregate({
+    where: { paymentStatus: 'paid' },
+    _sum: {
+      total: true,
+    },
+  });
 
   return {
-
     totalUsers,
 
     totalWastes,
@@ -109,17 +97,15 @@ async function getAnalytics() {
 
     totalStores,
 
-    totalRevenue:
-      totalRevenue._sum.total || 0
+    totalRevenue: totalRevenue._sum.total || 0,
   };
 }
 
 module.exports = {
-
   getAllUsers,
   getAllWastes,
   getAllOrders,
   banUser,
   deleteWaste,
-  getAnalytics
+  getAnalytics,
 };

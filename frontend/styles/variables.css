@@ -1,13 +1,12 @@
 :root {
-  --green: #16a34a;
-  --green-dark: #15803d;
-  --gray: #6b7280;
-  --border: #e5e7eb;
+  --green: #087b78;
+  --green-dark: #005654;
+  --gray: #56716f;
+  --border: #bfd4d2;
   --white: #ffffff;
   --danger: #dc2626;
 
-  --shadow:
-    0 4px 10px rgba(0,0,0,0.05);
+  --shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 
   --radius: 14px;
 }

@@ -1,33 +1,19 @@
-const Joi =
-  require('joi');
+const Joi = require('joi');
 
-const createWasteSchema =
-  Joi.object({
+const createWasteSchema = Joi.object({
+  title: Joi.string().min(3).required(),
 
-    title:
-      Joi.string()
-        .min(3)
-        .required(),
+  description: Joi.string().min(5).required(),
 
-    description:
-      Joi.string()
-        .min(5)
-        .required(),
+  category: Joi.string().valid('Pakan Ternak', 'Kompos').required(),
 
-    price:
-      Joi.number()
-        .integer()
-        .min(0)
-        .required(),
+  location: Joi.string().allow('').max(180),
 
-    stock:
-      Joi.number()
-        .integer()
-        .min(1)
-        .required()
-  });
+  price: Joi.number().integer().min(0).required(),
+
+  stock: Joi.number().integer().min(1).required(),
+});
 
 module.exports = {
-
-  createWasteSchema
+  createWasteSchema,
 };

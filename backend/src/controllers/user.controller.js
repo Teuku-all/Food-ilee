@@ -1,123 +1,73 @@
-const userService =
-  require('../services/user.service');
+const userService = require('../services/user.service');
 
-async function getMyProfile(
-  req,
-  res
-) {
-
+async function getMyProfile(req, res) {
   try {
-
-    const user =
-      await userService
-        .getMyProfile(
-          req.user.id
-        );
+    const user = await userService.getMyProfile(req.user.id);
 
     res.status(200).json({
-
       success: true,
 
-      data: user
+      data: user,
     });
-
   } catch (error) {
-
     res.status(500).json({
-
       success: false,
 
-      message:
-        error.message
+      message: error.message,
     });
   }
 }
 
-async function updateProfile(
-  req,
-  res
-) {
-
+async function updateProfile(req, res) {
   try {
+    const user = await userService.updateProfile(
+      req.user.id,
 
-    const user =
-      await userService
-        .updateProfile(
+      {
+        name: req.body.name,
 
-          req.user.id,
+        username: req.body.username,
 
-          {
+        bio: req.body.bio,
 
-            name:
-              req.body.name,
-
-            username:
-              req.body.username,
-
-            bio:
-              req.body.bio,
-
-            avatar:
-              req.file
-                ? req.file.path
-                : undefined
-          }
-        );
+        avatar: req.file ? req.file.path : undefined,
+      },
+    );
 
     res.status(200).json({
-
       success: true,
 
-      data: user
+      data: user,
     });
-
   } catch (error) {
-
     res.status(500).json({
-
       success: false,
 
-      message:
-        error.message
+      message: error.message,
     });
   }
 }
 
-async function getPublicProfile(
-  req,
-  res
-) {
-
+async function getPublicProfile(req, res) {
   try {
-
-    const user =
-      await userService
-        .getPublicProfile(
-          req.params.username
-        );
+    const user = await userService.getPublicProfile(req.params.username);
 
     res.status(200).json({
-
       success: true,
 
-      data: user
+      data: user,
     });
-
   } catch (error) {
-
     res.status(500).json({
-
       success: false,
 
-      message:
-        error.message
+      message: error.message,
     });
   }
 }
 
 module.exports = {
-
   getMyProfile,
   updateProfile,
-  getPublicProfile
+  getPublicProfile,
 };

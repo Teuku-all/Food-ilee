@@ -64,6 +64,8 @@ model WasteProduct {
 
   category    String?
 
+  location    String?
+
   createdAt   DateTime @default(now())
 
   sellerId String?
@@ -86,6 +88,8 @@ model Store {
   name        String
 
   description String?
+
+  location    String?
 
   image       String?
 

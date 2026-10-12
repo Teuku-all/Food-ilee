@@ -1,31 +1,21 @@
-const Joi =
-  require('joi');
+const Joi = require('joi');
 
-const registerSchema =
-  Joi.object({
+const registerSchema = Joi.object({
+  email: Joi.string().trim().lowercase().email().required(),
 
-    email:
-      Joi.string()
-        .email()
-        .required(),
+  password: Joi.string().min(8).required(),
 
-    password:
-      Joi.string()
-        .min(6)
-        .required(),
+  name: Joi.string().trim().min(3).required(),
 
-    name:
-      Joi.string()
-        .min(3)
-        .required(),
+  username: Joi.string().trim().lowercase().min(3).required(),
+});
 
-    username:
-      Joi.string()
-        .min(3)
-        .required()
-  });
+const loginSchema = Joi.object({
+  email: Joi.string().trim().lowercase().email().required(),
+  password: Joi.string().min(1).required(),
+});
 
 module.exports = {
-
-  registerSchema
+  registerSchema,
+  loginSchema,
 };

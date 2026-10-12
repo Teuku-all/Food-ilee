@@ -1,33 +1,20 @@
 export function showLoading() {
+  if (document.querySelector('.loading-overlay')) return;
 
-  if (
-    document.querySelector(
-      '.loading-overlay'
-    )
-  ) return;
+  const loading = document.createElement('div');
 
-  const loading =
-    document.createElement('div');
-
-  loading.className =
-    'loading-overlay';
+  loading.className = 'loading-overlay';
 
   loading.innerHTML = `
 
     <div class="spinner"></div>
   `;
 
-  document.body.appendChild(
-    loading
-  );
+  document.body.appendChild(loading);
 }
 
 export function hideLoading() {
-
-  const loading =
-    document.querySelector(
-      '.loading-overlay'
-    );
+  const loading = document.querySelector('.loading-overlay');
 
   if (loading) {
     loading.remove();
@@ -35,15 +22,9 @@ export function hideLoading() {
 }
 
 export function injectLoadingStyle() {
+  if (document.getElementById('loading-style')) return;
 
-  if (
-    document.getElementById(
-      'loading-style'
-    )
-  ) return;
-
-  const style =
-    document.createElement('style');
+  const style = document.createElement('style');
 
   style.id = 'loading-style';
 

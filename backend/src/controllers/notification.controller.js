@@ -1,77 +1,46 @@
-const notificationService =
-  require(
-    '../services/notification.service'
-  );
+const notificationService = require('../services/notification.service');
 
-async function getMyNotifications(
-  req,
-  res
-) {
-
+async function getMyNotifications(req, res) {
   try {
-
-    const notifications =
-      await notificationService
-        .getMyNotifications(
-          req.user.id
-        );
+    const notifications = await notificationService.getMyNotifications(req.user.id);
 
     res.status(200).json({
-
       success: true,
 
-      data: notifications
+      data: notifications,
     });
-
   } catch (error) {
-
     res.status(500).json({
-
       success: false,
 
-      message:
-        error.message
+      message: error.message,
     });
   }
 }
 
-async function markAsRead(
-  req,
-  res
-) {
-
+async function markAsRead(req, res) {
   try {
+    const notification = await notificationService.markAsRead(
+      req.params.id,
 
-    const notification =
-      await notificationService
-        .markAsRead(
-
-          req.params.id,
-
-          req.user.id
-        );
+      req.user.id,
+    );
 
     res.status(200).json({
-
       success: true,
 
-      data: notification
+      data: notification,
     });
-
   } catch (error) {
-
-    res.status(500).json({
-
+    res.status(error.message === 'Notifikasi tidak ditemukan' ? 404 : 500).json({
       success: false,
 
-      message:
-        error.message
+      message: error.message,
     });
   }
 }
 
 module.exports = {
-
   getMyNotifications,
-  markAsRead
+  markAsRead,
 };

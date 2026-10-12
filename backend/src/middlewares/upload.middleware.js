@@ -1,38 +1,32 @@
-const multer =
-  require('multer');
+const multer = require('multer');
 
-const cloudinary =
-  require('../config/cloudinary');
+const cloudinary = require('../config/cloudinary');
 
-const {
-  CloudinaryStorage
-} = require(
-  'multer-storage-cloudinary'
-);
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-const storage =
-  new CloudinaryStorage({
+const storage = new CloudinaryStorage({
+  cloudinary,
 
-    cloudinary,
+  params: {
+    folder: 'foodilee',
 
-    params: {
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+  },
+});
 
-      folder:
-        'foodilee',
+const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+    files: 1,
+  },
+  fileFilter: (req, file, callback) => {
+    if (allowedImageTypes.has(file.mimetype)) return callback(null, true);
+    const error = new Error('Unggah foto JPG, PNG, atau WebP dengan ukuran maksimal 5 MB.');
+    error.status = 400;
+    callback(error);
+  },
+});
 
-      allowed_formats: [
-        'jpg',
-        'png',
-        'jpeg',
-        'webp'
-      ]
-    }
-  });
-
-const upload =
-  multer({
-    storage
-  });
-
-module.exports =
-  upload;
+module.exports = upload;

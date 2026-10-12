@@ -1,34 +1,29 @@
-import { API_BASE_URL }
-  from './api.js';
+import { apiRequest } from './api.js';
 
 export async function loginUser(data) {
-
-  const response = await fetch(
-    `${API_BASE_URL}/auth/login`,
+  return apiRequest(
+    '/auth/login',
     {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data)
-    }
+      body: JSON.stringify(data),
+    },
+    'Email atau kata sandi tidak cocok.',
   );
-
-  return response.json();
 }
 
 export async function registerUser(data) {
-
-  const response = await fetch(
-    `${API_BASE_URL}/auth/register`,
+  return apiRequest(
+    '/auth/register',
     {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data)
-    }
+      body: JSON.stringify(data),
+    },
+    'Pendaftaran belum berhasil.',
   );
-
-  return response.json();
 }

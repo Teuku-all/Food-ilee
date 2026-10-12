@@ -1,47 +1,29 @@
-export function showToast(
-  message,
-  type = 'success'
-) {
+export function showToast(message, type = 'success') {
+  const toast = document.createElement('div');
 
-  const toast =
-    document.createElement('div');
-
-  toast.className =
-    `toast toast-${type}`;
+  toast.className = `toast toast-${type}`;
 
   toast.innerText = message;
 
   document.body.appendChild(toast);
 
   setTimeout(() => {
-
     toast.classList.add('show');
-
   }, 10);
 
   setTimeout(() => {
-
     toast.classList.remove('show');
 
     setTimeout(() => {
-
       toast.remove();
-
     }, 300);
-
   }, 3000);
 }
 
 export function injectToastStyle() {
+  if (document.getElementById('toast-style')) return;
 
-  if (
-    document.getElementById(
-      'toast-style'
-    )
-  ) return;
-
-  const style =
-    document.createElement('style');
+  const style = document.createElement('style');
 
   style.id = 'toast-style';
 

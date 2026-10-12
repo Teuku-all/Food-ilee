@@ -1,170 +1,130 @@
-const wasteService =
-  require('../services/waste.service');
+const wasteService = require('../services/waste.service');
 
 async function createWaste(req, res) {
-
   try {
     if (!req.file) {
-
       return res.status(400).json({
         success: false,
-        message: 'Foto wajib diupload'
+        message: 'Foto wajib diupload',
       });
     }
 
-    const waste =
-      await wasteService.createWaste({
+    const waste = await wasteService.createWaste({
+      title: req.body.title,
 
-        title: req.body.title,
+      description: req.body.description,
 
-        description:
-          req.body.description,
+      category: req.body.category,
 
-        image: req.file.path,
-        price: Number(req.body.price),
-        stock: Number(req.body.stock),
+      location: req.body.location,
 
-        sellerId: req.user.id
-      });
+      image: req.file.path,
+      price: Number(req.body.price),
+      stock: Number(req.body.stock),
+
+      sellerId: req.user.id,
+    });
 
     res.status(201).json({
       success: true,
       message: 'Limbah berhasil ditambahkan',
-      data: waste
+      data: waste,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
-
   }
 }
 
-async function getAllWastes(
-  req,
-  res
-) {
-
+async function getAllWastes(req, res) {
   try {
-
-    const result =
-      await wasteService
-        .getAllWastes(
-          { ...req.query, userId: req.user.id }
-        );
+    const result = await wasteService.getAllWastes({ ...req.query, userId: req.user.id });
 
     res.status(200).json({
-
       success: true,
 
-      ...result
+      ...result,
     });
-
   } catch (error) {
-
     res.status(500).json({
-
       success: false,
 
-      message:
-        error.message
+      message: error.message,
     });
   }
 }
 
 async function deleteWaste(req, res) {
-
   try {
-
     const { id } = req.params;
 
-    await wasteService.deleteWaste(
-      id,
-      req.user.id
-    );
+    await wasteService.deleteWaste(id, req.user.id);
 
     res.status(200).json({
       success: true,
-      message: 'Limbah berhasil dihapus'
+      message: 'Limbah berhasil dihapus',
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
-
   }
 }
 
 async function updateWaste(req, res) {
-
   try {
+    const updatedWaste = await wasteService.updateWaste(
+      req.params.id,
 
-    const updatedWaste =
-      await wasteService.updateWaste(
+      req.user.id,
 
-        req.params.id,
+      {
+        title: req.body.title,
 
-        req.user.id,
+        description: req.body.description,
 
-        {
-          title: req.body.title,
+        category: req.body.category,
 
-          description:
-            req.body.description,
+        location: req.body.location,
 
-          image: req.file ? req.file.path : undefined
-        }
-      );
+        price: Number(req.body.price),
+
+        stock: Number(req.body.stock),
+
+        image: req.file ? req.file.path : undefined,
+      },
+    );
 
     res.status(200).json({
       success: true,
       message: 'Limbah berhasil diupdate',
-      data: updatedWaste
+      data: updatedWaste,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
-
   }
 }
 
-async function getWasteById(
-  req,
-  res
-) {
-
+async function getWasteById(req, res) {
   try {
-
-    const waste =
-      await wasteService.getWasteById(
-        req.params.id
-      );
+    const waste = await wasteService.getWasteById(req.params.id);
 
     res.status(200).json({
-
       success: true,
 
-      data: waste
+      data: waste,
     });
-
   } catch (error) {
-
     res.status(404).json({
-
       success: false,
 
-      message:
-        error.message
+      message: error.message,
     });
   }
 }
@@ -174,5 +134,5 @@ module.exports = {
   getAllWastes,
   deleteWaste,
   updateWaste,
-  getWasteById
+  getWasteById,
 };

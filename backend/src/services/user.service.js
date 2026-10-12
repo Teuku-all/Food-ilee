@@ -1,18 +1,12 @@
-const prisma =
-  require('../config/prisma');
+const prisma = require('../config/prisma');
 
-async function getMyProfile(
-  userId
-) {
-
+async function getMyProfile(userId) {
   return prisma.user.findUnique({
-
     where: {
-      id: userId
+      id: userId,
     },
 
     select: {
-
       id: true,
 
       email: true,
@@ -27,51 +21,46 @@ async function getMyProfile(
 
       role: true,
 
-      createdAt: true
-    }
+      createdAt: true,
+    },
   });
 }
 
-async function updateProfile(
-  userId,
-  data
-) {
-
+async function updateProfile(userId, data) {
   return prisma.user.update({
-
     where: {
-      id: userId
+      id: userId,
     },
 
     data: {
+      name: data.name,
 
-      name:
-        data.name,
+      username: data.username,
 
-      username:
-        data.username,
+      bio: data.bio,
 
-      bio:
-        data.bio,
-
-      avatar:
-        data.avatar
-    }
+      avatar: data.avatar,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      username: true,
+      avatar: true,
+      bio: true,
+      role: true,
+      createdAt: true,
+    },
   });
 }
 
-async function getPublicProfile(
-  username
-) {
-
+async function getPublicProfile(username) {
   return prisma.user.findUnique({
-
     where: {
-      username
+      username,
     },
 
     select: {
-
       id: true,
 
       name: true,
@@ -82,14 +71,13 @@ async function getPublicProfile(
 
       bio: true,
 
-      store: true
-    }
+      store: true,
+    },
   });
 }
 
 module.exports = {
-
   getMyProfile,
   updateProfile,
-  getPublicProfile
+  getPublicProfile,
 };

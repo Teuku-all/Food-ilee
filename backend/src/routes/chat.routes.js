@@ -1,31 +1,17 @@
-const express =
-  require('express');
+const express = require('express');
 
-const router =
-  express.Router();
+const router = express.Router();
 
-const authMiddleware =
-  require('../middlewares/auth.middleware');
+const authMiddleware = require('../middlewares/auth.middleware');
 
-const chatController =
-  require('../controllers/chat.controller');
+const chatController = require('../controllers/chat.controller');
 
-router.post(
-  '/',
-  authMiddleware,
-  chatController.createChat
-);
+router.get('/', authMiddleware, chatController.getMyChats);
 
-router.post(
-  '/:chatId/messages',
-  authMiddleware,
-  chatController.sendMessage
-);
+router.post('/', authMiddleware, chatController.createChat);
 
-router.get(
-  '/:chatId/messages',
-  authMiddleware,
-  chatController.getMessages
-);
+router.post('/:chatId/messages', authMiddleware, chatController.sendMessage);
+
+router.get('/:chatId/messages', authMiddleware, chatController.getMessages);
 
 module.exports = router;

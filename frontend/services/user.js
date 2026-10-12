@@ -1,21 +1,32 @@
-import { API_BASE_URL }
-  from './api.js';
+import { apiRequest } from './api.js';
+import { getToken } from '../utils/storage.js';
 
-import { getToken }
-  from '../utils/storage.js';
+let currentUserRequest = null;
 
 export async function getCurrentUser() {
-
   const token = getToken();
+  if (currentUserRequest?.token === token) return currentUserRequest.promise;
 
-  const response = await fetch(
-    `${API_BASE_URL}/auth/me`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }
-  );
+  const promise = apiRequest('/users/me', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  currentUserRequest = { token, promise };
+  const clearRequest = () => {
+    if (currentUserRequest?.promise === promise) currentUserRequest = null;
+  };
+  promise.then(clearRequest, clearRequest);
+  return promise;
+}
 
-  return response.json();
+export async function updateCurrentUser(formData) {
+  const token = getToken();
+  const result = await apiRequest('/users/me', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  currentUserRequest = null;
+  return result;
 }

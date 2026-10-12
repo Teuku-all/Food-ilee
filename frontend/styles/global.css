@@ -13,7 +13,7 @@ body {
   width: 100%;
   overflow-x: hidden;
   font-family: Arial, sans-serif;
-  background: #f7f8fa;
+  background: #dce8e6;
   color: #1f2937;
 }
 
@@ -61,6 +61,13 @@ ol {
 #app {
   width: 100%;
   min-height: 100vh;
+}
+
+.fi-icon {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  vertical-align: middle;
 }
 
 .container {
