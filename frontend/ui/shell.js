@@ -1,4 +1,4 @@
-import { getCurrentUser } from '../services/user.js';
+import { getCachedCurrentUser, getCurrentUser } from '../services/user.js';
 import { removeToken } from '../utils/storage.js';
 import { escapeHtml } from '../utils/html.js';
 import { icon } from './icons.js';
@@ -144,30 +144,36 @@ function closeAccountMenu(menu, toggle) {
 
 async function hydrateAccount(version) {
   const header = document.querySelector('.fi-header');
+  const cached = getCachedCurrentUser();
+  if (version === shellRenderVersion && header?.isConnected && cached?.success && cached.data)
+    applyAccountUser(cached.data);
   try {
     const result = await getCurrentUser();
     if (version !== shellRenderVersion || !header?.isConnected || !result.success || !result.data)
       return;
-    const user = result.data;
-    const adminLink = document.querySelector('[data-admin-menu]');
-    if (adminLink) adminLink.hidden = user.role !== 'admin';
-    const name = user.name || user.username || user.email?.split('@')[0] || 'Pengguna';
-    document.querySelectorAll('[data-user-name]').forEach((el) => {
-      el.textContent = name;
-    });
-    document.querySelectorAll('[data-user-avatar]').forEach((el) => {
-      if (user.avatar) el.innerHTML = `<img src="${escapeHtml(user.avatar)}" alt="">`;
-      else el.textContent = name.charAt(0).toUpperCase();
-    });
-    document.querySelectorAll('[data-user-email]').forEach((el) => {
-      el.textContent = user.email || '';
-    });
-    document.querySelectorAll('[data-user-role]').forEach((el) => {
-      el.textContent = user.role === 'admin' ? 'Admin' : 'Anggota';
-    });
+    applyAccountUser(result.data);
   } catch {
     // Header tetap bisa digunakan meski profil belum dapat dimuat.
   }
+}
+
+function applyAccountUser(user) {
+  const adminLink = document.querySelector('[data-admin-menu]');
+  if (adminLink) adminLink.hidden = user.role !== 'admin';
+  const name = user.name || user.username || user.email?.split('@')[0] || 'Pengguna';
+  document.querySelectorAll('[data-user-name]').forEach((el) => {
+    el.textContent = name;
+  });
+  document.querySelectorAll('[data-user-avatar]').forEach((el) => {
+    if (user.avatar) el.innerHTML = `<img src="${escapeHtml(user.avatar)}" alt="">`;
+    else el.textContent = name.charAt(0).toUpperCase();
+  });
+  document.querySelectorAll('[data-user-email]').forEach((el) => {
+    el.textContent = user.email || '';
+  });
+  document.querySelectorAll('[data-user-role]').forEach((el) => {
+    el.textContent = user.role === 'admin' ? 'Admin' : 'Anggota';
+  });
 }
 
 export function showToast(message, type = 'success') {

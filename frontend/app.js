@@ -14,6 +14,15 @@ import { renderChat } from './pages/chat/chat.js';
 import { renderOnboarding, shouldShowOnboarding } from './ui/onboarding.js';
 import { getToken, removeToken } from './utils/storage.js';
 import { beginNavigation, isCurrentNavigation } from './utils/navigation.js';
+import { getCachedCurrentUser } from './services/user.js';
+
+document.addEventListener(
+  'close',
+  (event) => {
+    if (event.target instanceof HTMLDialogElement) event.target.remove();
+  },
+  true,
+);
 
 const protectedRoutes = new Set([
   '#dashboard',
@@ -45,6 +54,10 @@ window.addEventListener('foodilee:session-expired', (event) => {
 });
 
 async function router() {
+  document.querySelectorAll('dialog').forEach((dialog) => {
+    if (dialog.open) dialog.close();
+    dialog.remove();
+  });
   const route = location.hash || '#beranda';
   if (landingSectionRoutes.has(route) && document.querySelector('.landing-page')) return;
   const navigationRevision = beginNavigation();
@@ -117,7 +130,8 @@ async function router() {
   if (route === '#dashboard') {
     await renderDashboard();
     if (!isCurrentNavigation(navigationRevision)) return;
-    if (shouldShowOnboarding()) renderOnboarding();
+    const userId = getCachedCurrentUser()?.data?.id;
+    if (shouldShowOnboarding(userId)) renderOnboarding({ userId });
     return;
   }
   renderLanding();

@@ -1,16 +1,29 @@
 import { createWaste, getWastes } from '../../services/waste.js';
 import { getAIRecommendation } from '../../services/ai.js';
+import { getCurrentUser } from '../../services/user.js';
+import { getToken } from '../../utils/storage.js';
 import { escapeHtml } from '../../utils/html.js';
 import { formatRupiah, renderShell, showToast } from '../../ui/shell.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 
 const draftKey = 'foodilee_waste_draft_v1';
+let insightRequestRevision = 0;
 
 export async function renderTambahLimbah() {
   const navigationRevision = getNavigationRevision();
   let draft = {};
+  let scopedDraftKey = getToken()
+    ? `${draftKey}:session-${hashToken(getToken())}`
+    : draftKey;
   try {
-    draft = JSON.parse(localStorage.getItem(draftKey) || '{}');
+    const profile = await getCurrentUser();
+    if (profile.success && profile.data?.id)
+      scopedDraftKey = `${draftKey}:${profile.data.id}`;
+  } catch {
+    /* preserve the anonymous draft key when the profile cannot be loaded */
+  }
+  try {
+    draft = JSON.parse(localStorage.getItem(scopedDraftKey) || '{}');
   } catch {
     draft = {};
   }
@@ -28,10 +41,10 @@ export async function renderTambahLimbah() {
     `<section class="wa-page"><div class="wa-heading"><div><p class="wa-kicker">BAGIKAN SUMBER DAYA</p><h1>Tambah Limbah Organik</h1><p>Unggah bahan organik Anda agar dapat ditemukan dan dimanfaatkan kembali.</p></div><a class="fi-button fi-button-outline" href="#panduan"><span>▤</span> Lihat Panduan</a></div><div class="wa-layout"><form class="wa-form fi-card" id="waste-form"><label class="fi-label">Foto limbah <span class="wa-optional">Foto wajib</span></label><label class="wa-drop" for="waste-image"><input id="waste-image" name="image" type="file" accept="image/*" required><span class="wa-drop-icon">⌑</span><strong>Klik atau tarik foto ke sini</strong><small>JPG, PNG, WebP · maks. 5 MB</small><img class="wa-preview" alt="Pratinjau foto produk"></label><label class="fi-label" for="waste-title">Nama limbah<input class="fi-input" id="waste-title" name="title" value="${escapeHtml(draft.title || '')}" placeholder="Contoh: Kulit sayuran campuran" minlength="3" required></label><fieldset class="wa-category"><legend class="fi-label">Kategori pemanfaatan</legend><label><input type="radio" name="category" value="Pakan Ternak" ${draft.category !== 'Kompos' ? 'checked' : ''}><span class="wa-category-icon">♧</span><strong>Pakan Ternak</strong><small>Bahan yang cocok dimanfaatkan sebagai pakan</small></label><label><input type="radio" name="category" value="Kompos" ${draft.category === 'Kompos' ? 'checked' : ''}><span class="wa-category-icon compost">◌</span><strong>Kompos</strong><small>Sisa organik untuk pengolahan kompos</small></label></fieldset><div class="wa-two-fields"><label class="fi-label">Jumlah / berat (kg)<input class="fi-input" name="stock" type="number" min="1" step="1" value="${escapeHtml(draft.stock || '')}" placeholder="Contoh: 10" required></label><label class="fi-label">Harga penawaran / kg<input class="fi-input" name="price" type="number" min="0" step="1" value="${escapeHtml(draft.price || '')}" placeholder="Rp 0" required></label></div><p class="wa-price-tip">ⓘ Harga yang masuk akal membantu pembeli membandingkan penawaran.</p><label class="fi-label">Lokasi penjemputan<input class="fi-input" name="location" maxlength="180" value="${escapeHtml(draft.location || '')}" placeholder="Kecamatan, kota, provinsi" required></label><label class="fi-label">Catatan tambahan<textarea class="fi-input" name="description" rows="4" minlength="5" placeholder="Jelaskan kondisi, waktu ketersediaan, atau cara penjemputan…" required>${escapeHtml(draft.description || '')}</textarea></label><div class="wa-form-actions"><button class="fi-button fi-button-outline" type="button" id="waste-save-draft">Simpan Draft</button><button class="fi-button" type="submit">Unggah Penawaran <span>→</span></button></div></form><aside class="wa-aside"><section class="wa-ai-card"><div class="wa-aside-heading"><span>✳</span><div><strong>Insight AI Food Ilee</strong><small>Masukan untuk deskripsi Anda</small></div></div><div class="wa-ai-result" id="waste-ai-insight"><p>Isi nama dan catatan limbah, lalu pilih kategori. Insight yang relevan akan muncul di sini.</p></div><div class="wa-ai-image"><span>ALUR SIRKULAR DIMULAI DARI SINI</span></div></section><section class="wa-impact-card"><p>ETALASE ANDA</p><div><strong>${products.length}</strong><span>produk aktif</span></div><div><strong>${stock.toLocaleString('id-ID')} kg</strong><span>stok ditawarkan</span></div><a href="#kelola-toko">Kelola penawaran <span>→</span></a></section></aside></div></section>`,
   );
   injectWasteStyles();
-  bindWasteForm();
+  bindWasteForm(scopedDraftKey);
 }
 
-function bindWasteForm() {
+function bindWasteForm(scopedDraftKey) {
   const form = document.getElementById('waste-form');
   const fileInput = document.getElementById('waste-image');
   const drop = document.querySelector('.wa-drop');
@@ -40,7 +53,7 @@ function bindWasteForm() {
   const saveDraft = () => {
     const values = Object.fromEntries(new FormData(form));
     delete values.image;
-    localStorage.setItem(draftKey, JSON.stringify(values));
+    localStorage.setItem(scopedDraftKey, JSON.stringify(values));
   };
   document.getElementById('waste-save-draft').addEventListener('click', () => {
     saveDraft();
@@ -50,7 +63,7 @@ function bindWasteForm() {
     form.elements[name].addEventListener('input', () => {
       const values = Object.fromEntries(new FormData(form));
       delete values.image;
-      localStorage.setItem(draftKey, JSON.stringify(values));
+      localStorage.setItem(scopedDraftKey, JSON.stringify(values));
     }),
   );
   const previewFile = (file) => {
@@ -89,14 +102,29 @@ function bindWasteForm() {
     const title = form.elements.title.value.trim();
     const description = form.elements.description.value.trim();
     if (title.length < 3 || description.length < 5) return;
+    const requestRevision = ++insightRequestRevision;
     const insight = document.getElementById('waste-ai-insight');
     insight.innerHTML = '<p class="wa-insight-loading">Menganalisis bahan Anda…</p>';
     try {
       const result = await getAIRecommendation(title, description);
       if (!result.success) throw new Error(result.message);
+      if (
+        requestRevision !== insightRequestRevision ||
+        !insight.isConnected ||
+        form.elements.title.value.trim() !== title ||
+        form.elements.description.value.trim() !== description
+      )
+        return;
       const data = result.data || {};
       insight.innerHTML = `<p>${escapeHtml(data.recommendation || 'Pertimbangkan penyimpanan kering dan pisahkan dari bahan nonorganik.')}</p><small>Kategori saran: ${escapeHtml(data.category || 'belum ditentukan')}</small>${data.recycle_tip ? `<p class="wa-recycle-tip">${escapeHtml(data.recycle_tip)}</p>` : ''}`;
     } catch {
+      if (
+        requestRevision !== insightRequestRevision ||
+        !insight.isConnected ||
+        form.elements.title.value.trim() !== title ||
+        form.elements.description.value.trim() !== description
+      )
+        return;
       insight.innerHTML =
         '<p>Insight AI sementara tidak tersedia. Lengkapi deskripsi bahan untuk membantu calon pembeli.</p>';
     }
@@ -119,7 +147,7 @@ function bindWasteForm() {
       formData.set('price', String(Number(formData.get('price'))));
       const result = await createWaste(formData);
       if (!result.success) throw new Error(result.message || 'Penawaran belum dapat disimpan.');
-      localStorage.removeItem(draftKey);
+      localStorage.removeItem(scopedDraftKey);
       showToast('Penawaran berhasil ditambahkan ke marketplace.');
       location.hash = '#marketplace';
     } catch (error) {
@@ -128,6 +156,13 @@ function bindWasteForm() {
       button.innerHTML = oldLabel;
     }
   });
+}
+
+function hashToken(token) {
+  let hash = 2166136261;
+  for (let index = 0; index < token.length; index += 1)
+    hash = Math.imul(hash ^ token.charCodeAt(index), 16777619);
+  return (hash >>> 0).toString(36);
 }
 
 function injectWasteStyles() {

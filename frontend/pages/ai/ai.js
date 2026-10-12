@@ -50,7 +50,13 @@ async function submitPrompt(text) {
   const form = document.getElementById('ai-form');
   const send = form?.querySelector('button');
   const messages = document.getElementById('ai-messages');
-  if (!messages || !form) return;
+  if (!messages || !form || send?.disabled) return;
+  const promptButtons = [...document.querySelectorAll('[data-prompt]')];
+  promptButtons.forEach((button) => {
+    button.disabled = true;
+  });
+  const clearButton = document.getElementById('ai-clear');
+  if (clearButton) clearButton.disabled = true;
   let history;
   try {
     history = JSON.parse(sessionStorage.getItem(historyKey) || '[]');
@@ -85,6 +91,10 @@ async function submitPrompt(text) {
     messages.scrollTop = messages.scrollHeight;
     showToast(error.message || 'Asisten belum dapat menjawab.', 'error');
   } finally {
+    promptButtons.forEach((button) => {
+      if (button.isConnected) button.disabled = false;
+    });
+    if (clearButton?.isConnected) clearButton.disabled = false;
     if (send?.isConnected) send.disabled = false;
     input?.focus();
   }

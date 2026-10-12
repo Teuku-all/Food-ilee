@@ -15,6 +15,7 @@ export async function renderMarketplace() {
   const revision = getNavigationRevision();
   const app = document.getElementById('app');
   activeCategory = 'Semua';
+  currentMarketplaceUserId = '';
   app.innerHTML = `
     <div class="mp-app">
       ${dashboardHeader('market')}
@@ -29,10 +30,9 @@ export async function renderMarketplace() {
   injectToastStyle();
   bindSharedHeader();
   bindMarketplaceControls();
-  loadUser(revision);
 
   try {
-    const result = await getWastes();
+    const [result] = await Promise.all([getWastes(), loadUser(revision)]);
     if (!isRouteCurrent('#marketplace', revision)) return;
     if (result.success === false) throw new Error(result.message || 'Produk belum dapat dimuat.');
     marketplaceProducts = result.data || [];
@@ -64,13 +64,14 @@ function bindMarketplaceControls() {
 async function loadUser(revision) {
   try {
     const result = await getCurrentUser();
-    if (!isRouteCurrent('#marketplace', revision)) return;
+    if (!isRouteCurrent('#marketplace', revision)) return null;
     const user = result.data;
-    if (!result.success || !user) return;
+    if (!result.success || !user) return null;
     currentMarketplaceUserId = user.id || '';
   } catch {
     // Nama profil bukan prasyarat untuk menjelajah produk.
   }
+  return null;
 }
 
 function categoryFor(product) {

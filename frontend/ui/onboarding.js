@@ -1,4 +1,5 @@
 import { dashboardHeader, dashboardFooter, bindShell, injectShellStyles } from './shell.js';
+import { getCachedCurrentUser } from '../services/user.js';
 
 const steps = [
   {
@@ -24,19 +25,37 @@ const steps = [
   },
 ];
 
-export function shouldShowOnboarding() {
-  return !localStorage.getItem('foodilee_onboarding_v1');
+function onboardingStorageKey(userId) {
+  return userId ? `foodilee_onboarding_v1:${userId}` : 'foodilee_onboarding_v1';
 }
 
-export function renderOnboarding({ standalone = false } = {}) {
+export function shouldShowOnboarding(userId) {
+  const legacyKey = 'foodilee_onboarding_v1';
+  if (!userId) return !localStorage.getItem(legacyKey);
+  const key = onboardingStorageKey(userId);
+  if (localStorage.getItem(legacyKey) === 'done') {
+    localStorage.setItem(key, 'done');
+    localStorage.removeItem(legacyKey);
+  }
+  return !localStorage.getItem(key);
+}
+
+export function renderOnboarding({ standalone = false, userId } = {}) {
   injectShellStyles();
+  const accountId = userId || getCachedCurrentUser()?.data?.id;
+  const storageKey = onboardingStorageKey(accountId);
   let activeStep = 0;
   const app = document.getElementById('app');
   const render = () => {
     const step = steps[activeStep];
     const shellStart = standalone ? `<div class="fi-app">${dashboardHeader('')}` : '';
     const shellEnd = standalone ? `${dashboardFooter()}</div>` : '';
-    app.innerHTML = `${shellStart}<section class="fi-onboard-screen${standalone ? ' standalone' : ''}"><div class="fi-onboard-card fi-enter"><button class="fi-onboard-close" type="button" aria-label="Tutup panduan">×</button><div class="fi-onboard-art"><div class="fi-onboard-orbit orbit-a"></div><div class="fi-onboard-orbit orbit-b"></div><span class="fi-onboard-number">${step.icon}</span><span class="fi-onboard-leaf">✳</span><span class="fi-onboard-dot dot-a"></span><span class="fi-onboard-dot dot-b"></span></div><div class="fi-onboard-copy"><p class="fi-onboard-kicker">SELAMAT DATANG DI FOOD ILEE</p><h1>${step.title}</h1><p>${step.text}</p><div class="fi-onboard-progress">${steps.map((_, index) => `<span class="${index === activeStep ? 'active' : ''}"></span>`).join('')}</div><div class="fi-onboard-actions"><button class="fi-onboard-skip" type="button">Lewati panduan</button><button class="fi-button fi-onboard-next" type="button">${activeStep === steps.length - 1 ? 'Mulai sekarang' : 'Lanjut'} <span aria-hidden="true">→</span></button></div></div></div></section>${shellEnd}`;
+    const screen = `<section class="fi-onboard-screen${standalone ? ' standalone' : ''}"><div class="fi-onboard-card fi-enter"><button class="fi-onboard-close" type="button" aria-label="Tutup panduan">×</button><div class="fi-onboard-art"><div class="fi-onboard-orbit orbit-a"></div><div class="fi-onboard-orbit orbit-b"></div><span class="fi-onboard-number">${step.icon}</span><span class="fi-onboard-leaf">✳</span><span class="fi-onboard-dot dot-a"></span><span class="fi-onboard-dot dot-b"></span></div><div class="fi-onboard-copy"><p class="fi-onboard-kicker">SELAMAT DATANG DI FOOD ILEE</p><h1>${step.title}</h1><p>${step.text}</p><div class="fi-onboard-progress">${steps.map((_, index) => `<span class="${index === activeStep ? 'active' : ''}"></span>`).join('')}</div><div class="fi-onboard-actions"><button class="fi-onboard-skip" type="button">Lewati panduan</button><button class="fi-button fi-onboard-next" type="button">${activeStep === steps.length - 1 ? 'Mulai sekarang' : 'Lanjut'} <span aria-hidden="true">→</span></button></div></div></div></section>`;
+    if (standalone) app.innerHTML = `${shellStart}${screen}${shellEnd}`;
+    else {
+      app.querySelector('.fi-onboard-screen')?.remove();
+      app.insertAdjacentHTML('beforeend', screen);
+    }
     if (standalone) bindShell();
     document.querySelector('.fi-onboard-close').addEventListener('click', finish);
     document.querySelector('.fi-onboard-skip').addEventListener('click', finish);
@@ -46,17 +65,13 @@ export function renderOnboarding({ standalone = false } = {}) {
         render();
         return;
       }
-      localStorage.setItem('foodilee_onboarding_v1', 'done');
-      if (standalone) location.hash = '#dashboard';
-      else app.querySelector('.fi-onboard-screen')?.remove();
-    });
-    document.querySelector('.fi-onboard-close').addEventListener('click', () => {
+      localStorage.setItem(storageKey, 'done');
       if (standalone) location.hash = '#dashboard';
       else app.querySelector('.fi-onboard-screen')?.remove();
     });
   };
   const finish = () => {
-    localStorage.setItem('foodilee_onboarding_v1', 'done');
+    localStorage.setItem(storageKey, 'done');
     if (standalone) location.hash = '#dashboard';
     else app.querySelector('.fi-onboard-screen')?.remove();
   };

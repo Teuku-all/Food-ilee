@@ -2,9 +2,11 @@ import { apiRequest } from './api.js';
 import { getToken } from '../utils/storage.js';
 
 let currentUserRequest = null;
+let currentUserCache = null;
 
 export async function getCurrentUser() {
   const token = getToken();
+  if (currentUserCache?.token === token) return currentUserCache.result;
   if (currentUserRequest?.token === token) return currentUserRequest.promise;
 
   const promise = apiRequest('/users/me', {
@@ -13,11 +15,26 @@ export async function getCurrentUser() {
     },
   });
   currentUserRequest = { token, promise };
-  const clearRequest = () => {
-    if (currentUserRequest?.promise === promise) currentUserRequest = null;
-  };
-  promise.then(clearRequest, clearRequest);
+  promise.then(
+    (result) => {
+      if (currentUserRequest?.promise !== promise) return;
+      currentUserRequest = null;
+      if (result?.success && result.data) currentUserCache = { token, result };
+    },
+    () => {
+      if (currentUserRequest?.promise === promise) currentUserRequest = null;
+    },
+  );
   return promise;
+}
+
+export function getCachedCurrentUser() {
+  return currentUserCache?.token === getToken() ? currentUserCache.result : null;
+}
+
+export function invalidateCurrentUserCache() {
+  currentUserCache = null;
+  currentUserRequest = null;
 }
 
 export async function updateCurrentUser(formData) {
@@ -27,6 +44,6 @@ export async function updateCurrentUser(formData) {
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
   });
-  currentUserRequest = null;
+  invalidateCurrentUserCache();
   return result;
 }
