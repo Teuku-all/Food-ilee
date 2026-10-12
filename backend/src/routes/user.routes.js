@@ -8,6 +8,8 @@ const upload = require('../middlewares/upload.middleware');
 
 const userController = require('../controllers/user.controller');
 
+router.get('/username-availability', authMiddleware, userController.checkUsernameAvailability);
+
 router.get('/me', authMiddleware, userController.getMyProfile);
 
 router.put(

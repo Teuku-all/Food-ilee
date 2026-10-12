@@ -32,6 +32,13 @@ export function getCachedCurrentUser() {
   return currentUserCache?.token === getToken() ? currentUserCache.result : null;
 }
 
+export async function checkUsernameAvailability(username) {
+  const query = new URLSearchParams({ username: username.trim() });
+  return apiRequest(`/users/username-availability?${query}`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  });
+}
+
 export function invalidateCurrentUserCache() {
   currentUserCache = null;
   currentUserRequest = null;
