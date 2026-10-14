@@ -15,6 +15,7 @@ let socketConnectHandler = null;
 let socketMessageHandler = null;
 let socketStatusHandler = null;
 let socketBindRevision = 0;
+const loadedChatsThisVisit = new Set();
 
 window.addEventListener('hashchange', () => {
   if (location.hash !== '#chat') leaveSocketChat();
@@ -59,18 +60,30 @@ function renderChatView(revision) {
   injectStyles();
   document.querySelectorAll('[data-chat-select]').forEach((button) =>
     button.addEventListener('click', () => {
-      selectedChatId = button.dataset.chatSelect;
-      sessionStorage.setItem('foodilee_chat_id', selectedChatId);
-      renderChatView(revision);
+      selectChat(button.dataset.chatSelect, revision);
     }),
   );
-  if (selected) {
-    loadConversation(selected.id, revision);
-    bindLiveChat(selected.id, revision);
-    document
-      .querySelector('.ch-compose')
-      ?.addEventListener('submit', (event) => submitMessage(event, selected.id, revision));
-  }
+  if (selected) renderConversation(selected.id, revision);
+}
+
+function selectChat(chatId, revision) {
+  if (chatId === selectedChatId) return;
+  selectedChatId = chatId;
+  sessionStorage.setItem('foodilee_chat_id', chatId);
+  document.querySelectorAll('[data-chat-select]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.chatSelect === chatId);
+  });
+  renderConversation(chatId, revision);
+}
+
+function renderConversation(chatId, revision) {
+  const selected = chats.find((chat) => chat.id === chatId);
+  const pane = document.querySelector('.ch-conversation');
+  if (!pane || !selected) return;
+  pane.innerHTML = `<header class="ch-person"><span class="ch-avatar">${escapeHtml(initials(otherUser(selected)))}</span><div><strong>${escapeHtml(displayName(otherUser(selected)))}</strong><small>Diskusi transaksi Food Ilee</small></div></header><div class="ch-messages" data-chat-messages><div class="ch-empty">Memuat pesan…</div></div><form class="ch-compose"><input name="text" maxlength="4000" autocomplete="off" placeholder="Tulis pesan…" aria-label="Tulis pesan"><button class="fi-button" type="submit">Kirim</button></form>`;
+  loadConversation(chatId, revision);
+  bindLiveChat(chatId, revision);
+  pane.querySelector('.ch-compose')?.addEventListener('submit', (event) => submitMessage(event, chatId, revision));
 }
 
 async function bindLiveChat(chatId, revision) {
@@ -116,6 +129,7 @@ async function bindLiveChat(chatId, revision) {
     const box = document.querySelector('[data-chat-messages]');
     if (!box) return;
     appendMessage(box, message);
+    saveCachedMessage(chatId, message);
     updateChatPreview(chatId, message.text);
     box.scrollTop = box.scrollHeight;
   };
@@ -131,6 +145,7 @@ async function bindLiveChat(chatId, revision) {
 
 function leaveSocketChat() {
   socketBindRevision += 1;
+  loadedChatsThisVisit.clear();
   if (joinedChatId) liveSocket?.emit('leave_chat', joinedChatId);
   joinedChatId = '';
   if (socketConnectHandler) liveSocket?.off('connect', socketConnectHandler);
@@ -160,26 +175,76 @@ function initials(user) {
 }
 
 async function loadConversation(chatId, revision) {
+  const box = document.querySelector('[data-chat-messages]');
+  if (!box) return;
+  const cached = getCachedMessages(chatId);
+  if (cached !== null) {
+    renderMessages(box, cached);
+  }
+  if (loadedChatsThisVisit.has(chatId)) return;
+  loadedChatsThisVisit.add(chatId);
   try {
     const messages = await getMessages(chatId);
+    const mergedMessages = mergeMessages(getCachedMessages(chatId) || [], messages);
+    cacheMessages(chatId, mergedMessages);
     if (!isRouteCurrent('#chat', revision) || selectedChatId !== chatId) return;
-    const box = document.querySelector('[data-chat-messages]');
-    if (!box) return;
-    box.innerHTML = messages.length
-      ? messages
-          .map((message) => {
-            const date = new Date(message.createdAt);
-            const time = Number.isNaN(date.getTime())
-              ? ''
-              : date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-            return messageMarkup(message, time);
-          })
-          .join('')
-      : '<div class="ch-empty">Belum ada pesan. Kirim pesan pertama Anda.</div>';
-    box.scrollTop = box.scrollHeight;
+    const currentBox = document.querySelector('[data-chat-messages]');
+    if (currentBox) renderMessages(currentBox, mergedMessages);
   } catch (error) {
+    loadedChatsThisVisit.delete(chatId);
     if (isRouteCurrent('#chat', revision)) showToast(error.message, 'error');
   }
+}
+
+function renderMessages(box, messages) {
+  box.innerHTML = messages.length
+    ? messages.map((message) => {
+        const date = new Date(message.createdAt);
+        const time = Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        return messageMarkup(message, time);
+      }).join('')
+    : '<div class="ch-empty">Belum ada pesan. Kirim pesan pertama Anda.</div>';
+  box.scrollTop = box.scrollHeight;
+}
+
+function chatCacheKey(chatId) {
+  return `foodilee_chat_messages:${currentUserId}:${chatId}`;
+}
+
+function getCachedMessages(chatId) {
+  try {
+    const cached = localStorage.getItem(chatCacheKey(chatId));
+    if (cached === null) return null;
+    const messages = JSON.parse(cached);
+    return Array.isArray(messages) ? messages : null;
+  } catch {
+    return null;
+  }
+}
+
+function mergeMessages(existing, latest) {
+  const byId = new Map(existing.map((message) => [message.id, message]));
+  for (const message of latest) {
+    byId.set(message.id, { ...byId.get(message.id), ...message });
+  }
+  return [...byId.values()].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+}
+
+function cacheMessages(chatId, messages) {
+  try {
+    localStorage.setItem(chatCacheKey(chatId), JSON.stringify(messages));
+  } catch {
+    // The conversation remains usable in memory if browser storage is unavailable.
+  }
+}
+
+function saveCachedMessage(chatId, message) {
+  const messages = getCachedMessages(chatId) || [];
+  const index = messages.findIndex((item) => item.id === message.id);
+  if (index === -1) messages.push(message);
+  else messages[index] = { ...messages[index], ...message };
+  messages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  cacheMessages(chatId, messages);
 }
 
 async function submitMessage(event, chatId, revision) {
@@ -201,6 +266,7 @@ async function submitMessage(event, chatId, revision) {
   input.value = '';
   try {
     const message = await sendChatMessage(chatId, text);
+    saveCachedMessage(chatId, message);
     if (!isRouteCurrent('#chat', revision)) return;
     const pendingBubble = document.querySelector(`[data-message-id="${pendingId}"]`);
     if (pendingBubble) {
@@ -251,6 +317,7 @@ function updateMessageStatus(message) {
   if (!bubble) return;
   bubble.querySelector('[data-message-status]')?.remove();
   bubble.insertAdjacentHTML('beforeend', statusMarkup(message));
+  saveCachedMessage(selectedChatId, { id: message.id, deliveredAt: message.deliveredAt, readAt: message.readAt });
 }
 
 function updateChatPreview(chatId, text) {
