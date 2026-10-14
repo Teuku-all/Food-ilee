@@ -2,8 +2,16 @@ const prisma = require('../config/prisma');
 
 async function createWaste(data) {
   const store = data.sellerId
-    ? await prisma.store.findUnique({ where: { ownerId: data.sellerId }, select: { id: true } })
+    ? await prisma.store.findUnique({
+        where: { ownerId: data.sellerId },
+        select: { id: true },
+      })
     : null;
+  if (!store) {
+    const error = new Error('Buat toko terlebih dahulu sebelum mengunggah produk.');
+    error.code = 'STORE_REQUIRED';
+    throw error;
+  }
   const waste = await prisma.wasteProduct.create({
     data: {
       title: data.title,
@@ -18,7 +26,7 @@ async function createWaste(data) {
 
       sellerId: data.sellerId,
 
-      storeId: data.storeId || store?.id,
+      storeId: store.id,
 
       category: data.category,
 
@@ -100,6 +108,10 @@ async function getAllWastes(query) {
           id: true,
 
           email: true,
+
+          name: true,
+
+          username: true,
         },
       },
 
@@ -199,6 +211,8 @@ async function getWasteById(id) {
         select: {
           id: true,
           email: true,
+          name: true,
+          username: true,
         },
       },
 

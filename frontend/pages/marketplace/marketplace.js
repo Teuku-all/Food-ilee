@@ -10,6 +10,7 @@ import { skeleton } from '../../ui/skeleton.js';
 
 let marketplaceProducts = [];
 let activeCategory = 'Semua';
+let activeSearch = '';
 let currentMarketplaceUserId = '';
 let isDemoMarketplace = false;
 
@@ -59,12 +60,14 @@ export async function renderMarketplace() {
   const revision = getNavigationRevision();
   const app = document.getElementById('app');
   activeCategory = 'Semua';
+  activeSearch = '';
   currentMarketplaceUserId = '';
   app.innerHTML = `
     <div class="mp-app">
       ${dashboardHeader('market')}
       <main class="mp-main">
         <section class="mp-intro"><div><p class="mp-eyebrow">TEMUKAN NILAI BARU DARI SISA PANGAN</p><h1>Marketplace Limbah Organik</h1><p>Temukan limbah organik terbaik untuk pakan ternak dan bahan kompos dari sumber terpercaya di sekitar Anda.</p></div><div class="mp-product-count" id="mp-product-count"></div></section>
+        <div class="mp-search" role="search"><label class="mp-search-box"><span aria-hidden="true">⌕</span><input id="mp-search-input" type="search" placeholder="Cari nama produk, deskripsi, atau lokasi…" aria-label="Cari produk marketplace"><button id="mp-search-clear" type="button" aria-label="Hapus pencarian" hidden>×</button></label></div>
         <div class="mp-categories" role="group" aria-label="Kategori produk"><button type="button" class="active" aria-pressed="true" data-category="Semua">Semua</button><button type="button" aria-pressed="false" data-category="Pakan Ternak">Pakan Ternak</button><button type="button" aria-pressed="false" data-category="Kompos">Kompos</button></div>
         <div class="mp-demo-banner" id="mp-demo-banner" hidden>Ini data contoh untuk pratinjau. Produk ini belum benar-benar ditawarkan dan belum bisa dipesan.</div>
         <section class="mp-grid" id="mp-grid" aria-live="polite" aria-busy="true">${marketplaceLoadingSkeleton()}</section>
@@ -102,6 +105,21 @@ function marketplaceLoadingSkeleton() {
 }
 
 function bindMarketplaceControls() {
+  const searchInput = document.getElementById('mp-search-input');
+  const clearSearch = document.getElementById('mp-search-clear');
+  searchInput?.addEventListener('input', () => {
+    activeSearch = searchInput.value.trim().toLocaleLowerCase('id-ID');
+    if (clearSearch) clearSearch.hidden = !searchInput.value;
+    renderProducts();
+  });
+  clearSearch?.addEventListener('click', () => {
+    if (!searchInput) return;
+    searchInput.value = '';
+    activeSearch = '';
+    clearSearch.hidden = true;
+    searchInput.focus();
+    renderProducts();
+  });
   document.querySelectorAll('.mp-categories button').forEach((button) => {
     button.addEventListener('click', () => {
       document.querySelectorAll('.mp-categories button').forEach((item) => {
@@ -136,24 +154,37 @@ function categoryFor(product) {
   return /kompos|pupuk|kulit buah|ampas kopi/.test(text) ? 'Kompos' : 'Pakan Ternak';
 }
 
+function sellerDisplayName(product) {
+  return product.store?.name || 'Toko Food Ilee';
+}
+
 function renderProducts() {
   const grid = document.getElementById('mp-grid');
   if (!grid) return;
-  const products =
+  const categoryProducts =
     activeCategory === 'Semua'
       ? marketplaceProducts
       : marketplaceProducts.filter((product) => categoryFor(product) === activeCategory);
+  const products = activeSearch
+    ? categoryProducts.filter((product) =>
+        [product.title, product.description, product.location, product.store?.name, product.category]
+          .filter(Boolean)
+          .join(' ')
+          .toLocaleLowerCase('id-ID')
+          .includes(activeSearch),
+      )
+    : categoryProducts;
   document.getElementById('mp-product-count').textContent =
     `${products.length} ${products.length === 1 ? 'produk tersedia' : 'produk tersedia'}`;
   if (!products.length) {
-    grid.innerHTML = `<div class="mp-empty"><div class="mp-empty-mark">♧</div><h2>${marketplaceProducts.length ? 'Belum ada produk di kategori ini' : 'Belum ada produk tersedia'}</h2><p>${marketplaceProducts.length ? 'Pilih kategori lain untuk menjelajahi produk.' : 'Produk limbah pangan yang tersedia akan muncul di sini.'}</p>${marketplaceProducts.length ? '' : '<a href="#tambah-limbah">Mulai tambahkan limbah <span>→</span></a>'}</div>`;
+    const hasFilters = activeCategory !== 'Semua' || activeSearch;
+    grid.innerHTML = `<div class="mp-empty"><div class="mp-empty-mark">♧</div><h2>${hasFilters ? 'Produk tidak ditemukan' : marketplaceProducts.length ? 'Belum ada produk di kategori ini' : 'Belum ada produk tersedia'}</h2><p>${hasFilters ? 'Coba kata kunci lain atau ubah kategori pencarian.' : marketplaceProducts.length ? 'Pilih kategori lain untuk menjelajahi produk.' : 'Produk limbah pangan yang tersedia akan muncul di sini.'}</p>${!hasFilters && !marketplaceProducts.length ? '<a href="#tambah-limbah">Mulai tambahkan limbah <span>→</span></a>' : ''}</div>`;
     return;
   }
   grid.innerHTML = products
     .map((product) => {
       const category = categoryFor(product);
-      const seller =
-        product.store?.name || product.seller?.name || product.seller?.email || 'Penjual Food Ilee';
+      const seller = sellerDisplayName(product);
       const uploaded = new Date(product.createdAt);
       const relativeAge = Number.isNaN(uploaded.getTime())
         ? 'Tersedia sekarang'
@@ -172,7 +203,7 @@ function renderProducts() {
 function showProductDetail(product) {
   const dialog = document.createElement('dialog');
   dialog.className = 'mp-detail-dialog';
-  const seller = product.store?.name || product.seller?.name || 'Penjual Food Ilee';
+  const seller = sellerDisplayName(product);
   dialog.innerHTML = `<form class="mp-detail-card"><button type="button" class="mp-detail-close" aria-label="Tutup">×</button><img src="${escapeHtml(product.image || '')}" alt="${escapeHtml(product.title)}"><div class="mp-detail-copy"><span class="mp-category-tag ${categoryFor(product) === 'Kompos' ? 'compost' : ''}">${escapeHtml(categoryFor(product))}</span><h2>${escapeHtml(product.title)}</h2><p>${escapeHtml(product.description || 'Bahan organik yang tersedia untuk dimanfaatkan kembali.')}</p>${product.isDemo ? '<p class="mp-demo-detail-note">Produk contoh ini belum dapat di-chat atau dipesan.</p>' : ''}<div class="mp-detail-facts"><span><small>PENJUAL</small><strong>${escapeHtml(seller)}</strong></span><span><small>LOKASI</small><strong>${escapeHtml(product.location || 'Hubungi penjual untuk detail lokasi')}</strong></span></div><button class="mp-card-action mp-chat" type="button" ${product.isDemo || !product.seller?.id || product.seller.id === currentMarketplaceUserId ? 'disabled' : ''}>Chat penjual</button><div class="mp-detail-order"><label for="mp-quantity">Jumlah (kg)</label><div><input id="mp-quantity" type="number" min="1" max="${Math.max(1, Number(product.stock) || 1)}" value="1"><span>tersedia ${Number(product.stock || 0)} kg</span></div></div><div class="mp-detail-total"><span>Total pesanan</span><strong id="mp-order-total">${formatPrice(product.price)}</strong></div><button class="mp-card-action mp-buy" type="submit" ${product.isDemo || Number(product.stock) < 1 ? 'disabled' : ''}>Buat Pesanan <span>&rarr;</span></button><small class="mp-payment-note">Pembayaran dilanjutkan melalui halaman pembayaran aman.</small></div></form>`;
   injectMarketplaceDetailStyles();
   document.body.append(dialog);
@@ -261,5 +292,6 @@ function injectMarketplaceStyle() {
     .mp-app{--mp-deep:#004847;--mp-green:#087b78;--mp-ink:#173d3c;--mp-muted:#56716f;--mp-line:#bfd4d2;min-height:100vh;background:#dce8e6;color:var(--mp-ink);font-family:Inter,Arial,sans-serif;font-size:14px}.mp-main{max-width:1304px;margin:auto;padding:47px 0 80px}.mp-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}.mp-eyebrow{margin:0 0 7px;color:#77837e;font-size:11px;font-weight:700;letter-spacing:.12em}.mp-intro h1{margin:0;color:var(--mp-deep);font-size:38px;line-height:1.2;font-weight:600;letter-spacing:-1.4px}.mp-intro p:not(.mp-eyebrow){max-width:710px;margin:9px 0 0;color:#59635f;font-size:18px;line-height:1.55}.mp-product-count{padding-bottom:4px;color:#70807a;font-size:13px}.mp-demo-banner{margin:0 0 20px;padding:12px 16px;border:1px solid #d8e4cf;border-radius:13px;background:#f0f5e8;color:#63744d;font-size:12px;line-height:1.5}.mp-categories{display:flex;gap:14px;margin:48px 0 32px}.mp-categories button{min-width:110px;height:40px;padding:0 25px;border:0;border-radius:999px;background:#f0f1ef;color:#45504c;font:500 14px Inter,Arial,sans-serif;cursor:pointer}.mp-categories button.active{background:var(--mp-deep);color:white}.mp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}.mp-card{padding:20px;border-radius:28px;background:#edf6f5;box-shadow:0 12px 38px #123a2a0b;transition:transform .18s,box-shadow .18s}.mp-card:hover{transform:translateY(-3px);box-shadow:0 17px 45px #123a2a13}.mp-card-image-wrap{height:192px;position:relative;overflow:hidden;border-radius:26px}.mp-card-image{width:100%;height:100%;object-fit:cover;background:#eff2ef}.mp-category-tag{position:absolute;top:12px;left:12px;padding:5px 13px;border-radius:999px;background:#ffe3a5;color:#a45316;font-size:11px;font-weight:600}.mp-category-tag.compost{background:#c7e9c9;color:#2b7533}.mp-demo-tag{position:absolute;top:12px;right:12px;padding:5px 10px;border-radius:999px;background:#ffffffdf;color:#59675d;font-size:9px;font-weight:700;letter-spacing:.08em}.mp-card-body{padding:22px 0 0}.mp-title-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px}.mp-title-row h2{overflow:hidden;margin:0;color:#202925;font-size:16px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}.mp-title-row strong{flex:none;color:var(--mp-deep);font-size:16px;font-weight:700}.mp-meta{display:flex;align-items:center;gap:11px;margin-top:11px;color:#818b86;font-size:12px}.mp-meta span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mp-meta i{font-style:normal;color:#9ca6a1}.mp-updated{margin:20px 0 13px;color:#505c57;font-size:12px;font-weight:600}.mp-card-action{width:100%;height:43px;padding:0 20px;border:0;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:8px;background:#176457;color:#fff;font:500 13px Inter,Arial,sans-serif;cursor:pointer;transition:background .16s}.mp-card-action:hover{background:#005448}.mp-card-action span{font-size:16px}.mp-loading{grid-column:1/-1;min-height:300px;display:grid;place-items:center;color:var(--mp-muted)}.mp-empty{grid-column:1/-1;min-height:330px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.mp-empty-mark{width:55px;height:55px;margin-bottom:15px;border-radius:18px;display:grid;place-items:center;background:#edf5f1;color:var(--mp-deep);font-size:25px}.mp-empty h2{margin:0 0 8px;color:#163d35;font-size:19px}.mp-empty p{margin:0 0 17px;color:#74807b;font-size:14px}.mp-empty button,.mp-empty a{padding:11px 19px;border:0;border-radius:999px;background:var(--mp-deep);color:#fff;font:500 13px Inter,Arial,sans-serif;text-decoration:none;cursor:pointer}
     @media(max-width:1380px){.mp-main{margin:0 5%}}@media(max-width:920px){.mp-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}}@media(max-width:640px){.mp-main{margin:0 16px;padding:31px 0 52px}.mp-intro h1{font-size:29px;letter-spacing:-.8px}.mp-intro p:not(.mp-eyebrow){font-size:15px}.mp-product-count{display:none}.mp-categories{gap:8px;margin:29px 0 21px}.mp-categories button{min-width:0;height:36px;padding:0 16px;font-size:12px}.mp-grid{grid-template-columns:1fr;gap:14px}.mp-card{padding:13px;border-radius:22px}.mp-card-image-wrap{height:200px;border-radius:18px}.mp-card-body{padding-top:15px}.mp-title-row h2,.mp-title-row strong{font-size:14px}.mp-meta{font-size:11px}.mp-updated{margin:15px 0 11px}}
   `;
+  style.textContent += `.mp-search{max-width:680px;margin:28px 0 0}.mp-search-box{min-height:52px;padding:0 15px;border:1px solid #c7d9d6;border-radius:16px;display:flex;align-items:center;gap:11px;background:#f4f8f7;box-shadow:0 8px 24px #123a2a08}.mp-search-box>span{color:#4e7771;font-size:25px;line-height:1;transform:rotate(-20deg)}.mp-search-box input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:#173d3c;font:400 14px Inter,Arial,sans-serif}.mp-search-box input::placeholder{color:#899894}.mp-search-box button{width:30px;height:30px;border:0;border-radius:50%;background:#e2ece9;color:#48615a;font-size:21px;line-height:1;cursor:pointer}.mp-search-box button[hidden]{display:none}.mp-categories{margin-top:24px}@media(max-width:640px){.mp-search{margin-top:20px}.mp-search-box{min-height:47px;padding:0 12px}.mp-search-box input{font-size:12px}.mp-categories{margin-top:20px}}`;
   document.head.appendChild(style);
 }

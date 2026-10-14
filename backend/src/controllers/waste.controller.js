@@ -31,8 +31,9 @@ async function createWaste(req, res) {
       data: waste,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error.code === 'STORE_REQUIRED' ? 403 : 500).json({
       success: false,
+      ...(error.code === 'STORE_REQUIRED' ? { code: error.code } : {}),
       message: error.message,
     });
   }

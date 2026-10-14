@@ -5,10 +5,12 @@ const upload = require('../middlewares/upload.middleware');
 const wasteController = require('../controllers/waste.controller');
 const validate = require('../middlewares/validation.middleware');
 const { createWasteSchema } = require('../validations/waste.validation');
+const requireStore = require('../middlewares/store.middleware');
 
 router.post(
   '/',
   authMiddleware,
+  requireStore,
   upload.single('image'),
   validate(createWasteSchema),
 
