@@ -11,6 +11,7 @@ import { renderAI } from './pages/ai/ai.js';
 import { renderAdmin } from './pages/admin/admin.js';
 import { renderNotifications } from './pages/notifications/notifications.js';
 import { renderChat } from './pages/chat/chat.js';
+import { renderCheckout } from './pages/checkout/checkout.js';
 import { renderOnboarding, shouldShowOnboarding } from './ui/onboarding.js';
 import { getToken, removeToken } from './utils/storage.js';
 import { beginNavigation, isCurrentNavigation } from './utils/navigation.js';
@@ -37,6 +38,7 @@ const protectedRoutes = new Set([
   '#admin',
   '#notifikasi',
   '#chat',
+  '#checkout',
 ]);
 const landingSectionRoutes = new Set([
   '#tentang',
@@ -125,6 +127,10 @@ async function router() {
   }
   if (route === '#chat') {
     await renderChat();
+    return;
+  }
+  if (route === '#checkout') {
+    await renderCheckout();
     return;
   }
   if (route === '#dashboard') {

@@ -15,9 +15,24 @@ async function request(path, options = {}) {
 export function createOrder(wasteId, quantity) {
   return request('/orders', { method: 'POST', body: JSON.stringify({ wasteId, quantity }) });
 }
+export function getShippingRates(items, address) {
+  return request('/orders/rates', { method: 'POST', body: JSON.stringify({ items, address }) });
+}
+export function createCheckout(items, address, courier, courierType, checkoutKey) {
+  return request('/orders/checkout', {
+    method: 'POST',
+    body: JSON.stringify({ items, address, courier, courierType, checkoutKey }),
+  });
+}
 
 export function getMyOrders() {
   return request('/orders/my');
+}
+export function getOrder(id) {
+  return request(`/orders/${encodeURIComponent(id)}`);
+}
+export function refreshOrderPayment(id) {
+  return request(`/payments/${encodeURIComponent(id)}/status`);
 }
 export function getMySales() {
   return request('/orders/sales');

@@ -2,7 +2,6 @@ import { getWastes } from '../../services/waste.js';
 import { getCurrentUser } from '../../services/user.js';
 import { escapeHtml } from '../../utils/html.js';
 import { showToast, injectToastStyle } from '../../utils/toast.js';
-import { createOrder } from '../../services/order.js';
 import { bindSharedHeader, dashboardFooter, dashboardHeader } from '../../ui/shell.js';
 import { startChat } from '../../services/chat.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
@@ -204,7 +203,7 @@ function showProductDetail(product) {
   const dialog = document.createElement('dialog');
   dialog.className = 'mp-detail-dialog';
   const seller = sellerDisplayName(product);
-  dialog.innerHTML = `<form class="mp-detail-card"><button type="button" class="mp-detail-close" aria-label="Tutup">×</button><img src="${escapeHtml(product.image || '')}" alt="${escapeHtml(product.title)}"><div class="mp-detail-copy"><span class="mp-category-tag ${categoryFor(product) === 'Kompos' ? 'compost' : ''}">${escapeHtml(categoryFor(product))}</span><h2>${escapeHtml(product.title)}</h2><p>${escapeHtml(product.description || 'Bahan organik yang tersedia untuk dimanfaatkan kembali.')}</p>${product.isDemo ? '<p class="mp-demo-detail-note">Produk contoh ini belum dapat di-chat atau dipesan.</p>' : ''}<div class="mp-detail-facts"><span><small>PENJUAL</small><strong>${escapeHtml(seller)}</strong></span><span><small>LOKASI</small><strong>${escapeHtml(product.location || 'Hubungi penjual untuk detail lokasi')}</strong></span></div><button class="mp-card-action mp-chat" type="button" ${product.isDemo || !product.seller?.id || product.seller.id === currentMarketplaceUserId ? 'disabled' : ''}>Chat penjual</button><div class="mp-detail-order"><label for="mp-quantity">Jumlah (kg)</label><div><input id="mp-quantity" type="number" min="1" max="${Math.max(1, Number(product.stock) || 1)}" value="1"><span>tersedia ${Number(product.stock || 0)} kg</span></div></div><div class="mp-detail-total"><span>Total pesanan</span><strong id="mp-order-total">${formatPrice(product.price)}</strong></div><button class="mp-card-action mp-buy" type="submit" ${product.isDemo || Number(product.stock) < 1 ? 'disabled' : ''}>Buat Pesanan <span>&rarr;</span></button><small class="mp-payment-note">Pembayaran dilanjutkan melalui halaman pembayaran aman.</small></div></form>`;
+  dialog.innerHTML = `<form class="mp-detail-card"><button type="button" class="mp-detail-close" aria-label="Tutup">×</button><img src="${escapeHtml(product.image || '')}" alt="${escapeHtml(product.title)}"><div class="mp-detail-copy"><span class="mp-category-tag ${categoryFor(product) === 'Kompos' ? 'compost' : ''}">${escapeHtml(categoryFor(product))}</span><h2>${escapeHtml(product.title)}</h2><p>${escapeHtml(product.description || 'Bahan organik yang tersedia untuk dimanfaatkan kembali.')}</p>${product.isDemo ? '<p class="mp-demo-detail-note">Produk contoh ini belum dapat di-chat atau dipesan.</p>' : ''}<div class="mp-detail-facts"><span><small>PENJUAL</small><strong>${escapeHtml(seller)}</strong></span><span><small>LOKASI</small><strong>${escapeHtml(product.location || 'Hubungi penjual untuk detail lokasi')}</strong></span></div><button class="mp-card-action mp-chat" type="button" ${product.isDemo || !product.seller?.id || product.seller.id === currentMarketplaceUserId ? 'disabled' : ''}>Chat penjual</button><div class="mp-detail-order"><label for="mp-quantity">Jumlah (kg)</label><div><input id="mp-quantity" type="number" min="1" max="${Math.max(1, Number(product.stock) || 1)}" value="1"><span>tersedia ${Number(product.stock || 0)} kg</span></div></div><div class="mp-detail-total"><span>Subtotal produk</span><strong id="mp-order-total">${formatPrice(product.price)}</strong></div><button class="mp-card-action mp-add-cart" type="button" ${product.isDemo || Number(product.stock) < 1 ? 'disabled' : ''}>Tambah ke keranjang</button><button class="mp-card-action mp-buy" type="submit" ${product.isDemo || Number(product.stock) < 1 ? 'disabled' : ''}>Checkout sekarang <span>&rarr;</span></button><small class="mp-payment-note">Ongkir dihitung saat checkout berdasarkan alamat dan layanan kurir.</small></div></form>`;
   injectMarketplaceDetailStyles();
   document.body.append(dialog);
   dialog.showModal();
@@ -236,6 +235,19 @@ function showProductDetail(product) {
       button.textContent = 'Chat penjual';
     }
   });
+  dialog.querySelector('.mp-add-cart')?.addEventListener('click', () => {
+    const qty = Number(quantity.value);
+    if (!Number.isInteger(qty) || qty < 1 || qty > Number(product.stock)) {
+      showToast('Masukkan jumlah stok yang tersedia.', 'error'); return;
+    }
+    let cart = [];
+    try { cart = JSON.parse(sessionStorage.getItem('foodilee_checkout_cart') || '[]'); } catch { cart = []; }
+    const existing = cart.find((item) => item.wasteId === product.id);
+    if (existing) existing.quantity = Math.min(Number(product.stock), Number(existing.quantity) + qty);
+    else cart.push({ wasteId: product.id, quantity: qty });
+    sessionStorage.setItem('foodilee_checkout_cart', JSON.stringify(cart));
+    showToast('Produk ditambahkan ke keranjang checkout.');
+  });
   dialog.addEventListener('click', (event) => {
     if (event.target === dialog) {
       dialog.close();
@@ -251,24 +263,13 @@ function showProductDetail(product) {
       showToast('Masukkan jumlah stok yang tersedia.', 'error');
       return;
     }
-    button.disabled = true;
-    button.textContent = 'Menyiapkan pesanan?';
-    try {
-      const result = await createOrder(product.id, qty);
-      if (!result.success) throw new Error(result.message || 'Pesanan belum dapat dibuat.');
-      if (result.data?.paymentUrl) {
-        location.assign(result.data.paymentUrl);
-        return;
-      }
-      showToast('Pesanan dibuat. Lanjutkan pembayaran dari riwayat transaksi.');
-      dialog.close();
-      dialog.remove();
-      location.hash = '#transaksi';
-    } catch (error) {
-      showToast(error.message || 'Pesanan belum dapat dibuat.', 'error');
-      button.disabled = false;
-      button.innerHTML = 'Buat Pesanan <span>&rarr;</span>';
-    }
+    let cart = [];
+    try { cart = JSON.parse(sessionStorage.getItem('foodilee_checkout_cart') || '[]'); } catch { cart = []; }
+    const existing = cart.find((item) => item.wasteId === product.id);
+    if (existing) existing.quantity = Math.min(Number(product.stock), Number(existing.quantity) + qty);
+    else cart.push({ wasteId: product.id, quantity: qty });
+    sessionStorage.setItem('foodilee_checkout_cart', JSON.stringify(cart));
+    dialog.close(); dialog.remove(); location.hash = '#checkout';
   });
 }
 

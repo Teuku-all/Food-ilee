@@ -77,6 +77,7 @@ model WasteProduct {
   store Store? @relation(fields: [storeId], references: [id])
 
   orders Order[]
+  orderItems OrderItem[]
 
   reviews Review[]
 }
@@ -161,7 +162,32 @@ model Order {
   waste WasteProduct @relation(fields: [wasteId], references: [id])
 
   paymentToken String?
+  checkoutKey String? @unique
   paymentStatus String @default("pending")
+  subtotal Int @default(0)
+  discount Int @default(0)
+  shippingCost Int @default(0)
+  shippingAddress Json?
+  courier String?
+  courierService String?
+  courierServiceName String?
+  biteshipOrderId String? @unique
+  trackingNumber String?
+  trackingUrl String?
+  shippingStatus String?
+  items OrderItem[]
+}
+
+model OrderItem {
+  id String @id @default(cuid())
+  orderId String
+  wasteId String
+  title String
+  unitPrice Int
+  quantity Int
+  image String?
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  waste WasteProduct @relation(fields: [wasteId], references: [id], onDelete: Restrict)
 }
 
 model Review {

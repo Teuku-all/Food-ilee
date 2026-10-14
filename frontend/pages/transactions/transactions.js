@@ -1,4 +1,4 @@
-import { createReview, getMyOrders } from '../../services/order.js';
+import { createReview, getMyOrders, getOrder, refreshOrderPayment } from '../../services/order.js';
 import { escapeHtml } from '../../utils/html.js';
 import { showToast, injectToastStyle } from '../../utils/toast.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
@@ -13,6 +13,18 @@ const STATUS = {
   shipped: { label: 'Dikirim', tone: 'shipped' },
   completed: { label: 'Selesai', tone: 'completed' },
   cancelled: { label: 'Dibatalkan', tone: 'cancelled' },
+  payment_review: { label: 'Pembayaran terverifikasi · Pesanan ditinjau', tone: 'pending' },
+};
+const PAYMENT_STATUS = {
+  paid: 'Pembayaran berhasil', pending: 'Menunggu pembayaran', cancel: 'Dibatalkan',
+  cancelled: 'Dibatalkan', expire: 'Kedaluwarsa', deny: 'Ditolak', failure: 'Gagal',
+  challenge: 'Sedang diverifikasi', refund: 'Dana dikembalikan', partial_refund: 'Pengembalian sebagian',
+};
+const SHIPPING_STATUS = {
+  confirmed: 'Dikonfirmasi kurir', allocated: 'Kurir ditugaskan', picking_up: 'Menunggu penjemputan',
+  picked: 'Paket dijemput', dropping_off: 'Dalam perjalanan', delivered: 'Terkirim',
+  rejected: 'Pengiriman ditolak', cancelled: 'Pengiriman dibatalkan', configuration_missing: 'Menunggu konfigurasi pengiriman',
+  creation_requires_review: 'Pengiriman perlu diperiksa',
 };
 
 let allOrders = [];
@@ -93,6 +105,14 @@ async function loadOrders(revision) {
     if (!result.success) throw new Error(result.message || 'Gagal memuat transaksi.');
     document.getElementById('tx-order-list')?.removeAttribute('aria-busy');
     allOrders = Array.isArray(result.data) ? result.data : Array.isArray(result) ? result : [];
+    const pending = allOrders.filter((order) => order.paymentStatus === 'pending').slice(0, 8);
+    const refreshed = await Promise.allSettled(pending.map((order) => refreshOrderPayment(order.id)));
+    refreshed.forEach((entry) => {
+      if (entry.status !== 'fulfilled' || !entry.value?.success) return;
+      const index = allOrders.findIndex((order) => order.id === entry.value.data.id);
+      if (index >= 0) allOrders[index] = entry.value.data;
+    });
+    if (!isRouteCurrent('#transaksi', revision)) return;
     renderOrders();
   } catch (error) {
     if (!isRouteCurrent('#transaksi', revision)) return;
@@ -168,8 +188,8 @@ function renderOrders() {
           .slice(-4)
           .toUpperCase(),
       )}</span></div></div><span class="tx-status tx-status-${status.tone}">${escapeHtml(status.label)}</span></header>
-      <div class="tx-order-content"><img class="tx-item-image" src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'"><div class="tx-item-info"><h2>${escapeHtml(title)}</h2><p>${quantity.toLocaleString('id-ID')} kg <span>×</span> ${formatRupiah(unitPrice)}</p><span class="tx-impact">\u267b Membantu mengurangi ${Math.round(quantity * 0.3)} kg emisi CO\u2082</span></div><div class="tx-total"><span>Total Belanja</span><strong>${formatRupiah(total)}</strong></div></div>
-      <footer class="tx-order-actions">${order.status === 'pending' && order.paymentToken ? `<a class="tx-button tx-button-primary" target="_blank" rel="noopener" href="https://app.sandbox.midtrans.com/snap/v2/vtweb/${encodeURIComponent(order.paymentToken)}">Lanjutkan Pembayaran</a>` : ''}${shipped ? `<button class="tx-button tx-button-outline" type="button" data-track="${id}">Lihat Pengiriman</button>` : ''}<button class="tx-button tx-button-outline" type="button" data-detail="${id}">Lihat Detail</button>${completed ? `<button class="tx-button tx-button-primary" type="button" data-review="${id}">Beri Ulasan</button>` : ''}</footer>
+      <div class="tx-order-content"><img class="tx-item-image" src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'"><div class="tx-item-info"><h2>${escapeHtml(title)}</h2><p>${quantity.toLocaleString('id-ID')} kg <span>×</span> ${formatRupiah(unitPrice)}</p><span class="tx-impact">${escapeHtml(PAYMENT_STATUS[order.paymentStatus] || 'Status pembayaran belum tersedia')} · Pengiriman: ${escapeHtml(SHIPPING_STATUS[order.shippingStatus] || order.shippingStatus || 'Belum tersedia')}</span><span class="tx-impact">\u267b Membantu mengurangi ${Math.round(quantity * 0.3)} kg emisi CO\u2082</span></div><div class="tx-total"><span>Total Belanja</span><strong>${formatRupiah(total)}</strong></div></div>
+      <footer class="tx-order-actions">${order.status === 'pending' && order.paymentUrl ? `<a class="tx-button tx-button-primary" href="${escapeHtml(order.paymentUrl)}">Lanjutkan Pembayaran</a>` : ''}${order.paymentStatus === 'pending' ? `<button class="tx-button tx-button-outline" type="button" data-payment-status="${id}">Periksa Pembayaran</button>` : ''}${shipped && order.trackingUrl ? `<a class="tx-button tx-button-outline" target="_blank" rel="noopener" href="${escapeHtml(order.trackingUrl)}">Lacak Paket</a>` : ''}<button class="tx-button tx-button-outline" type="button" data-detail="${id}">Lihat Detail</button>${completed ? `<button class="tx-button tx-button-primary" type="button" data-review="${id}">Beri Ulasan</button>` : ''}</footer>
     </article>`;
     })
     .join('');
@@ -177,6 +197,22 @@ function renderOrders() {
   list
     .querySelectorAll('[data-detail]')
     .forEach((button) => button.addEventListener('click', () => showDetail(button.dataset.detail)));
+  list.querySelectorAll('[data-payment-status]').forEach((button) => button.addEventListener('click', async () => {
+    button.disabled = true;
+    button.textContent = 'Memeriksa…';
+    try {
+      const result = await refreshOrderPayment(button.dataset.paymentStatus);
+      if (!result.success) throw new Error(result.message || 'Status belum dapat diperiksa.');
+      const index = allOrders.findIndex((item) => item.id === button.dataset.paymentStatus);
+      if (index >= 0) allOrders[index] = result.data;
+      renderOrders();
+      showToast(result.data?.paymentStatus === 'paid' ? 'Pembayaran terverifikasi.' : 'Pembayaran masih menunggu konfirmasi.');
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = 'Periksa Pembayaran';
+      showToast(error.message || 'Status pembayaran belum dapat diperiksa.', 'error');
+    }
+  }));
   list
     .querySelectorAll('[data-review]')
     .forEach((button) =>
@@ -196,11 +232,26 @@ function showDetail(id) {
   const status = STATUS[order.status]?.label || order.status || 'Status belum tersedia';
   const seller =
     waste.store?.name || waste.seller?.name || waste.seller?.email || 'Penjual Food Ilee';
+  const items = Array.isArray(order.items) && order.items.length ? order.items : [{ title: waste.title, image: waste.image, quantity: order.quantity, unitPrice: Number(order.quantity) ? Number(order.total) / Number(order.quantity) : order.total }];
+  const shippingAddress = order.shippingAddress || {};
   const dialog = document.createElement('dialog');
   dialog.className = 'tx-detail-dialog';
-  dialog.innerHTML = `<section class="tx-detail-card"><button type="button" class="tx-dialog-close" aria-label="Tutup">?</button><p class="tx-dialog-kicker">RINGKASAN PESANAN</p><h2>${escapeHtml(waste.title || 'Produk pangan')}</h2><span class="tx-status tx-status-${STATUS[order.status]?.tone || 'unknown'}">${escapeHtml(status)}</span><img src="${escapeHtml(waste.image || FALLBACK_IMAGE)}" alt="${escapeHtml(waste.title || 'Produk pangan')}"><dl><div><dt>Penjual</dt><dd>${escapeHtml(seller)}</dd></div><div><dt>Tanggal pesanan</dt><dd>${escapeHtml(formatDate(order.createdAt))}</dd></div><div><dt>Jumlah</dt><dd>${Number(order.quantity || 0).toLocaleString('id-ID')} kg</dd></div><div><dt>Total pembayaran</dt><dd>${formatRupiah(order.total)}</dd></div><div><dt>Status pembayaran</dt><dd>${escapeHtml(order.paymentStatus || 'Menunggu pembayaran')}</dd></div></dl>${order.status === 'pending' && order.paymentToken ? `<a class="tx-button tx-button-primary" target="_blank" rel="noopener" href="https://app.sandbox.midtrans.com/snap/v2/vtweb/${encodeURIComponent(order.paymentToken)}">Lanjutkan Pembayaran</a>` : ''}</section>`;
+  dialog.innerHTML = `<section class="tx-detail-card"><button type="button" class="tx-dialog-close" aria-label="Tutup">×</button><p class="tx-dialog-kicker">RINGKASAN PESANAN</p><h2>Pesanan ${escapeHtml(String(order.id).slice(-8).toUpperCase())}</h2><span class="tx-status tx-status-${STATUS[order.status]?.tone || 'unknown'}">${escapeHtml(status)}</span><div class="tx-detail-items">${items.map((item) => `<div><img src="${escapeHtml(item.image || FALLBACK_IMAGE)}" alt=""><span><strong>${escapeHtml(item.title || 'Produk pangan')}</strong><small>${Number(item.quantity || 0).toLocaleString('id-ID')} kg × ${formatRupiah(item.unitPrice)}</small></span><b>${formatRupiah(Number(item.quantity || 0) * Number(item.unitPrice || 0))}</b></div>`).join('')}</div><dl><div><dt>Penjual</dt><dd>${escapeHtml(seller)}</dd></div><div><dt>Tanggal pesanan</dt><dd>${escapeHtml(formatDate(order.createdAt))}</dd></div><div><dt>Penerima</dt><dd>${escapeHtml(shippingAddress.recipientName || 'Belum tersedia')}</dd></div><div><dt>Telepon</dt><dd>${escapeHtml(shippingAddress.phone || 'Belum tersedia')}</dd></div><div><dt>Alamat tujuan</dt><dd>${escapeHtml([shippingAddress.details, shippingAddress.village, shippingAddress.district, shippingAddress.city, shippingAddress.province, shippingAddress.postalCode].filter(Boolean).join(', ') || 'Belum tersedia')}</dd></div><div><dt>Subtotal</dt><dd>${formatRupiah(order.subtotal ?? order.total)}</dd></div><div><dt>Diskon</dt><dd>${formatRupiah(order.discount || 0)}</dd></div><div><dt>Ongkir</dt><dd>${order.shippingCost == null ? 'Belum tersedia' : formatRupiah(order.shippingCost)}</dd></div><div><dt>Total pembayaran</dt><dd>${formatRupiah(order.total)}</dd></div><div><dt>Status pembayaran</dt><dd>${escapeHtml(PAYMENT_STATUS[order.paymentStatus] || 'Belum tersedia')}</dd></div><div><dt>Status pesanan</dt><dd>${escapeHtml(status)}</dd></div><div><dt>Status pengiriman</dt><dd>${escapeHtml(SHIPPING_STATUS[order.shippingStatus] || order.shippingStatus || 'Belum tersedia')}</dd></div><div><dt>Kurir</dt><dd>${escapeHtml([order.courier, order.courierServiceName || order.courierService].filter(Boolean).join(' · ') || 'Belum tersedia')}</dd></div><div><dt>Nomor resi</dt><dd>${escapeHtml(order.trackingNumber || 'Belum tersedia')}</dd></div></dl>${order.paymentUrl ? `<a class="tx-button tx-button-primary" href="${escapeHtml(order.paymentUrl)}">Lanjutkan Pembayaran</a>` : ''}${order.trackingUrl ? `<a class="tx-button tx-button-outline" target="_blank" rel="noopener" href="${escapeHtml(order.trackingUrl)}">Lacak paket</a>` : ''}<p class="tx-detail-refresh" aria-live="polite"></p></section>`;
   document.body.append(dialog);
   dialog.showModal();
+  getOrder(id).then((result) => {
+    if (!dialog.isConnected || !result.success) return;
+    const latest = result.data;
+    const detail = dialog.querySelector('.tx-detail-card');
+    const old = allOrders.findIndex((item) => item.id === id);
+    if (old >= 0) allOrders[old] = latest;
+    if (latest.paymentStatus === 'pending') refreshOrderPayment(id).then((payment) => {
+      if (!dialog.isConnected || !payment.success) return;
+      const index = allOrders.findIndex((item) => item.id === id);
+      if (index >= 0) allOrders[index] = payment.data;
+      detail.querySelector('.tx-detail-refresh').textContent = payment.data.paymentStatus === 'paid' ? 'Pembayaran terverifikasi oleh server.' : 'Pembayaran masih menunggu konfirmasi backend.';
+    }).catch(() => { detail.querySelector('.tx-detail-refresh').textContent = 'Status pembayaran belum dapat diperiksa.'; });
+  }).catch(() => {});
   dialog.querySelector('.tx-dialog-close').addEventListener('click', () => {
     dialog.close();
     dialog.remove();
@@ -257,7 +308,7 @@ function injectTransactionDialogStyle() {
   if (document.getElementById('tx-dialog-style')) return;
   const style = document.createElement('style');
   style.id = 'tx-dialog-style';
-  style.textContent = `.tx-detail-dialog{width:min(470px,calc(100% - 24px));max-height:calc(100% - 28px);padding:0;border:0;border-radius:22px;box-shadow:0 25px 85px #091b1460}.tx-detail-dialog::backdrop{background:#102c2480;backdrop-filter:blur(3px)}.tx-detail-card{position:relative;padding:27px}.tx-dialog-kicker{margin:0 0 7px;color:#789083;font-size:9px;font-weight:700;letter-spacing:.13em}.tx-detail-card h2{margin:0 35px 11px 0;color:#164b3c;font-size:22px;line-height:1.25}.tx-detail-card>img{width:100%;height:180px;margin-top:15px;border-radius:14px;object-fit:cover;background:#f1f3f0}.tx-detail-card dl{margin:13px 0 16px}.tx-detail-card dl>div{padding:9px 0;border-bottom:1px solid #edf1ee;display:flex;justify-content:space-between;gap:10px}.tx-detail-card dt{color:#859088;font-size:10px}.tx-detail-card dd{margin:0;color:#35483d;font-size:10px;font-weight:600;text-align:right}.tx-detail-card>.tx-button{width:100%;text-decoration:none}.tx-dialog-close{position:absolute;right:16px;top:16px;width:32px;height:32px;border:0;border-radius:50%;background:#f1f4f1;color:#4c5b52;font-size:20px;cursor:pointer}.tx-review-form{display:flex;flex-direction:column;gap:13px}.tx-review-form h2{margin-bottom:0}.tx-review-product{margin:-6px 0 4px;color:#728077;font-size:12px}.tx-review-form label{display:flex;flex-direction:column;gap:7px;color:#3f584b;font-size:11px;font-weight:600}.tx-review-form select,.tx-review-form textarea{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #e1e9e3;border-radius:11px;background:#fff;color:#34473d;font:400 12px Inter,Arial,sans-serif;outline:none}.tx-review-form textarea{resize:vertical}.tx-review-form>.tx-button{margin-top:3px}`;
+  style.textContent = `.tx-detail-dialog{width:min(470px,calc(100% - 24px));max-height:calc(100% - 28px);padding:0;border:0;border-radius:22px;box-shadow:0 25px 85px #091b1460}.tx-detail-dialog::backdrop{background:#102c2480;backdrop-filter:blur(3px)}.tx-detail-card{position:relative;padding:27px}.tx-dialog-kicker{margin:0 0 7px;color:#789083;font-size:9px;font-weight:700;letter-spacing:.13em}.tx-detail-card h2{margin:0 35px 11px 0;color:#164b3c;font-size:22px;line-height:1.25}.tx-detail-card dl{margin:13px 0 16px}.tx-detail-card dl>div{padding:9px 0;border-bottom:1px solid #edf1ee;display:flex;justify-content:space-between;gap:10px}.tx-detail-card dt{color:#859088;font-size:10px}.tx-detail-card dd{margin:0;color:#35483d;font-size:10px;font-weight:600;text-align:right}.tx-detail-card>.tx-button{width:100%;text-decoration:none}.tx-detail-items{display:grid;gap:10px;margin:15px 0}.tx-detail-items>div{display:flex;align-items:center;gap:10px;padding:9px;border:1px solid #edf1ee;border-radius:12px}.tx-detail-items img{width:46px;height:46px;border-radius:8px;object-fit:cover;background:#f3f5f4}.tx-detail-items span{flex:1;display:grid;gap:4px}.tx-detail-items strong,.tx-detail-items b{font-size:11px;color:#35483d}.tx-detail-items small{font-size:10px;color:#829087}.tx-dialog-close{position:absolute;right:16px;top:16px;width:32px;height:32px;border:0;border-radius:50%;background:#f1f4f1;color:#4c5b52;font-size:20px;cursor:pointer}.tx-review-form{display:flex;flex-direction:column;gap:13px}.tx-review-form h2{margin-bottom:0}.tx-review-product{margin:-6px 0 4px;color:#728077;font-size:12px}.tx-review-form label{display:flex;flex-direction:column;gap:7px;color:#3f584b;font-size:11px;font-weight:600}.tx-review-form select,.tx-review-form textarea{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #e1e9e3;border-radius:11px;background:#fff;color:#34473d;font:400 12px Inter,Arial,sans-serif;outline:none}.tx-review-form textarea{resize:vertical}.tx-review-form>.tx-button{margin-top:3px}`;
   document.head.append(style);
 }
 

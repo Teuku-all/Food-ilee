@@ -17,6 +17,10 @@ export async function getWastes({ mine = false } = {}) {
   );
 }
 
+export function getWaste(id) {
+  return apiRequest(`/wastes/${encodeURIComponent(id)}`);
+}
+
 export async function createWaste(formData) {
   const token = getToken();
 
