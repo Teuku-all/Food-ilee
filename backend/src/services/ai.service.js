@@ -34,7 +34,7 @@ async function askAI(message) {
       },
     ],
 
-    model: 'llama-3.3-70b-versatile',
+    model: 'openai/gpt-oss-120b',
   });
 
   return completion.choices[0].message.content;
@@ -81,7 +81,7 @@ async function recommendWaste(title, description) {
       },
     ],
 
-    model: 'llama-3.3-70b-versatile',
+    model: 'openai/gpt-oss-120b',
 
     temperature: 0.5,
   });
