@@ -38,7 +38,7 @@ export function dashboardHeader(active = '') {
 
   return `
     <header class="fi-header">
-      <a class="fi-header-brand" href="#dashboard" aria-label="Food Ilee">Food Ilee</a>
+      <a class="fi-header-brand" href="#dashboard" aria-label="Food Ilee"><img src="./assets/foodilee-wordmark.png" alt="Food Ilee"></a>
       <nav class="fi-nav" aria-label="Navigasi utama">${nav}</nav>
       <div class="fi-account">
         <button class="fi-account-toggle" id="fi-account-toggle" type="button" aria-label="Buka menu akun" aria-haspopup="true" aria-controls="fi-account-menu" aria-expanded="false">
@@ -66,7 +66,7 @@ export function dashboardHeader(active = '') {
 }
 
 export function dashboardFooter() {
-  return `<footer class="fi-footer"><div class="fi-footer-grid"><div class="fi-footer-brand"><a href="#beranda">Food Ilee</a><p>Membangun jembatan antara limbah pangan dan inovasi berkelanjutan untuk masa depan bumi.</p></div><div><h3>Jelajahi</h3><a href="#marketplace">Marketplace</a><a href="#tambah-limbah">Tambah Limbah</a><a href="#tanya-ai">Tanya AI</a></div><div><h3>Akun</h3><a href="#profil">Profil Anda</a><a href="#transaksi">Riwayat Transaksi</a><a href="#kelola-toko">Kelola Toko</a></div><div><h3>Bantuan</h3><a href="#panduan">Panduan Food Ilee</a><a href="mailto:halo@foodilee.id">Hubungi Kami</a><span>Indonesia</span></div></div><div class="fi-footer-bottom">© 2026 Food Ilee · Memberdayakan sirkularitas untuk Indonesia hijau.</div></footer>`;
+  return `<footer class="fi-footer"><div class="fi-footer-grid"><div class="fi-footer-brand"><a href="#beranda"><img src="./assets/foodilee-logo.png" alt=""><span>Food Ilee</span></a><p>Membangun jembatan antara limbah pangan dan inovasi berkelanjutan untuk masa depan bumi.</p></div><div><h3>Jelajahi</h3><a href="#marketplace">Marketplace</a><a href="#tambah-limbah">Tambah Limbah</a><a href="#tanya-ai">Tanya AI</a></div><div><h3>Akun</h3><a href="#profil">Profil Anda</a><a href="#transaksi">Riwayat Transaksi</a><a href="#kelola-toko">Kelola Toko</a></div><div><h3>Bantuan</h3><a href="#panduan">Panduan Food Ilee</a><a href="mailto:halo@foodilee.id">Hubungi Kami</a><span>Indonesia</span></div></div><div class="fi-footer-bottom">© 2026 Food Ilee · Memberdayakan sirkularitas untuk Indonesia hijau.</div></footer>`;
 }
 
 export function renderShell(active, content, { footer = true } = {}) {
