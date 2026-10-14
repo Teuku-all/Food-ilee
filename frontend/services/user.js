@@ -51,6 +51,7 @@ export async function updateCurrentUser(formData) {
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
   });
-  invalidateCurrentUserCache();
+  if (result?.success && result.data) currentUserCache = { token, result };
+  else invalidateCurrentUserCache();
   return result;
 }
