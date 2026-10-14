@@ -124,10 +124,15 @@ io.use(async (socket, next) => {
 });
 
 io.on('connection', (socket) => {
+  socket.join(`user:${socket.data.user.id}`);
   socket.on('join_chat', async (chatId) => {
     try {
       await chatService.getMessages(chatId, socket.data.user.id);
       socket.join(`chat:${chatId}`);
+      const readMessages = await chatService.markChatRead(chatId, socket.data.user.id);
+      for (const message of readMessages) {
+        io.to(`chat:${chatId}`).emit('message_status', message);
+      }
     } catch {
       socket.emit('chat_error', 'Akses percakapan ditolak');
     }
@@ -141,7 +146,7 @@ io.on('connection', (socket) => {
     try {
       if (typeof data.chatId !== 'string') throw new Error('Percakapan tidak valid');
       const message = await chatService.sendMessage(data.chatId, socket.data.user.id, data.text);
-      io.to(`chat:${data.chatId}`).emit('receive_message', message);
+      await chatService.publishMessage(io, message, socket.data.user.id);
     } catch (error) {
       socket.emit('chat_error', error.message);
     }

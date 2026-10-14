@@ -52,6 +52,10 @@ async function getMessages(chatId, userId) {
     select: { id: true },
   });
   if (!chat) throw new Error('Akses percakapan ditolak');
+  await prisma.message.updateMany({
+    where: { chatId, senderId: { not: userId }, readAt: null },
+    data: { readAt: new Date(), deliveredAt: new Date() },
+  });
   return prisma.message.findMany({
     where: {
       chatId,
@@ -72,6 +76,56 @@ async function getMessages(chatId, userId) {
   });
 }
 
+async function markMessageDelivered(messageId, recipientId) {
+  const message = await prisma.message.findFirst({
+    where: { id: messageId, senderId: { not: recipientId }, deliveredAt: null,
+      chat: { OR: [{ buyerId: recipientId }, { sellerId: recipientId }] } },
+    select: { id: true },
+  });
+  if (!message) return null;
+  return prisma.message.update({ where: { id: messageId }, data: { deliveredAt: new Date() } });
+}
+
+async function getChatRecipient(chatId, senderId) {
+  const chat = await prisma.chat.findFirst({
+    where: { id: chatId, OR: [{ buyerId: senderId }, { sellerId: senderId }] },
+    select: { buyerId: true, sellerId: true },
+  });
+  if (!chat) throw new Error('Akses percakapan ditolak');
+  return chat.buyerId === senderId ? chat.sellerId : chat.buyerId;
+}
+
+async function publishMessage(io, message, senderId) {
+  const recipientId = await getChatRecipient(message.chatId, senderId);
+  const recipientRoom = io.sockets.adapter.rooms.get(`user:${recipientId}`);
+  io.to(`user:${recipientId}`).emit('receive_message', message);
+  if (!recipientRoom?.size) return message;
+  const delivered = await markMessageDelivered(message.id, recipientId);
+  if (!delivered) return message;
+  io.to(`chat:${message.chatId}`).emit('message_status', {
+    id: delivered.id,
+    deliveredAt: delivered.deliveredAt,
+    readAt: delivered.readAt,
+  });
+  return delivered;
+}
+
+async function markChatRead(chatId, userId) {
+  const chat = await prisma.chat.findFirst({
+    where: { id: chatId, OR: [{ buyerId: userId }, { sellerId: userId }] },
+    select: { id: true },
+  });
+  if (!chat) throw new Error('Akses percakapan ditolak');
+  await prisma.message.updateMany({
+    where: { chatId, senderId: { not: userId }, readAt: null },
+    data: { deliveredAt: new Date(), readAt: new Date() },
+  });
+  return prisma.message.findMany({
+    where: { chatId, senderId: { not: userId }, readAt: { not: null } },
+    select: { id: true, deliveredAt: true, readAt: true },
+  });
+}
+
 async function getMyChats(userId) {
   return prisma.chat.findMany({
     where: { OR: [{ buyerId: userId }, { sellerId: userId }] },
@@ -88,5 +142,9 @@ module.exports = {
   createChat,
   sendMessage,
   getMessages,
+  markMessageDelivered,
+  getChatRecipient,
+  publishMessage,
+  markChatRead,
   getMyChats,
 };

@@ -32,12 +32,13 @@ async function sendMessage(req, res) {
       req.body.text,
     );
 
-    req.app.get('io')?.to(`chat:${req.params.chatId}`).emit('receive_message', message);
+    const io = req.app.get('io');
+    const published = io ? await chatService.publishMessage(io, message, req.user.id) : message;
 
     res.status(201).json({
       success: true,
 
-      data: message,
+      data: published,
     });
   } catch (error) {
     res.status(error.message === 'Akses percakapan ditolak' ? 403 : 400).json({

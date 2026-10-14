@@ -127,6 +127,10 @@ model Message {
 
   createdAt DateTime @default(now())
 
+  deliveredAt DateTime?
+
+  readAt DateTime?
+
   senderId String
 
   sender User @relation(fields: [senderId], references: [id])
