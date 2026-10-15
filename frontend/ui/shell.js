@@ -41,7 +41,7 @@ export function dashboardHeader(active = '') {
       <a class="fi-header-brand" href="#dashboard" aria-label="Food Ilee"><img src="./assets/foodilee-wordmark.png" alt="Food Ilee"></a>
       <nav class="fi-nav" aria-label="Navigasi utama">${nav}</nav>
       <div class="fi-header-actions">
-        <a class="fi-cart-link" href="#checkout" aria-label="Keranjang belanja, 0 barang" title="Keranjang belanja">
+        <a class="fi-cart-link" href="#cart" aria-label="Keranjang belanja, 0 barang" title="Keranjang belanja">
           ${icon('cart')}<span class="fi-cart-count" data-cart-count hidden>0</span>
         </a>
         <div class="fi-account">

@@ -260,7 +260,7 @@ function showProductDetail(product) {
   const dialog = document.createElement('dialog');
   dialog.className = 'mp-detail-dialog';
   const seller = sellerDisplayName(product);
-  dialog.innerHTML = `<form class="mp-detail-card"><button type="button" class="mp-detail-close" aria-label="Tutup">×</button><img src="${escapeHtml(product.image || '')}" alt="${escapeHtml(product.title)}"><div class="mp-detail-copy"><span class="mp-category-tag ${categoryFor(product) === 'Kompos' ? 'compost' : ''}">${escapeHtml(categoryFor(product))}</span><h2>${escapeHtml(product.title)}</h2><p>${escapeHtml(product.description || 'Bahan organik yang tersedia untuk dimanfaatkan kembali.')}</p>${product.isDemo ? '<p class="mp-demo-detail-note">Produk contoh ini belum dapat di-chat atau dipesan.</p>' : ''}<div class="mp-detail-facts"><span><small>PENJUAL</small><strong>${escapeHtml(seller)}</strong></span><span><small>LOKASI</small><strong>${escapeHtml(product.location || 'Hubungi penjual untuk detail lokasi')}</strong></span></div><button class="mp-card-action mp-chat" type="button" ${product.isDemo || !product.seller?.id || product.seller.id === currentMarketplaceUserId ? 'disabled' : ''}>Chat penjual</button><div class="mp-detail-order"><label for="mp-quantity">Jumlah (kg)</label><div class="mp-quantity-row"><div class="mp-quantity-stepper"><button class="mp-quantity-step" type="button" data-step="-1" aria-label="Kurangi jumlah">−</button><input id="mp-quantity" type="number" min="1" max="${Math.max(1, Number(product.stock) || 1)}" step="1" value="1" inputmode="numeric"><button class="mp-quantity-step" type="button" data-step="1" aria-label="Tambah jumlah">+</button></div><span>tersedia ${Number(product.stock || 0)} kg</span></div></div><div class="mp-detail-total"><span>Subtotal produk</span><strong id="mp-order-total">${formatPrice(product.price)}</strong></div><div class="mp-detail-actions"><button class="mp-card-action mp-add-cart" type="button" ${product.isDemo || Number(product.stock) < 1 ? 'disabled' : ''}>Tambah ke keranjang</button><button class="mp-card-action mp-buy" type="submit" ${product.isDemo || Number(product.stock) < 1 ? 'disabled' : ''}>Checkout sekarang <span>&rarr;</span></button></div><small class="mp-payment-note">Ongkir dihitung saat checkout berdasarkan alamat dan layanan kurir.</small></div></form>`;
+  dialog.innerHTML = `<form class="mp-detail-card"><button type="button" class="mp-detail-close" aria-label="Tutup">×</button><img src="${escapeHtml(product.image || '')}" alt="${escapeHtml(product.title)}"><div class="mp-detail-copy"><span class="mp-category-tag ${categoryFor(product) === 'Kompos' ? 'compost' : ''}">${escapeHtml(categoryFor(product))}</span><h2>${escapeHtml(product.title)}</h2><p>${escapeHtml(product.description || 'Bahan organik yang tersedia untuk dimanfaatkan kembali.')}</p>${product.isDemo ? '<p class="mp-demo-detail-note">Produk contoh ini belum dapat di-chat atau dipesan.</p>' : ''}<div class="mp-detail-facts"><span><small>PENJUAL</small><strong>${escapeHtml(seller)}</strong></span><span><small>LOKASI</small><strong>${escapeHtml(product.location || 'Hubungi penjual untuk detail lokasi')}</strong></span></div><button class="mp-card-action mp-chat" type="button" ${product.isDemo || !product.seller?.id || product.seller.id === currentMarketplaceUserId ? 'disabled' : ''}>Chat penjual</button><div class="mp-detail-order"><label for="mp-quantity">Jumlah (kg)</label><div class="mp-quantity-row"><div class="mp-quantity-stepper"><button class="mp-quantity-step" type="button" data-step="-1" aria-label="Kurangi jumlah">−</button><input id="mp-quantity" type="number" min="1" max="${Math.max(1, Number(product.stock) || 1)}" step="1" value="1" inputmode="numeric"><button class="mp-quantity-step" type="button" data-step="1" aria-label="Tambah jumlah">+</button></div><span>tersedia ${Number(product.stock || 0)} kg</span></div></div><div class="mp-detail-total"><span>Subtotal produk</span><strong id="mp-order-total">${formatPrice(product.price)}</strong></div><div class="mp-detail-actions"><button class="mp-card-action mp-add-cart" type="button" ${product.isDemo || Number(product.stock) < 1 ? 'disabled' : ''}>Tambah ke keranjang</button><button class="mp-card-action mp-buy" type="submit" ${product.isDemo || Number(product.stock) < 1 ? 'disabled' : ''}>Lihat keranjang <span>&rarr;</span></button></div><small class="mp-payment-note">Periksa produk pilihan Anda di keranjang sebelum membayar.</small></div></form>`;
   injectMarketplaceDetailStyles();
   document.body.append(dialog);
   dialog.showModal();
@@ -338,8 +338,16 @@ function showProductDetail(product) {
     if (existing) existing.quantity = Math.min(Number(product.stock), Number(existing.quantity) + qty);
     else cart.push({ wasteId: product.id, quantity: qty });
     sessionStorage.setItem('foodilee_checkout_cart', JSON.stringify(cart));
+    let selection = { selected: [], known: [] };
+    try {
+      const savedSelection = JSON.parse(sessionStorage.getItem('foodilee_checkout_selected') || 'null');
+      if (Array.isArray(savedSelection?.selected) && Array.isArray(savedSelection?.known)) selection = savedSelection;
+    } catch { /* Pilihan awal keranjang akan dibuat saat dibuka. */ }
+    selection.selected = [...new Set([...selection.selected, product.id])];
+    selection.known = cart.map((item) => item.wasteId);
+    sessionStorage.setItem('foodilee_checkout_selected', JSON.stringify(selection));
     window.dispatchEvent(new Event('foodilee:cart-updated'));
-    showToast('Produk ditambahkan ke keranjang checkout.');
+    showToast('Produk ditambahkan ke keranjang belanja.');
   });
   dialog.addEventListener('click', (event) => {
     if (event.target === dialog) {
@@ -362,8 +370,16 @@ function showProductDetail(product) {
     if (existing) existing.quantity = Math.min(Number(product.stock), Number(existing.quantity) + qty);
     else cart.push({ wasteId: product.id, quantity: qty });
     sessionStorage.setItem('foodilee_checkout_cart', JSON.stringify(cart));
+    let selection = { selected: [], known: [] };
+    try {
+      const savedSelection = JSON.parse(sessionStorage.getItem('foodilee_checkout_selected') || 'null');
+      if (Array.isArray(savedSelection?.selected) && Array.isArray(savedSelection?.known)) selection = savedSelection;
+    } catch { /* Pilihan awal keranjang akan dibuat saat dibuka. */ }
+    selection.selected = [...new Set([...selection.selected, product.id])];
+    selection.known = cart.map((item) => item.wasteId);
+    sessionStorage.setItem('foodilee_checkout_selected', JSON.stringify(selection));
     window.dispatchEvent(new Event('foodilee:cart-updated'));
-    dialog.close(); dialog.remove(); location.hash = '#checkout';
+    dialog.close(); dialog.remove(); location.hash = '#cart';
   });
 }
 

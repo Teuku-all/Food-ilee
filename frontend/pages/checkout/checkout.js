@@ -3,6 +3,7 @@ import { getWaste } from '../../services/waste.js';
 import { escapeHtml } from '../../utils/html.js';
 import { showToast, injectToastStyle } from '../../utils/toast.js';
 import { bindSharedHeader, dashboardFooter, dashboardHeader } from '../../ui/shell.js';
+import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 
 const REGION_API = 'https://www.emsifa.com/api-wilayah-indonesia/v2';
 const CART_KEY = 'foodilee_checkout_cart';
@@ -11,6 +12,7 @@ const ADDRESS_KEY = 'foodilee_shipping_address';
 const IDEMPOTENCY_KEY = 'foodilee_checkout_idempotency_key';
 const addressFields = ['recipientName', 'phone', 'provinceCode', 'province', 'cityCode', 'city', 'districtCode', 'district', 'villageCode', 'village', 'postalCode', 'details'];
 let checkoutItems = [];
+let cartEntries = [];
 let selectedWasteIds = new Set();
 let address = {};
 let rates = [];
@@ -39,14 +41,14 @@ function readSelectedItems(items) {
 function persistSelection() {
   sessionStorage.setItem(SELECTED_CART_KEY, JSON.stringify({
     selected: [...selectedWasteIds],
-    known: checkoutItems.map((item) => item.wasteId || item.id),
+    known: cartEntries.map((item) => item.wasteId || item.id),
   }));
 }
 function selectedItems() {
   return checkoutItems.filter((item) => selectedWasteIds.has(item.wasteId));
 }
 function persistCart() {
-  sessionStorage.setItem(CART_KEY, JSON.stringify(checkoutItems.map((item) => ({ wasteId: item.wasteId || item.id, quantity: item.quantity }))));
+  sessionStorage.setItem(CART_KEY, JSON.stringify(cartEntries.map((item) => ({ wasteId: item.wasteId || item.id, quantity: item.quantity }))));
   window.dispatchEvent(new Event('foodilee:cart-updated'));
 }
 function invalidateCheckoutKey() { sessionStorage.removeItem(IDEMPOTENCY_KEY); }
@@ -63,24 +65,28 @@ function savedAddress() {
 }
 
 export async function renderCheckout() {
-  checkoutItems = readCart();
-  selectedWasteIds = readSelectedItems(checkoutItems);
+  const navigationRevision = getNavigationRevision();
+  cartEntries = readCart();
+  selectedWasteIds = readSelectedItems(cartEntries);
+  checkoutItems = cartEntries.filter((item) => selectedWasteIds.has(item.wasteId));
   address = savedAddress();
   rates = [];
   selectedRate = null;
   checkoutBusy = false;
   const app = document.getElementById('app');
-  app.innerHTML = `<div class="co-app">${dashboardHeader('market')}<main class="co-main"><a class="co-back" href="#marketplace">← Kembali ke marketplace</a><header class="co-heading"><p>KERANJANG BELANJA</p><h1>Keranjang Anda</h1><span>Pilih produk yang ingin dibeli. Produk lainnya tetap tersimpan di keranjang.</span></header><div class="co-layout"><div class="co-left"><section class="co-panel"><div class="co-section-head"><span>01</span><div><h2>Alamat penerima</h2><p>Wilayah Indonesia berjenjang. Ongkir dihitung ulang oleh server.</p></div></div><label class="co-label">Alamat tersimpan<select id="co-saved"><option value="">Pilih alamat tersimpan</option></select></label><form id="co-address" class="co-form" novalidate><div class="co-two"><label class="co-label">Nama penerima<input name="recipientName" autocomplete="name" required maxlength="100"></label><label class="co-label">Nomor telepon<input name="phone" autocomplete="tel" inputmode="tel" required maxlength="20"></label></div><label class="co-label">Provinsi<select id="co-province" required><option value="">Pilih provinsi</option></select></label><label class="co-label">Kabupaten/Kota<select id="co-city" required disabled><option value="">Pilih kabupaten/kota</option></select></label><label class="co-label">Kecamatan<select id="co-district" required disabled><option value="">Pilih kecamatan</option></select></label><label class="co-label">Desa/Kelurahan<select id="co-village" required disabled><option value="">Pilih desa/kelurahan</option></select></label><div class="co-two"><label class="co-label">Kode pos<input name="postalCode" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" required></label><label class="co-label">Detail alamat<input name="details" placeholder="Nama jalan, nomor rumah, RT/RW" required maxlength="240"></label></div><label class="co-label">Catatan untuk kurir (opsional)<input name="notes" maxlength="200"></label><button class="co-save-address" type="button" id="co-save-address">Simpan alamat ini</button><p class="co-error" id="co-address-error" role="alert"></p></form></section><section class="co-panel"><div class="co-section-head"><span>02</span><div><h2>Produk di keranjang</h2><p>Centang produk yang ingin diproses. Harga dan stok akan diperiksa kembali oleh server.</p></div></div><div id="co-items" class="co-items"><div class="co-loading">Memuat produk…</div></div></section><section class="co-panel"><div class="co-section-head"><span>03</span><div><h2>Pengiriman</h2><p>Pilihan kurir dan tarif aktual dari Biteship untuk produk terpilih.</p></div></div><div id="co-rates" class="co-rates"><p>Lengkapi alamat dan pilih produk untuk memuat layanan pengiriman.</p></div></section></div><aside class="co-summary"><h2>Ringkasan pembayaran</h2><div class="co-summary-row"><span>Produk dipilih</span><strong id="co-selected-count">0 produk</strong></div><div class="co-summary-row"><span>Subtotal produk</span><strong id="co-subtotal">—</strong></div><div class="co-summary-row"><span>Diskon</span><strong>Rp0</strong></div><div class="co-summary-row"><span>Pengiriman</span><strong id="co-shipping">Pilih layanan</strong></div><div class="co-summary-total"><span>Total</span><strong id="co-total">—</strong></div><button type="button" id="co-pay" disabled>Checkout produk dipilih</button><p id="co-pay-error" class="co-error" role="alert"></p><small>Total final dihitung dan diverifikasi kembali oleh backend.</small></aside></div></main>${dashboardFooter()}</div>`;
+  app.innerHTML = `<div class="co-app">${dashboardHeader('market')}<main class="co-main"><a class="co-back" href="#cart">&larr; Kembali ke keranjang</a><header class="co-heading"><p>PEMBAYARAN AMAN</p><h1>Pembayaran</h1><span>Lengkapi alamat dan pengiriman untuk produk yang Anda pilih.</span></header><div class="co-layout"><div class="co-left"><section class="co-panel"><div class="co-section-head"><span>01</span><div><h2>Alamat penerima</h2><p>Wilayah Indonesia berjenjang. Ongkir dihitung ulang oleh server.</p></div></div><label class="co-label">Alamat tersimpan<select id="co-saved"><option value="">Pilih alamat tersimpan</option></select></label><form id="co-address" class="co-form" novalidate><div class="co-two"><label class="co-label">Nama penerima<input name="recipientName" autocomplete="name" required maxlength="100"></label><label class="co-label">Nomor telepon<input name="phone" autocomplete="tel" inputmode="tel" required maxlength="20"></label></div><label class="co-label">Provinsi<select id="co-province" required><option value="">Pilih provinsi</option></select></label><label class="co-label">Kabupaten/Kota<select id="co-city" required disabled><option value="">Pilih kabupaten/kota</option></select></label><label class="co-label">Kecamatan<select id="co-district" required disabled><option value="">Pilih kecamatan</option></select></label><label class="co-label">Desa/Kelurahan<select id="co-village" required disabled><option value="">Pilih desa/kelurahan</option></select></label><div class="co-two"><label class="co-label">Kode pos<input name="postalCode" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" required></label><label class="co-label">Detail alamat<input name="details" placeholder="Nama jalan, nomor rumah, RT/RW" required maxlength="240"></label></div><label class="co-label">Catatan untuk kurir (opsional)<input name="notes" maxlength="200"></label><button class="co-save-address" type="button" id="co-save-address">Simpan alamat ini</button><p class="co-error" id="co-address-error" role="alert"></p></form></section><section class="co-panel"><div class="co-section-head"><span>02</span><div><h2>Produk yang akan dibayar</h2><p>Rincian dan jumlah produk terpilih. Harga serta stok diperiksa kembali oleh server.</p></div></div><div id="co-items" class="co-items"><div class="co-loading">Memuat produk…</div></div></section><section class="co-panel"><div class="co-section-head"><span>03</span><div><h2>Pengiriman</h2><p>Pilihan kurir dan tarif aktual dari Biteship untuk produk terpilih.</p></div></div><div id="co-rates" class="co-rates"><p>Lengkapi alamat dan pilih produk untuk memuat layanan pengiriman.</p></div></section></div><aside class="co-summary"><h2>Ringkasan pembayaran</h2><div class="co-summary-row"><span>Produk dipilih</span><strong id="co-selected-count">0 produk</strong></div><div class="co-summary-row"><span>Subtotal produk</span><strong id="co-subtotal">—</strong></div><div class="co-summary-row"><span>Diskon</span><strong>Rp0</strong></div><div class="co-summary-row"><span>Pengiriman</span><strong id="co-shipping">Pilih layanan</strong></div><div class="co-summary-total"><span>Total</span><strong id="co-total">—</strong></div><button type="button" id="co-pay" disabled>Checkout produk dipilih</button><p id="co-pay-error" class="co-error" role="alert"></p><small>Total final dihitung dan diverifikasi kembali oleh backend.</small></aside></div></main>${dashboardFooter()}</div>`;
   injectCheckoutStyles(); injectToastStyle(); bindSharedHeader();
-  await loadProducts();
+  await loadProducts(navigationRevision);
+  if (!isRouteCurrent('#checkout', navigationRevision)) return;
   bindAddressForm();
-  await loadRegionOptions();
+  await loadRegionOptions(navigationRevision);
 }
 
-async function loadProducts() {
+async function loadProducts(navigationRevision) {
   const root = document.getElementById('co-items');
   if (!checkoutItems.length) {
-    root.innerHTML = '<div class="co-empty">Keranjang checkout kosong. <a href="#marketplace">Pilih produk</a></div>';
+    root.innerHTML = '<div class="co-empty">Belum ada produk yang dipilih. <a href="#cart">Kembali ke keranjang</a></div>';
+    updateSummary();
     return;
   }
   try {
@@ -89,10 +95,16 @@ async function loadProducts() {
       if (!result.success || !result.data) throw new Error(result.message || 'Produk tidak tersedia.');
       return { ...result.data, wasteId: item.wasteId, quantity: Math.min(Number(item.quantity), Number(result.data.stock)) };
     }));
+    if (!isRouteCurrent('#checkout', navigationRevision)) return;
     checkoutItems = checkoutItems.filter((item) => item.quantity > 0);
-    selectedWasteIds = new Set(checkoutItems.filter((item) => selectedWasteIds.has(item.wasteId)).map((item) => item.wasteId));
-    persistCart(); persistSelection(); renderItems(); updateSummary();
+    const selectedById = new Map(checkoutItems.map((item) => [item.wasteId, item]));
+    cartEntries = cartEntries.map((item) => {
+      const refreshed = selectedById.get(item.wasteId);
+      return refreshed ? { ...item, quantity: refreshed.quantity } : item;
+    });
+    renderItems(); updateSummary();
   } catch (error) {
+    if (!isRouteCurrent('#checkout', navigationRevision)) return;
     root.innerHTML = `<p class="co-error">${escapeHtml(error.message || 'Produk belum dapat dimuat.')}</p>`;
   }
 }
@@ -100,31 +112,10 @@ async function loadProducts() {
 function renderItems() {
   const root = document.getElementById('co-items');
   if (!checkoutItems.length) {
-    root.innerHTML = '<div class="co-empty">Keranjang checkout kosong. <a href="#marketplace">Pilih produk</a></div>';
+    root.innerHTML = '<div class="co-empty">Belum ada produk yang dipilih. <a href="#cart">Kembali ke keranjang</a></div>';
     return;
   }
-  const selectedCount = checkoutItems.filter((item) => selectedWasteIds.has(item.wasteId)).length;
-  root.innerHTML = `<div class="co-select-all"><label><input type="checkbox" id="co-select-all" ${selectedCount === checkoutItems.length ? 'checked' : ''}><span>Pilih semua produk</span></label><small>${selectedCount} dari ${checkoutItems.length} dipilih</small></div>${checkoutItems.map((item, index) => `<article class="co-item${selectedWasteIds.has(item.wasteId) ? ' is-selected' : ''}"><label class="co-item-check"><input type="checkbox" data-select-item="${index}" ${selectedWasteIds.has(item.wasteId) ? 'checked' : ''} aria-label="Pilih ${escapeHtml(item.title)} untuk checkout"><span></span></label><img src="${escapeHtml(item.image || '')}" alt="${escapeHtml(item.title)}"><div class="co-item-copy"><strong>${escapeHtml(item.title)}</strong><span>${formatPrice(item.price)} / kg</span><span>Subtotal ${formatPrice(Number(item.price) * item.quantity)}</span></div><div class="co-quantity"><button type="button" data-qty="${index}" data-delta="-1" aria-label="Kurangi ${escapeHtml(item.title)}">−</button><span>${item.quantity} kg</span><button type="button" data-qty="${index}" data-delta="1" aria-label="Tambah ${escapeHtml(item.title)}" ${item.quantity >= item.stock ? 'disabled' : ''}>+</button><button class="co-remove" type="button" data-remove="${index}">Hapus</button></div></article>`).join('')}`;
-  root.querySelector('#co-select-all')?.addEventListener('change', (event) => {
-    selectedWasteIds = event.currentTarget.checked ? new Set(checkoutItems.map((item) => item.wasteId)) : new Set();
-    persistSelection(); renderItems(); invalidateCheckoutKey(); loadRates();
-  });
-  root.querySelectorAll('[data-select-item]').forEach((checkbox) => checkbox.addEventListener('change', () => {
-    const item = checkoutItems[Number(checkbox.dataset.selectItem)];
-    if (checkbox.checked) selectedWasteIds.add(item.wasteId);
-    else selectedWasteIds.delete(item.wasteId);
-    persistSelection(); renderItems(); invalidateCheckoutKey(); loadRates();
-  }));
-  root.querySelectorAll('[data-qty]').forEach((button) => button.addEventListener('click', () => {
-    const item = checkoutItems[Number(button.dataset.qty)];
-    item.quantity = Math.max(1, Math.min(item.stock, item.quantity + Number(button.dataset.delta)));
-    invalidateCheckoutKey();
-    persistCart(); renderItems(); updateSummary(); loadRates();
-  }));
-  root.querySelectorAll('[data-remove]').forEach((button) => button.addEventListener('click', () => {
-    const [removed] = checkoutItems.splice(Number(button.dataset.remove), 1);
-    selectedWasteIds.delete(removed?.wasteId); invalidateCheckoutKey(); persistCart(); persistSelection(); renderItems(); updateSummary(); loadRates();
-  }));
+  root.innerHTML = checkoutItems.map((item) => `<article class="co-item"><img src="${escapeHtml(item.image || '')}" alt="${escapeHtml(item.title)}"><div class="co-item-copy"><strong>${escapeHtml(item.title)}</strong><span>${formatPrice(item.price)} / kg · ${item.quantity} kg</span></div><strong class="co-item-total">${formatPrice(Number(item.price) * item.quantity)}</strong></article>`).join('');
 }
 
 function readAddress() {
@@ -177,20 +168,24 @@ function setOptions(select, data, placeholder) {
   }
   select.disabled = false;
 }
-async function loadRegionOptions() {
+async function loadRegionOptions(navigationRevision = getNavigationRevision()) {
   try {
     const provinces = await fetchRegions('provinces');
+    if (!isRouteCurrent('#checkout', navigationRevision)) return;
     setOptions(document.getElementById('co-province'), provinces, 'Pilih provinsi');
     const saved = savedAddress();
     if (saved.provinceCode) {
       document.getElementById('co-province').value = saved.provinceCode;
-      await cascade('province', saved);
+      await cascade('province', saved, navigationRevision);
+      if (!isRouteCurrent('#checkout', navigationRevision)) return;
       address = readAddress();
       loadRates();
     }
   } catch (error) {
+    if (!isRouteCurrent('#checkout', navigationRevision)) return;
     document.getElementById('co-address-error').textContent = error.message;
   }
+  if (!isRouteCurrent('#checkout', navigationRevision)) return;
   ['province', 'city', 'district'].forEach((level) => document.getElementById(`co-${level}`).addEventListener('change', async () => {
     const parent = document.getElementById(`co-${level}`).value;
     invalidateCheckoutKey();
@@ -208,7 +203,11 @@ async function loadRegionOptions() {
     address = readAddress(); loadRates();
     if (!parent) return;
     try { setOptions(select, await fetchRegions(resource, parent), 'Pilih ' + (next === 'city' ? 'kabupaten/kota' : next === 'district' ? 'kecamatan' : 'desa/kelurahan')); }
-    catch (error) { document.getElementById('co-address-error').textContent = error.message; }
+    catch (error) {
+      if (!isRouteCurrent('#checkout', navigationRevision)) return;
+      document.getElementById('co-address-error').textContent = error.message;
+    }
+    if (!isRouteCurrent('#checkout', navigationRevision)) return;
     address = readAddress(); loadRates();
   }));
   document.getElementById('co-village').addEventListener('change', () => {
@@ -218,17 +217,23 @@ async function loadRegionOptions() {
   });
 }
 
-async function cascade(level, saved) {
+async function cascade(level, saved, navigationRevision = getNavigationRevision()) {
   const city = document.getElementById('co-city');
-  setOptions(city, await fetchRegions('regencies', saved.provinceCode), 'Pilih kabupaten/kota');
+  const cities = await fetchRegions('regencies', saved.provinceCode);
+  if (!isRouteCurrent('#checkout', navigationRevision) || !city?.isConnected) return;
+  setOptions(city, cities, 'Pilih kabupaten/kota');
   city.value = saved.cityCode || '';
   if (!city.value) return;
   const district = document.getElementById('co-district');
-  setOptions(district, await fetchRegions('districts', saved.cityCode), 'Pilih kecamatan');
+  const districts = await fetchRegions('districts', saved.cityCode);
+  if (!isRouteCurrent('#checkout', navigationRevision) || !district?.isConnected) return;
+  setOptions(district, districts, 'Pilih kecamatan');
   district.value = saved.districtCode || '';
   if (!district.value) return;
   const village = document.getElementById('co-village');
-  setOptions(village, await fetchRegions('villages', saved.districtCode), 'Pilih desa/kelurahan');
+  const villages = await fetchRegions('villages', saved.districtCode);
+  if (!isRouteCurrent('#checkout', navigationRevision) || !village?.isConnected) return;
+  setOptions(village, villages, 'Pilih desa/kelurahan');
   village.value = saved.villageCode || '';
   const form = document.getElementById('co-address');
   for (const key of ['recipientName', 'phone', 'postalCode', 'details', 'notes']) if (form.elements[key]) form.elements[key].value = saved[key] || '';
@@ -239,7 +244,11 @@ function applyAddress(value) {
   const form = document.getElementById('co-address');
   for (const key of ['recipientName', 'phone', 'postalCode', 'details', 'notes']) if (form.elements[key]) form.elements[key].value = value[key] || '';
   document.getElementById('co-province').value = value.provinceCode || '';
-  cascade('province', value).then(() => { address = readAddress(); loadRates(); });
+  const navigationRevision = getNavigationRevision();
+  cascade('province', value, navigationRevision).then(() => {
+    if (!isRouteCurrent('#checkout', navigationRevision)) return;
+    address = readAddress(); loadRates();
+  });
 }
 
 function validateForm() {
@@ -267,10 +276,12 @@ async function loadRates() {
   const revision = ++rateRevision;
   selectedRate = null;
   updateSummary();
-  rateTimer = setTimeout(() => loadRatesNow(revision), 350);
+  const navigationRevision = getNavigationRevision();
+  rateTimer = setTimeout(() => loadRatesNow(revision, navigationRevision), 350);
 }
 
-async function loadRatesNow(revision) {
+async function loadRatesNow(revision, navigationRevision = getNavigationRevision()) {
+  if (!isRouteCurrent('#checkout', navigationRevision)) return;
   selectedRate = null; rates = []; updateSummary();
   const root = document.getElementById('co-rates');
   if (!root) return;
@@ -280,7 +291,7 @@ async function loadRatesNow(revision) {
   root.innerHTML = '<div class="co-loading">Mengambil tarif kurir…</div>';
   try {
     const result = await getShippingRates(chosenItems.map((item) => ({ wasteId: item.id, quantity: item.quantity })), readAddress());
-    if (revision !== rateRevision) return;
+    if (revision !== rateRevision || !isRouteCurrent('#checkout', navigationRevision)) return;
     if (!result.success) throw new Error(result.message || 'Tarif pengiriman belum tersedia.');
     rates = result.data || [];
     if (!rates.length) { root.innerHTML = '<p class="co-error">Tidak ada layanan pengiriman yang tersedia untuk alamat ini.</p>'; return; }
@@ -289,7 +300,7 @@ async function loadRatesNow(revision) {
       selectedRate = rates[Number(radio.value)]; updateSummary();
     }));
   } catch (error) {
-    if (revision !== rateRevision) return;
+    if (revision !== rateRevision || !isRouteCurrent('#checkout', navigationRevision)) return;
     root.innerHTML = `<p class="co-error">${escapeHtml(error.message || 'Ongkir gagal dimuat.')}</p><button type="button" class="co-retry" id="co-retry-rate">Coba lagi</button>`;
     document.getElementById('co-retry-rate')?.addEventListener('click', loadRates);
   }

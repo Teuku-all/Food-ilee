@@ -6,9 +6,12 @@ async function createChat(buyerId, sellerId) {
   if (!seller) throw new Error('Penjual tidak ditemukan');
   const existingChat = await prisma.chat.findFirst({
     where: {
-      buyerId,
-      sellerId,
+      OR: [
+        { buyerId, sellerId },
+        { buyerId: sellerId, sellerId: buyerId },
+      ],
     },
+    orderBy: { createdAt: 'asc' },
   });
 
   if (existingChat) {
