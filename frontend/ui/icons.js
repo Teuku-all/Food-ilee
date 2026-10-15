@@ -1,6 +1,7 @@
 const paths = {
   market:
     '<path d="M3 10h18l-1.5-6h-15L3 10Z"/><path d="M5 10v10h14V10M9 20v-6h6v6"/><path d="M3 10a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0"/>',
+  cart: '<circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M2 3h2l2.7 12.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6L22 7H5"/>',
   add: '<path d="M12 5v14M5 12h14"/>',
   ai: '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 22h8M12 18v4M8 10h.01M12 10h.01M16 10h.01M8 14h8"/>',
   orders: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/>',

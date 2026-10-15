@@ -106,6 +106,58 @@ body {
   box-shadow: 0 5px 15px #071a1238;
   transform: translateY(-1px);
 }
+.fi-header-actions {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 10px;
+}
+.fi-cart-link {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 1px solid rgba(219, 245, 238, 0.2);
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 43, 43, 0.46);
+  color: #effbf5;
+  text-decoration: none;
+  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+.fi-cart-link:hover {
+  transform: translateY(-2px);
+  border-color: rgba(219, 245, 238, 0.46);
+  background: rgba(0, 35, 36, 0.78);
+}
+.fi-cart-link > svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.fi-cart-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 2px solid #123524;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #a3e6b8;
+  color: #123524;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+.fi-cart-count[hidden] { display: none; }
 .fi-account {
   width: 212px;
   justify-self: end;
@@ -114,13 +166,13 @@ body {
 .fi-account-toggle {
   width: 100%;
   height: 48px;
-  padding: 5px 12px 5px 6px;
-  border: 1px solid rgba(219, 245, 238, 0.18);
+  padding: 5px 10px 5px 6px;
+  border: 1px solid rgba(219, 245, 238, 0.26);
   border-radius: 999px;
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(0, 43, 43, 0.5);
+  background: linear-gradient(135deg, rgba(245, 255, 249, 0.13), rgba(0, 43, 43, 0.48));
   color: #eaf7f6;
   font:
     500 13px Inter,
@@ -133,8 +185,10 @@ body {
     transform 0.16s;
 }
 .fi-account-toggle:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   background: rgba(0, 35, 36, 0.78);
+  border-color: rgba(219, 245, 238, 0.48);
+  box-shadow: 0 8px 20px #041a1238;
 }
 .fi-account-toggle .fi-avatar {
   width: 36px;
@@ -144,8 +198,9 @@ body {
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 1px solid rgba(228, 248, 241, 0.55);
-  background: #e4f3ee;
+  border: 2px solid rgba(228, 248, 241, 0.78);
+  box-shadow: 0 0 0 2px #ffffff14;
+  background: linear-gradient(145deg, #effbf5, #c5ead2);
   color: #075653;
   font-weight: 600;
 }
@@ -513,9 +568,12 @@ body {
   .fi-nav::-webkit-scrollbar {
     display: none;
   }
-  .fi-account {
+  .fi-header-actions {
     grid-column: 2;
     grid-row: 1;
+    gap: 8px;
+  }
+  .fi-account {
     width: 46px;
   }
   .fi-account-toggle {
@@ -711,6 +769,7 @@ body {
   }
   .fi-nav-link,
   .fi-account-toggle,
+  .fi-cart-link,
   .fi-account-menu,
   .fi-account-menu a,
   .fi-account-menu button,

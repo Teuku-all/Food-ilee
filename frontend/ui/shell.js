@@ -40,7 +40,11 @@ export function dashboardHeader(active = '') {
     <header class="fi-header">
       <a class="fi-header-brand" href="#dashboard" aria-label="Food Ilee"><img src="./assets/foodilee-wordmark.png" alt="Food Ilee"></a>
       <nav class="fi-nav" aria-label="Navigasi utama">${nav}</nav>
-      <div class="fi-account">
+      <div class="fi-header-actions">
+        <a class="fi-cart-link" href="#checkout" aria-label="Keranjang belanja, 0 barang" title="Keranjang belanja">
+          ${icon('cart')}<span class="fi-cart-count" data-cart-count hidden>0</span>
+        </a>
+        <div class="fi-account">
         <button class="fi-account-toggle" id="fi-account-toggle" type="button" aria-label="Buka menu akun" aria-haspopup="true" aria-controls="fi-account-menu" aria-expanded="false">
           <span class="fi-avatar" data-user-avatar>U</span>
           <span class="fi-account-meta"><small>Akun Anda</small><span class="fi-account-name" data-user-name>Pengguna</span></span>
@@ -60,6 +64,7 @@ export function dashboardHeader(active = '') {
             <a href="#panduan" data-reopen-onboarding>${icon('guide')}<span>Panduan</span></a>
             <button class="fi-logout" type="button">${icon('logout')}<span>Keluar</span></button>
           </div>
+        </div>
         </div>
       </div>
     </header>`;
@@ -92,6 +97,11 @@ export function injectShellStyles() {
   document.head.append(stylesheet);
 }
 export function bindShell(version = shellRenderVersion) {
+  updateCartBadge();
+  if (!document.documentElement.dataset.fiCartBound) {
+    window.addEventListener('foodilee:cart-updated', updateCartBadge);
+    document.documentElement.dataset.fiCartBound = 'true';
+  }
   const toggle = document.querySelector('.fi-account-toggle');
   const menu = document.querySelector('.fi-account-menu');
   if (toggle && menu) {
@@ -134,6 +144,21 @@ export function bindShell(version = shellRenderVersion) {
     });
   }
   hydrateAccount(version);
+}
+
+function updateCartBadge() {
+  const badge = document.querySelector('[data-cart-count]');
+  const link = badge?.closest('.fi-cart-link');
+  if (!badge || !link) return;
+  let cart = [];
+  try {
+    const value = JSON.parse(sessionStorage.getItem('foodilee_checkout_cart') || '[]');
+    if (Array.isArray(value)) cart = value;
+  } catch { /* Keranjang rusak atau kosong. */ }
+  const count = cart.reduce((total, item) => total + Math.max(0, Number(item?.quantity) || 0), 0);
+  badge.textContent = count > 99 ? '99+' : String(count);
+  badge.hidden = count === 0;
+  link.setAttribute('aria-label', `Keranjang belanja, ${count} barang`);
 }
 
 function closeAccountMenu(menu, toggle) {

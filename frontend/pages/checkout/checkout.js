@@ -6,10 +6,12 @@ import { bindSharedHeader, dashboardFooter, dashboardHeader } from '../../ui/she
 
 const REGION_API = 'https://www.emsifa.com/api-wilayah-indonesia/v2';
 const CART_KEY = 'foodilee_checkout_cart';
+const SELECTED_CART_KEY = 'foodilee_checkout_selected';
 const ADDRESS_KEY = 'foodilee_shipping_address';
 const IDEMPOTENCY_KEY = 'foodilee_checkout_idempotency_key';
 const addressFields = ['recipientName', 'phone', 'provinceCode', 'province', 'cityCode', 'city', 'districtCode', 'district', 'villageCode', 'village', 'postalCode', 'details'];
 let checkoutItems = [];
+let selectedWasteIds = new Set();
 let address = {};
 let rates = [];
 let selectedRate = null;
@@ -24,7 +26,29 @@ function readCart() {
     return Array.isArray(value) ? value.filter((item) => item?.wasteId && Number(item.quantity) > 0) : [];
   } catch { return []; }
 }
-function persistCart() { sessionStorage.setItem(CART_KEY, JSON.stringify(checkoutItems.map(({ wasteId, quantity }) => ({ wasteId, quantity })))); }
+function readSelectedItems(items) {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(SELECTED_CART_KEY) || 'null');
+    if (Array.isArray(saved)) return saved.length ? new Set(saved.filter((id) => items.some((item) => item.wasteId === id))) : new Set(items.map((item) => item.wasteId));
+    if (!saved || !Array.isArray(saved.selected) || !Array.isArray(saved.known)) return new Set(items.map((item) => item.wasteId));
+    const selected = new Set(saved.selected.filter((id) => items.some((item) => item.wasteId === id)));
+    items.forEach((item) => { if (!saved.known.includes(item.wasteId)) selected.add(item.wasteId); });
+    return selected;
+  } catch { return new Set(items.map((item) => item.wasteId)); }
+}
+function persistSelection() {
+  sessionStorage.setItem(SELECTED_CART_KEY, JSON.stringify({
+    selected: [...selectedWasteIds],
+    known: checkoutItems.map((item) => item.wasteId || item.id),
+  }));
+}
+function selectedItems() {
+  return checkoutItems.filter((item) => selectedWasteIds.has(item.wasteId));
+}
+function persistCart() {
+  sessionStorage.setItem(CART_KEY, JSON.stringify(checkoutItems.map((item) => ({ wasteId: item.wasteId || item.id, quantity: item.quantity }))));
+  window.dispatchEvent(new Event('foodilee:cart-updated'));
+}
 function invalidateCheckoutKey() { sessionStorage.removeItem(IDEMPOTENCY_KEY); }
 function checkoutKey() {
   let key = sessionStorage.getItem(IDEMPOTENCY_KEY);
@@ -40,12 +64,13 @@ function savedAddress() {
 
 export async function renderCheckout() {
   checkoutItems = readCart();
+  selectedWasteIds = readSelectedItems(checkoutItems);
   address = savedAddress();
   rates = [];
   selectedRate = null;
   checkoutBusy = false;
   const app = document.getElementById('app');
-  app.innerHTML = `<div class="co-app">${dashboardHeader('market')}<main class="co-main"><a class="co-back" href="#marketplace">← Kembali ke marketplace</a><header class="co-heading"><p>PEMBAYARAN AMAN</p><h1>Checkout</h1><span>Periksa alamat, produk, dan pilihan pengiriman Anda.</span></header><div class="co-layout"><div class="co-left"><section class="co-panel"><div class="co-section-head"><span>01</span><div><h2>Alamat penerima</h2><p>Wilayah Indonesia berjenjang. Ongkir dihitung ulang oleh server.</p></div></div><label class="co-label">Alamat tersimpan<select id="co-saved"><option value="">Pilih alamat tersimpan</option></select></label><form id="co-address" class="co-form" novalidate><div class="co-two"><label class="co-label">Nama penerima<input name="recipientName" autocomplete="name" required maxlength="100"></label><label class="co-label">Nomor telepon<input name="phone" autocomplete="tel" inputmode="tel" required maxlength="20"></label></div><label class="co-label">Provinsi<select id="co-province" required><option value="">Pilih provinsi</option></select></label><label class="co-label">Kabupaten/Kota<select id="co-city" required disabled><option value="">Pilih kabupaten/kota</option></select></label><label class="co-label">Kecamatan<select id="co-district" required disabled><option value="">Pilih kecamatan</option></select></label><label class="co-label">Desa/Kelurahan<select id="co-village" required disabled><option value="">Pilih desa/kelurahan</option></select></label><div class="co-two"><label class="co-label">Kode pos<input name="postalCode" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" required></label><label class="co-label">Detail alamat<input name="details" placeholder="Nama jalan, nomor rumah, RT/RW" required maxlength="240"></label></div><label class="co-label">Catatan untuk kurir (opsional)<input name="notes" maxlength="200"></label><button class="co-save-address" type="button" id="co-save-address">Simpan alamat ini</button><p class="co-error" id="co-address-error" role="alert"></p></form></section><section class="co-panel"><div class="co-section-head"><span>02</span><div><h2>Produk</h2><p>Harga dan stok akan diperiksa kembali oleh server.</p></div></div><div id="co-items" class="co-items"><div class="co-loading">Memuat produk…</div></div></section><section class="co-panel"><div class="co-section-head"><span>03</span><div><h2>Pengiriman</h2><p>Pilihan kurir dan tarif aktual dari Biteship.</p></div></div><div id="co-rates" class="co-rates"><p>Lengkapi alamat dan keranjang untuk memuat layanan pengiriman.</p></div></section></div><aside class="co-summary"><h2>Ringkasan pembayaran</h2><div class="co-summary-row"><span>Subtotal produk</span><strong id="co-subtotal">—</strong></div><div class="co-summary-row"><span>Diskon</span><strong>Rp0</strong></div><div class="co-summary-row"><span>Pengiriman</span><strong id="co-shipping">Pilih layanan</strong></div><div class="co-summary-total"><span>Total</span><strong id="co-total">—</strong></div><button type="button" id="co-pay" disabled>Lanjut ke Pembayaran</button><p id="co-pay-error" class="co-error" role="alert"></p><small>Total final dihitung dan diverifikasi kembali oleh backend.</small></aside></div></main>${dashboardFooter()}</div>`;
+  app.innerHTML = `<div class="co-app">${dashboardHeader('market')}<main class="co-main"><a class="co-back" href="#marketplace">← Kembali ke marketplace</a><header class="co-heading"><p>KERANJANG BELANJA</p><h1>Keranjang Anda</h1><span>Pilih produk yang ingin dibeli. Produk lainnya tetap tersimpan di keranjang.</span></header><div class="co-layout"><div class="co-left"><section class="co-panel"><div class="co-section-head"><span>01</span><div><h2>Alamat penerima</h2><p>Wilayah Indonesia berjenjang. Ongkir dihitung ulang oleh server.</p></div></div><label class="co-label">Alamat tersimpan<select id="co-saved"><option value="">Pilih alamat tersimpan</option></select></label><form id="co-address" class="co-form" novalidate><div class="co-two"><label class="co-label">Nama penerima<input name="recipientName" autocomplete="name" required maxlength="100"></label><label class="co-label">Nomor telepon<input name="phone" autocomplete="tel" inputmode="tel" required maxlength="20"></label></div><label class="co-label">Provinsi<select id="co-province" required><option value="">Pilih provinsi</option></select></label><label class="co-label">Kabupaten/Kota<select id="co-city" required disabled><option value="">Pilih kabupaten/kota</option></select></label><label class="co-label">Kecamatan<select id="co-district" required disabled><option value="">Pilih kecamatan</option></select></label><label class="co-label">Desa/Kelurahan<select id="co-village" required disabled><option value="">Pilih desa/kelurahan</option></select></label><div class="co-two"><label class="co-label">Kode pos<input name="postalCode" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" required></label><label class="co-label">Detail alamat<input name="details" placeholder="Nama jalan, nomor rumah, RT/RW" required maxlength="240"></label></div><label class="co-label">Catatan untuk kurir (opsional)<input name="notes" maxlength="200"></label><button class="co-save-address" type="button" id="co-save-address">Simpan alamat ini</button><p class="co-error" id="co-address-error" role="alert"></p></form></section><section class="co-panel"><div class="co-section-head"><span>02</span><div><h2>Produk di keranjang</h2><p>Centang produk yang ingin diproses. Harga dan stok akan diperiksa kembali oleh server.</p></div></div><div id="co-items" class="co-items"><div class="co-loading">Memuat produk…</div></div></section><section class="co-panel"><div class="co-section-head"><span>03</span><div><h2>Pengiriman</h2><p>Pilihan kurir dan tarif aktual dari Biteship untuk produk terpilih.</p></div></div><div id="co-rates" class="co-rates"><p>Lengkapi alamat dan pilih produk untuk memuat layanan pengiriman.</p></div></section></div><aside class="co-summary"><h2>Ringkasan pembayaran</h2><div class="co-summary-row"><span>Produk dipilih</span><strong id="co-selected-count">0 produk</strong></div><div class="co-summary-row"><span>Subtotal produk</span><strong id="co-subtotal">—</strong></div><div class="co-summary-row"><span>Diskon</span><strong>Rp0</strong></div><div class="co-summary-row"><span>Pengiriman</span><strong id="co-shipping">Pilih layanan</strong></div><div class="co-summary-total"><span>Total</span><strong id="co-total">—</strong></div><button type="button" id="co-pay" disabled>Checkout produk dipilih</button><p id="co-pay-error" class="co-error" role="alert"></p><small>Total final dihitung dan diverifikasi kembali oleh backend.</small></aside></div></main>${dashboardFooter()}</div>`;
   injectCheckoutStyles(); injectToastStyle(); bindSharedHeader();
   await loadProducts();
   bindAddressForm();
@@ -62,10 +87,11 @@ async function loadProducts() {
     checkoutItems = await Promise.all(checkoutItems.map(async (item) => {
       const result = await getWaste(item.wasteId);
       if (!result.success || !result.data) throw new Error(result.message || 'Produk tidak tersedia.');
-      return { ...result.data, quantity: Math.min(Number(item.quantity), Number(result.data.stock)) };
+      return { ...result.data, wasteId: item.wasteId, quantity: Math.min(Number(item.quantity), Number(result.data.stock)) };
     }));
     checkoutItems = checkoutItems.filter((item) => item.quantity > 0);
-    persistCart(); renderItems(); updateSummary();
+    selectedWasteIds = new Set(checkoutItems.filter((item) => selectedWasteIds.has(item.wasteId)).map((item) => item.wasteId));
+    persistCart(); persistSelection(); renderItems(); updateSummary();
   } catch (error) {
     root.innerHTML = `<p class="co-error">${escapeHtml(error.message || 'Produk belum dapat dimuat.')}</p>`;
   }
@@ -73,7 +99,22 @@ async function loadProducts() {
 
 function renderItems() {
   const root = document.getElementById('co-items');
-  root.innerHTML = checkoutItems.map((item, index) => `<article class="co-item"><img src="${escapeHtml(item.image || '')}" alt="${escapeHtml(item.title)}"><div class="co-item-copy"><strong>${escapeHtml(item.title)}</strong><span>${formatPrice(item.price)} / kg</span><span>Subtotal ${formatPrice(Number(item.price) * item.quantity)}</span></div><div class="co-quantity"><button type="button" data-qty="${index}" data-delta="-1" aria-label="Kurangi ${escapeHtml(item.title)}">−</button><span>${item.quantity} kg</span><button type="button" data-qty="${index}" data-delta="1" aria-label="Tambah ${escapeHtml(item.title)}" ${item.quantity >= item.stock ? 'disabled' : ''}>+</button><button class="co-remove" type="button" data-remove="${index}">Hapus</button></div></article>`).join('') || '<div class="co-empty">Keranjang checkout kosong. <a href="#marketplace">Pilih produk</a></div>';
+  if (!checkoutItems.length) {
+    root.innerHTML = '<div class="co-empty">Keranjang checkout kosong. <a href="#marketplace">Pilih produk</a></div>';
+    return;
+  }
+  const selectedCount = checkoutItems.filter((item) => selectedWasteIds.has(item.wasteId)).length;
+  root.innerHTML = `<div class="co-select-all"><label><input type="checkbox" id="co-select-all" ${selectedCount === checkoutItems.length ? 'checked' : ''}><span>Pilih semua produk</span></label><small>${selectedCount} dari ${checkoutItems.length} dipilih</small></div>${checkoutItems.map((item, index) => `<article class="co-item${selectedWasteIds.has(item.wasteId) ? ' is-selected' : ''}"><label class="co-item-check"><input type="checkbox" data-select-item="${index}" ${selectedWasteIds.has(item.wasteId) ? 'checked' : ''} aria-label="Pilih ${escapeHtml(item.title)} untuk checkout"><span></span></label><img src="${escapeHtml(item.image || '')}" alt="${escapeHtml(item.title)}"><div class="co-item-copy"><strong>${escapeHtml(item.title)}</strong><span>${formatPrice(item.price)} / kg</span><span>Subtotal ${formatPrice(Number(item.price) * item.quantity)}</span></div><div class="co-quantity"><button type="button" data-qty="${index}" data-delta="-1" aria-label="Kurangi ${escapeHtml(item.title)}">−</button><span>${item.quantity} kg</span><button type="button" data-qty="${index}" data-delta="1" aria-label="Tambah ${escapeHtml(item.title)}" ${item.quantity >= item.stock ? 'disabled' : ''}>+</button><button class="co-remove" type="button" data-remove="${index}">Hapus</button></div></article>`).join('')}`;
+  root.querySelector('#co-select-all')?.addEventListener('change', (event) => {
+    selectedWasteIds = event.currentTarget.checked ? new Set(checkoutItems.map((item) => item.wasteId)) : new Set();
+    persistSelection(); renderItems(); invalidateCheckoutKey(); loadRates();
+  });
+  root.querySelectorAll('[data-select-item]').forEach((checkbox) => checkbox.addEventListener('change', () => {
+    const item = checkoutItems[Number(checkbox.dataset.selectItem)];
+    if (checkbox.checked) selectedWasteIds.add(item.wasteId);
+    else selectedWasteIds.delete(item.wasteId);
+    persistSelection(); renderItems(); invalidateCheckoutKey(); loadRates();
+  }));
   root.querySelectorAll('[data-qty]').forEach((button) => button.addEventListener('click', () => {
     const item = checkoutItems[Number(button.dataset.qty)];
     item.quantity = Math.max(1, Math.min(item.stock, item.quantity + Number(button.dataset.delta)));
@@ -81,7 +122,8 @@ function renderItems() {
     persistCart(); renderItems(); updateSummary(); loadRates();
   }));
   root.querySelectorAll('[data-remove]').forEach((button) => button.addEventListener('click', () => {
-    checkoutItems.splice(Number(button.dataset.remove), 1); invalidateCheckoutKey(); persistCart(); renderItems(); updateSummary(); loadRates();
+    const [removed] = checkoutItems.splice(Number(button.dataset.remove), 1);
+    selectedWasteIds.delete(removed?.wasteId); invalidateCheckoutKey(); persistCart(); persistSelection(); renderItems(); updateSummary(); loadRates();
   }));
 }
 
@@ -210,11 +252,13 @@ function validateForm() {
 }
 
 function updateSummary() {
-  const subtotal = checkoutItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
+  const chosenItems = selectedItems();
+  const subtotal = chosenItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
+  document.getElementById('co-selected-count').textContent = `${chosenItems.length} ${chosenItems.length === 1 ? 'produk' : 'produk'}`;
   document.getElementById('co-subtotal').textContent = formatPrice(subtotal);
   document.getElementById('co-shipping').textContent = selectedRate ? formatPrice(selectedRate.price) : 'Pilih layanan';
   document.getElementById('co-total').textContent = formatPrice(subtotal + Number(selectedRate?.price || 0));
-  const valid = !validateForm() && checkoutItems.length > 0 && selectedRate && !checkoutBusy;
+  const valid = !validateForm() && chosenItems.length > 0 && selectedRate && !checkoutBusy;
   document.getElementById('co-pay').disabled = !valid;
 }
 
@@ -231,10 +275,11 @@ async function loadRatesNow(revision) {
   const root = document.getElementById('co-rates');
   if (!root) return;
   const error = validateForm();
-  if (error || !checkoutItems.length) { root.innerHTML = `<p>${escapeHtml(error || 'Tambahkan produk untuk melihat tarif.')}</p>`; return; }
+  const chosenItems = selectedItems();
+  if (error || !chosenItems.length) { root.innerHTML = `<p>${escapeHtml(error || 'Centang minimal satu produk untuk melihat tarif.')}</p>`; return; }
   root.innerHTML = '<div class="co-loading">Mengambil tarif kurir…</div>';
   try {
-    const result = await getShippingRates(checkoutItems.map((item) => ({ wasteId: item.id, quantity: item.quantity })), readAddress());
+    const result = await getShippingRates(chosenItems.map((item) => ({ wasteId: item.id, quantity: item.quantity })), readAddress());
     if (revision !== rateRevision) return;
     if (!result.success) throw new Error(result.message || 'Tarif pengiriman belum tersedia.');
     rates = result.data || [];
@@ -252,6 +297,8 @@ async function loadRatesNow(revision) {
 
 async function submitCheckout() {
   if (checkoutBusy || !selectedRate) return;
+  const chosenItems = selectedItems();
+  if (!chosenItems.length) return;
   const validation = validateForm();
   if (validation) { document.getElementById('co-address-error').textContent = validation; return; }
   checkoutBusy = true; updateSummary();
@@ -260,12 +307,16 @@ async function submitCheckout() {
   try {
     const current = readAddress();
     const result = await createCheckout(
-      checkoutItems.map((item) => ({ wasteId: item.id, quantity: item.quantity })),
+      chosenItems.map((item) => ({ wasteId: item.id, quantity: item.quantity })),
       current, selectedRate.company, selectedRate.courierType, checkoutKey(),
     );
     if (!result.success || !result.data?.paymentUrl) throw new Error(result.message || 'Transaksi belum dapat dibuat.');
     localStorage.setItem(ADDRESS_KEY, JSON.stringify(current));
-    sessionStorage.removeItem(CART_KEY);
+    const purchasedIds = new Set(chosenItems.map((item) => item.wasteId));
+    checkoutItems = checkoutItems.filter((item) => !purchasedIds.has(item.wasteId));
+    selectedWasteIds = new Set([...selectedWasteIds].filter((id) => !purchasedIds.has(id)));
+    persistCart(); persistSelection();
+    window.dispatchEvent(new Event('foodilee:cart-updated'));
     sessionStorage.removeItem(IDEMPOTENCY_KEY);
     window.location.assign(result.data.paymentUrl);
   } catch (error) {
@@ -278,5 +329,51 @@ function injectCheckoutStyles() {
   if (document.getElementById('checkout-style')) return;
   const style = document.createElement('style'); style.id = 'checkout-style';
   style.textContent = `.co-app{min-height:100vh;background:#dce8e6;color:#173d3c;font-family:Inter,Arial,sans-serif}.co-main{max-width:1200px;margin:auto;padding:38px 24px 76px}.co-back{color:#176457;text-decoration:none;font-size:13px}.co-heading{margin:25px 0}.co-heading p{font-size:10px;letter-spacing:.14em;color:#77837e;font-weight:700}.co-heading h1{margin:4px 0;color:#004847;font-size:36px}.co-heading span{color:#65736d}.co-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;align-items:start;gap:22px}.co-left{display:grid;gap:16px}.co-panel,.co-summary{background:#fff;border-radius:22px;padding:23px;box-shadow:0 10px 30px #173d3c08}.co-section-head{display:flex;gap:13px;align-items:flex-start;margin-bottom:20px}.co-section-head>span{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#e5f2ed;color:#176457;font-size:12px;font-weight:700}.co-section-head h2,.co-summary h2{margin:0 0 4px;font-size:18px;color:#174a3b}.co-section-head p{margin:0;color:#76827c;font-size:12px;line-height:1.5}.co-label{display:grid;gap:7px;margin:12px 0;color:#42584e;font-size:12px;font-weight:600}.co-label input,.co-label select{width:100%;height:42px;padding:0 12px;border:1px solid #dfe9e2;border-radius:10px;background:white;color:#253b31;font:400 13px Inter,Arial,sans-serif;box-sizing:border-box}.co-label select:disabled{background:#f4f6f4;color:#8c9790}.co-two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.co-save-address,.co-retry{border:0;background:transparent;color:#146354;padding:8px 0;font-weight:600;cursor:pointer}.co-error{color:#a34338;font-size:12px;line-height:1.5}.co-items{display:grid;gap:13px}.co-item{display:flex;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid #edf1ee}.co-item img{width:72px;height:72px;border-radius:11px;background:#f0f3ef;object-fit:cover}.co-item-copy{display:grid;gap:5px;flex:1}.co-item-copy strong{font-size:14px}.co-item-copy span{color:#6e7a73;font-size:12px}.co-quantity{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.co-quantity button{width:29px;height:29px;border:1px solid #dce6df;border-radius:8px;background:#fff;color:#175c4c;cursor:pointer}.co-quantity button:disabled{opacity:.4}.co-quantity span{font-size:12px;white-space:nowrap}.co-quantity .co-remove{width:auto;border:0;color:#9b5144;font-size:11px}.co-empty,.co-rates>p{color:#77837c;font-size:13px;line-height:1.6}.co-empty a{color:#166453}.co-loading{padding:14px 0;color:#718078;font-size:13px}.co-rate{display:flex;gap:12px;align-items:center;padding:14px;border:1px solid #e3ece5;border-radius:13px;margin:9px 0;cursor:pointer}.co-rate:has(input:checked){border-color:#167362;background:#f3faf7}.co-rate input{accent-color:#146354}.co-rate span{display:grid;gap:5px;flex:1}.co-rate strong{font-size:13px}.co-rate small{font-size:11px;color:#7b8780}.co-rate b{font-size:13px;color:#12604e;white-space:nowrap}.co-summary{position:sticky;top:20px}.co-summary h2{margin-bottom:20px}.co-summary-row,.co-summary-total{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #edf1ee;font-size:13px;color:#6b7770}.co-summary-row strong{color:#31473b;font-weight:600}.co-summary-total{align-items:center;padding:20px 0;color:#1b4234;font-weight:700}.co-summary-total strong{font-size:21px;color:#005448}.co-summary>button{width:100%;height:48px;border:0;border-radius:999px;background:#005448;color:white;font:600 14px Inter,Arial,sans-serif;cursor:pointer}.co-summary>button:disabled{background:#a7b9b1;cursor:not-allowed}.co-summary>small{display:block;margin-top:12px;color:#829087;line-height:1.5}.co-summary>.co-error{min-height:16px}.co-detail-link{color:#176457}@media(max-width:850px){.co-layout{grid-template-columns:1fr}.co-summary{position:static;order:-1}.co-main{padding:28px 18px 50px}}@media(max-width:560px){.co-heading h1{font-size:30px}.co-panel,.co-summary{padding:18px;border-radius:17px}.co-two{grid-template-columns:1fr;gap:0}.co-item{align-items:flex-start;flex-wrap:wrap}.co-item-copy{min-width:calc(100% - 90px)}.co-quantity{width:100%;justify-content:flex-start;padding-left:84px}}`;
+  style.textContent += `
+    .co-main{max-width:1240px;padding:36px 28px 80px}
+    .co-back{width:max-content;min-height:40px;box-sizing:border-box;padding:0 15px 0 11px;border:1px solid #bdd5c8;border-radius:999px;display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,#f8fcf9,#eaf5ef);color:#17604d;font-size:12px;font-weight:700;box-shadow:0 4px 12px #173d3c0c;transition:transform 180ms ease,box-shadow 180ms ease,border-color 180ms ease}
+    .co-back::before{content:'←';width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#dcefe3;color:#17604d;font-size:15px;transition:transform 180ms ease}
+    .co-back:hover{transform:translateY(-2px);border-color:#8fb8a0;box-shadow:0 8px 18px #173d3c16}
+    .co-back:hover::before{transform:translateX(-2px)}
+    .co-heading{margin:23px 0 24px;padding:0 0 22px;border-bottom:1px solid #bfcec5}
+    .co-heading p{width:max-content;margin:0 0 11px;padding:7px 11px;border:1px solid #c7e0ce;border-radius:999px;display:flex;align-items:center;gap:7px;background:#edf7ef;color:#356d4b;font-size:9px;letter-spacing:.12em}
+    .co-heading p::before{content:'';width:7px;height:7px;border-radius:50%;background:#42915c;box-shadow:0 0 0 3px #42915c20}
+    .co-heading h1{margin:0;color:#104b3e;font-size:clamp(32px,4vw,42px);line-height:1.12;letter-spacing:-1.4px}
+    .co-heading span{display:block;margin-top:9px;color:#61746a;font-size:14px;line-height:1.6}
+    .co-layout{grid-template-columns:minmax(0,1fr) 340px;gap:30px}
+    .co-left{gap:18px}
+    .co-panel,.co-summary{border:1px solid #c6d6cc;border-radius:20px;box-shadow:0 8px 22px #173d3c0b,0 1px 2px #173d3c0a}
+    .co-panel{padding:25px}
+    .co-items{gap:0}
+    .co-select-all{min-height:44px;margin:-4px 0 5px;padding:0 2px 10px;border-bottom:1px solid #dce7df;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .co-select-all label{display:flex;align-items:center;gap:10px;color:#315746;font-size:12px;font-weight:700;cursor:pointer}
+    .co-select-all small{color:#78877e;font-size:11px}
+    .co-select-all input,.co-item-check input{width:18px;height:18px;margin:0;accent-color:#176457;cursor:pointer}
+    .co-item{min-width:0;gap:14px;padding:16px 2px;border-bottom:1px solid #dce5de;transition:background 160ms ease}
+    .co-item:last-child{border-bottom:0;padding-bottom:2px}
+    .co-item.is-selected{background:linear-gradient(90deg,#f4faf6,transparent 78%)}
+    .co-item-check{width:20px;flex:none;display:grid;place-items:center;cursor:pointer}
+    .co-item img{flex:none;border:1px solid #dce6df}
+    .co-item-copy{min-width:0;align-self:center}
+    .co-item-copy strong{line-height:1.4}
+    .co-quantity{flex:none}
+    .co-section-head{padding-bottom:16px;border-bottom:1px solid #dce7df}
+    .co-section-head>span{flex:none;border:1px solid #c8dfd0;background:#edf7ef}
+    .co-label{line-height:1.4}
+    .co-label input,.co-label select{border-color:#cad9cf;transition:border-color 160ms ease,box-shadow 160ms ease}
+    .co-label input:focus,.co-label select:focus{outline:0;border-color:#398364;box-shadow:0 0 0 3px #39836420}
+    .co-summary{padding:24px;position:sticky;top:96px}
+    .co-summary h2{padding-bottom:16px;border-bottom:1px solid #dce7df;line-height:1.35}
+    .co-summary-row,.co-summary-total{border-color:#dce5de}
+    .co-rate{border-color:#cbdad0;transition:border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}
+    .co-rate:hover{border-color:#7eaf91;box-shadow:0 4px 12px #173d3c0c}
+    .co-rate:has(input:checked){border-color:#167362;box-shadow:inset 0 0 0 1px #16736230}
+    #co-pay{transition:transform 160ms ease,box-shadow 160ms ease,background 160ms ease}
+    #co-pay:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 8px 16px #00544828}
+    @media(max-width:850px){.co-layout{gap:18px}.co-summary{top:auto;border-bottom:2px solid #afc6b7}}
+    @media(max-width:700px){.co-item{display:grid;grid-template-columns:20px 64px minmax(0,1fr);align-items:start;gap:10px}.co-item img{width:64px;height:64px}.co-item-copy{min-width:0}.co-quantity{grid-column:2/-1;width:auto;justify-content:flex-start;padding-left:0}}
+    @media(max-width:560px){.co-main{padding:24px 15px 52px}.co-heading{margin:20px 0;padding-bottom:18px}.co-heading h1{font-size:32px}.co-heading span{font-size:13px}.co-panel,.co-summary{padding:18px;border-radius:17px}.co-section-head{padding-bottom:14px}.co-layout{gap:14px}.co-select-all small{font-size:10px}.co-item{padding:14px 0}.co-quantity{gap:7px}.co-quantity button{width:31px;height:31px}}
+    @media(prefers-reduced-motion:reduce){.co-back,.co-back::before,.co-rate,#co-pay{transition:none}}
+  `;
   document.head.append(style);
 }
