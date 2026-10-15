@@ -4,7 +4,17 @@ async function createWaste(data) {
   const store = data.sellerId
     ? await prisma.store.findUnique({
         where: { ownerId: data.sellerId },
-        select: { id: true },
+        select: {
+          id: true,
+          shippingOriginContactName: true,
+          shippingOriginContactPhone: true,
+          shippingOriginAddress: true,
+          shippingOriginPostalCode: true,
+          shippingOriginRegion: true,
+          bankName: true,
+          bankAccountNumber: true,
+          bankAccountHolder: true,
+        },
       })
     : null;
   if (!store) {
@@ -12,6 +22,17 @@ async function createWaste(data) {
     error.code = 'STORE_REQUIRED';
     throw error;
   }
+  if ([store.shippingOriginContactName, store.shippingOriginContactPhone, store.shippingOriginAddress, store.shippingOriginPostalCode,
+    store.bankName, store.bankAccountNumber, store.bankAccountHolder].some((value) => !value?.trim())) {
+    const error = new Error('Lengkapi alamat pickup dan rekening toko sebelum mengunggah produk.');
+    error.code = 'STORE_PROFILE_INCOMPLETE';
+    throw error;
+  }
+  if (!store.shippingOriginRegion || ['provinceCode', 'province', 'cityCode', 'city', 'districtCode', 'district', 'villageCode', 'village', 'details']
+    .some((key) => !String(store.shippingOriginRegion[key] || '').trim()))
+    throw new Error('Pilih provinsi hingga desa/kelurahan pada alamat pickup toko sebelum mengunggah produk.');
+  if (!/^\d{5}$/.test(store.shippingOriginPostalCode) || !/^\d{6,30}$/.test(store.bankAccountNumber))
+    throw new Error('Periksa kembali kode pos pickup dan nomor rekening toko.');
   const waste = await prisma.wasteProduct.create({
     data: {
       title: data.title,
@@ -115,7 +136,7 @@ async function getAllWastes(query) {
         },
       },
 
-      store: true,
+      store: { select: { id: true, name: true, description: true, location: true, image: true, ownerId: true } },
     },
 
     orderBy,
@@ -216,7 +237,7 @@ async function getWasteById(id) {
         },
       },
 
-      store: true,
+      store: { select: { id: true, name: true, description: true, location: true, image: true, ownerId: true } },
     },
   });
 

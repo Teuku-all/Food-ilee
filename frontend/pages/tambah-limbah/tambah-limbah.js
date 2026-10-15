@@ -37,6 +37,22 @@ export async function renderTambahLimbah() {
       injectWasteStyles();
       return;
     }
+    const store = storeResult.data;
+    const requiredStoreFields = [
+      store.shippingOriginContactName, store.shippingOriginContactPhone,
+      store.shippingOriginAddress, store.shippingOriginPostalCode,
+      store.bankName, store.bankAccountNumber, store.bankAccountHolder,
+    ];
+    const regionComplete = store.shippingOriginRegion && ['provinceCode', 'province', 'cityCode', 'city', 'districtCode', 'district', 'villageCode', 'village', 'details']
+      .every((key) => String(store.shippingOriginRegion[key] || '').trim());
+    if (requiredStoreFields.some((value) => !String(value || '').trim()) || !regionComplete) {
+      renderShell(
+        'add',
+        `<section class="wa-page"><div class="wa-store-required fi-card"><span aria-hidden="true">⌂</span><p class="wa-kicker">PROFIL TOKO BELUM LENGKAP</p><h1>Lengkapi alamat pickup dan rekening</h1><p>Alamat pickup diperlukan untuk cek ongkir. Rekening diperlukan untuk pencatatan penyelesaian pembayaran penjual. Produk baru bisa diunggah setelah keduanya lengkap.</p><a class="fi-button" href="#kelola-toko">Lengkapi profil toko <span>→</span></a></div></section>`,
+      );
+      injectWasteStyles();
+      return;
+    }
   } catch (error) {
     if (!isRouteCurrent('#tambah-limbah', navigationRevision)) return;
     renderShell(

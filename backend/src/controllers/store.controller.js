@@ -12,6 +12,14 @@ async function createStore(req, res) {
       image: req.file ? req.file.path : null,
 
       ownerId: req.user.id,
+      shippingOriginContactName: req.body.shippingOriginContactName,
+      shippingOriginContactPhone: req.body.shippingOriginContactPhone,
+      shippingOriginAddress: req.body.shippingOriginAddress,
+      shippingOriginPostalCode: req.body.shippingOriginPostalCode,
+      shippingOriginRegion: req.body.shippingOriginRegion,
+      bankName: req.body.bankName,
+      bankAccountNumber: req.body.bankAccountNumber,
+      bankAccountHolder: req.body.bankAccountHolder,
     });
 
     res.status(201).json({
@@ -20,7 +28,7 @@ async function createStore(req, res) {
       data: store,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(400).json({
       success: false,
 
       message: error.message,
@@ -53,6 +61,14 @@ async function updateStore(req, res) {
       description: req.body.description,
       location: req.body.location,
       image: req.file ? req.file.path : undefined,
+      shippingOriginContactName: req.body.shippingOriginContactName,
+      shippingOriginContactPhone: req.body.shippingOriginContactPhone,
+      shippingOriginAddress: req.body.shippingOriginAddress,
+      shippingOriginPostalCode: req.body.shippingOriginPostalCode,
+      shippingOriginRegion: req.body.shippingOriginRegion,
+      bankName: req.body.bankName,
+      bankAccountNumber: req.body.bankAccountNumber,
+      bankAccountHolder: req.body.bankAccountHolder,
     });
     res.status(200).json({ success: true, data: store });
   } catch (error) {

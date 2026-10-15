@@ -2,10 +2,16 @@ const orderService = require('../services/order.service');
 
 function withPaymentUrl(order) {
   if (!order?.paymentToken || order.paymentStatus !== 'pending') return order;
-  const host = process.env.MIDTRANS_IS_PRODUCTION === 'true'
+  const snapHost = process.env.MIDTRANS_IS_PRODUCTION === 'true'
     ? 'https://app.midtrans.com'
     : 'https://app.sandbox.midtrans.com';
-  return { ...order, paymentUrl: `${host}/snap/v2/vtweb/${encodeURIComponent(order.paymentToken)}` };
+  return {
+    ...order,
+    paymentUrl: `${snapHost}/snap/v2/vtweb/${encodeURIComponent(order.paymentToken)}`,
+    snapToken: order.paymentToken,
+    snapClientKey: process.env.MIDTRANS_CLIENT_KEY,
+    snapJsUrl: `${snapHost}/snap/snap.js`,
+  };
 }
 
 async function createOrder(req, res) {
@@ -34,7 +40,7 @@ async function createOrder(req, res) {
 
 async function getShippingRates(req, res) {
   try {
-    const data = await orderService.getRates(req.user.id, req.body.items, req.body.address);
+    const data = await orderService.getRates(req.user.id, req.body.items, req.body.address, req.body.paymentMethod || 'midtrans');
     res.json({ success: true, data });
   } catch (error) {
     const unavailable = /BITESHIP|Biteship|tidak dapat dihubungi|timeout|waktu|layanan data/i.test(error.message);
@@ -45,7 +51,20 @@ async function getShippingRates(req, res) {
 async function createCheckout(req, res) {
   try {
     const order = await orderService.createCheckout(req.user.id, req.body);
-    res.status(201).json({ success: true, data: order });
+    const snapHost = process.env.MIDTRANS_IS_PRODUCTION === 'true'
+      ? 'https://app.midtrans.com'
+      : 'https://app.sandbox.midtrans.com';
+    res.status(201).json({
+      success: true,
+      data: order.paymentMethod === 'cod'
+        ? order
+        : {
+            ...order,
+            snapToken: order.paymentToken,
+            snapClientKey: process.env.MIDTRANS_CLIENT_KEY,
+            snapJsUrl: `${snapHost}/snap/snap.js`,
+          },
+    });
   } catch (error) {
     const unavailable = /BITESHIP|Biteship|tidak dapat dihubungi|timeout|waktu|layanan data|Midtrans/i.test(error.message);
     res.status(unavailable ? 503 : 400).json({ success: false, message: error.message });

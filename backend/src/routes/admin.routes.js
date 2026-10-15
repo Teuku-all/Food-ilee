@@ -21,5 +21,6 @@ router.patch('/users/:id/ban', adminController.banUser);
 router.delete('/wastes/:id', adminController.deleteWaste);
 
 router.get('/analytics', adminController.getAnalytics);
+router.patch('/stores/:id/midtrans-merchant', adminController.setStoreMidtransMerchantId);
 
 module.exports = router;

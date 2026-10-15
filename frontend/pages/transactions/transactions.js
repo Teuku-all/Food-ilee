@@ -105,7 +105,7 @@ async function loadOrders(revision) {
     if (!result.success) throw new Error(result.message || 'Gagal memuat transaksi.');
     document.getElementById('tx-order-list')?.removeAttribute('aria-busy');
     allOrders = Array.isArray(result.data) ? result.data : Array.isArray(result) ? result : [];
-    const pending = allOrders.filter((order) => order.paymentStatus === 'pending').slice(0, 8);
+    const pending = allOrders.filter((order) => order.paymentStatus === 'pending' && order.paymentMethod !== 'cod').slice(0, 8);
     const refreshed = await Promise.allSettled(pending.map((order) => refreshOrderPayment(order.id)));
     refreshed.forEach((entry) => {
       if (entry.status !== 'fulfilled' || !entry.value?.success) return;
@@ -189,14 +189,24 @@ function renderOrders() {
           .toUpperCase(),
       )}</span></div></div><span class="tx-status tx-status-${status.tone}">${escapeHtml(status.label)}</span></header>
       <div class="tx-order-content"><img class="tx-item-image" src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'"><div class="tx-item-info"><h2>${escapeHtml(title)}</h2><p>${quantity.toLocaleString('id-ID')} kg <span>×</span> ${formatRupiah(unitPrice)}</p><span class="tx-impact">${escapeHtml(PAYMENT_STATUS[order.paymentStatus] || 'Status pembayaran belum tersedia')} · Pengiriman: ${escapeHtml(SHIPPING_STATUS[order.shippingStatus] || order.shippingStatus || 'Belum tersedia')}</span><span class="tx-impact">\u267b Membantu mengurangi ${Math.round(quantity * 0.3)} kg emisi CO\u2082</span></div><div class="tx-total"><span>Total Belanja</span><strong>${formatRupiah(total)}</strong></div></div>
-      <footer class="tx-order-actions">${order.status === 'pending' && order.paymentUrl ? `<a class="tx-button tx-button-primary" href="${escapeHtml(order.paymentUrl)}">Lanjutkan Pembayaran</a>` : ''}${order.paymentStatus === 'pending' ? `<button class="tx-button tx-button-outline" type="button" data-payment-status="${id}">Periksa Pembayaran</button>` : ''}${shipped && order.trackingUrl ? `<a class="tx-button tx-button-outline" target="_blank" rel="noopener" href="${escapeHtml(order.trackingUrl)}">Lacak Paket</a>` : ''}<button class="tx-button tx-button-outline" type="button" data-detail="${id}">Lihat Detail</button>${completed ? `<button class="tx-button tx-button-primary" type="button" data-review="${id}">Beri Ulasan</button>` : ''}</footer>
+      <footer class="tx-order-actions">${order.paymentStatus === 'pending' && order.paymentMethod !== 'cod' && order.snapToken ? `<button class="tx-button tx-button-primary" type="button" data-pay-snap="${id}">Lanjutkan Pembayaran</button>` : ''}${order.paymentStatus === 'pending' && order.paymentMethod !== 'cod' ? `<button class="tx-button tx-button-outline" type="button" data-payment-status="${id}">Periksa Pembayaran</button>` : ''}${shipped && order.trackingUrl ? `<a class="tx-button tx-button-outline" target="_blank" rel="noopener" href="${escapeHtml(order.trackingUrl)}">Lacak Paket</a>` : ''}<button class="tx-button tx-button-outline" type="button" data-detail="${id}">Lihat Detail</button>${completed ? `<button class="tx-button tx-button-primary" type="button" data-review="${id}">Beri Ulasan</button>` : ''}</footer>
     </article>`;
     })
     .join('');
 
+  visible.forEach((order, index) => {
+    if (order.paymentMethod !== 'cod') return;
+    const paymentLine = list.querySelectorAll('.tx-order-card .tx-item-info .tx-impact')[index * 2];
+    if (paymentLine) paymentLine.textContent = `${order.paymentStatus === 'paid' ? 'COD dibayar dan terverifikasi' : 'COD · bayar kepada kurir saat diterima'} · Pengiriman: ${SHIPPING_STATUS[order.shippingStatus] || order.shippingStatus || 'Belum tersedia'}`;
+  });
+
   list
     .querySelectorAll('[data-detail]')
     .forEach((button) => button.addEventListener('click', () => showDetail(button.dataset.detail)));
+  list.querySelectorAll('[data-pay-snap]').forEach((button) => button.addEventListener('click', () => {
+    const order = allOrders.find((item) => item.id === button.dataset.paySnap);
+    if (order) openSnapPayment(order);
+  }));
   list.querySelectorAll('[data-payment-status]').forEach((button) => button.addEventListener('click', async () => {
     button.disabled = true;
     button.textContent = 'Memeriksa…';
@@ -239,13 +249,32 @@ function showDetail(id) {
   dialog.innerHTML = `<section class="tx-detail-card"><button type="button" class="tx-dialog-close" aria-label="Tutup">×</button><p class="tx-dialog-kicker">RINGKASAN PESANAN</p><h2>Pesanan ${escapeHtml(String(order.id).slice(-8).toUpperCase())}</h2><span class="tx-status tx-status-${STATUS[order.status]?.tone || 'unknown'}">${escapeHtml(status)}</span><div class="tx-detail-items">${items.map((item) => `<div><img src="${escapeHtml(item.image || FALLBACK_IMAGE)}" alt=""><span><strong>${escapeHtml(item.title || 'Produk pangan')}</strong><small>${Number(item.quantity || 0).toLocaleString('id-ID')} kg × ${formatRupiah(item.unitPrice)}</small></span><b>${formatRupiah(Number(item.quantity || 0) * Number(item.unitPrice || 0))}</b></div>`).join('')}</div><dl><div><dt>Penjual</dt><dd>${escapeHtml(seller)}</dd></div><div><dt>Tanggal pesanan</dt><dd>${escapeHtml(formatDate(order.createdAt))}</dd></div><div><dt>Penerima</dt><dd>${escapeHtml(shippingAddress.recipientName || 'Belum tersedia')}</dd></div><div><dt>Telepon</dt><dd>${escapeHtml(shippingAddress.phone || 'Belum tersedia')}</dd></div><div><dt>Alamat tujuan</dt><dd>${escapeHtml([shippingAddress.details, shippingAddress.village, shippingAddress.district, shippingAddress.city, shippingAddress.province, shippingAddress.postalCode].filter(Boolean).join(', ') || 'Belum tersedia')}</dd></div><div><dt>Subtotal</dt><dd>${formatRupiah(order.subtotal ?? order.total)}</dd></div><div><dt>Diskon</dt><dd>${formatRupiah(order.discount || 0)}</dd></div><div><dt>Ongkir</dt><dd>${order.shippingCost == null ? 'Belum tersedia' : formatRupiah(order.shippingCost)}</dd></div><div><dt>Total pembayaran</dt><dd>${formatRupiah(order.total)}</dd></div><div><dt>Status pembayaran</dt><dd>${escapeHtml(PAYMENT_STATUS[order.paymentStatus] || 'Belum tersedia')}</dd></div><div><dt>Status pesanan</dt><dd>${escapeHtml(status)}</dd></div><div><dt>Status pengiriman</dt><dd>${escapeHtml(SHIPPING_STATUS[order.shippingStatus] || order.shippingStatus || 'Belum tersedia')}</dd></div><div><dt>Kurir</dt><dd>${escapeHtml([order.courier, order.courierServiceName || order.courierService].filter(Boolean).join(' · ') || 'Belum tersedia')}</dd></div><div><dt>Nomor resi</dt><dd>${escapeHtml(order.trackingNumber || 'Belum tersedia')}</dd></div></dl>${order.paymentUrl ? `<a class="tx-button tx-button-primary" href="${escapeHtml(order.paymentUrl)}">Lanjutkan Pembayaran</a>` : ''}${order.trackingUrl ? `<a class="tx-button tx-button-outline" target="_blank" rel="noopener" href="${escapeHtml(order.trackingUrl)}">Lacak paket</a>` : ''}<p class="tx-detail-refresh" aria-live="polite"></p></section>`;
   document.body.append(dialog);
   dialog.showModal();
+  const paymentLink = dialog.querySelector('a[href*="/snap/v2/vtweb/"]');
+  paymentLink?.addEventListener('click', (event) => {
+    event.preventDefault();
+    openSnapPayment(order);
+  });
+  if (order.paymentMethod === 'cod') {
+    if (Number(order.codFee) > 0) {
+      const feeRow = document.createElement('div');
+      const feeLabel = document.createElement('dt'); feeLabel.textContent = 'Biaya layanan COD';
+      const feeValue = document.createElement('dd'); feeValue.textContent = `${formatRupiah(order.codFee)} · dipotong dari pencairan penjual`;
+      feeRow.append(feeLabel, feeValue);
+      dialog.querySelector('dl')?.append(feeRow);
+    }
+    const paymentRow = [...dialog.querySelectorAll('dl div')].find((row) => row.querySelector('dt')?.textContent === 'Status pembayaran');
+    const value = paymentRow?.querySelector('dd');
+    if (value) value.textContent = order.paymentStatus === 'paid'
+      ? 'COD dibayar ke kurir dan terverifikasi'
+      : 'COD · bayar ke kurir saat pesanan diterima';
+  }
   getOrder(id).then((result) => {
     if (!dialog.isConnected || !result.success) return;
     const latest = result.data;
     const detail = dialog.querySelector('.tx-detail-card');
     const old = allOrders.findIndex((item) => item.id === id);
     if (old >= 0) allOrders[old] = latest;
-    if (latest.paymentStatus === 'pending') refreshOrderPayment(id).then((payment) => {
+    if (latest.paymentStatus === 'pending' && latest.paymentMethod !== 'cod') refreshOrderPayment(id).then((payment) => {
       if (!dialog.isConnected || !payment.success) return;
       const index = allOrders.findIndex((item) => item.id === id);
       if (index >= 0) allOrders[index] = payment.data;
@@ -262,6 +291,46 @@ function showDetail(id) {
       dialog.remove();
     }
   });
+}
+
+async function openSnapPayment(order) {
+  if (!order.snapToken || !order.snapClientKey || !order.snapJsUrl) {
+    showToast('Informasi pembayaran belum lengkap. Muat ulang transaksi.', 'error');
+    return;
+  }
+  try {
+    if (!window.snap) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = order.snapJsUrl;
+        script.dataset.clientKey = order.snapClientKey;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Snap Midtrans gagal dimuat.'));
+        document.head.append(script);
+      });
+    }
+    const verify = async (message) => {
+      try {
+        const result = await refreshOrderPayment(order.id);
+        if (!result.success) throw new Error(result.message || 'Status belum dapat diperiksa.');
+        const index = allOrders.findIndex((item) => item.id === order.id);
+        if (index >= 0) allOrders[index] = result.data;
+        renderOrders();
+        showToast(result.data.paymentStatus === 'paid' ? 'Pembayaran terverifikasi.' : message);
+      } catch (error) {
+        showToast(error.message || 'Status pembayaran belum dapat diperiksa.', 'error');
+      }
+    };
+    window.snap.pay(order.snapToken, {
+      language: 'id',
+      onSuccess: () => verify('Pembayaran sedang diverifikasi server.'),
+      onPending: () => verify('Pembayaran masih menunggu konfirmasi.'),
+      onError: () => verify('Pembayaran belum berhasil.'),
+      onClose: () => verify('Pembayaran belum selesai. Pesanan tetap tersimpan.'),
+    });
+  } catch (error) {
+    showToast(error.message || 'Halaman pembayaran belum dapat dimuat.', 'error');
+  }
 }
 
 function reviewOrder(id) {

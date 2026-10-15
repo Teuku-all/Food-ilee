@@ -94,7 +94,7 @@ async function getPublicProfile(username) {
 
       bio: true,
 
-      store: true,
+      store: { select: { id: true, name: true, description: true, location: true, image: true } },
     },
   });
 }

@@ -101,6 +101,16 @@ async function getAnalytics() {
   };
 }
 
+async function setStoreMidtransMerchantId(storeId, merchantId) {
+  if (typeof merchantId !== 'string' || !/^[A-Za-z0-9_-]{2,64}$/.test(merchantId.trim()))
+    throw new Error('ID merchant Midtrans tidak valid.');
+  return prisma.store.update({
+    where: { id: storeId },
+    data: { midtransMerchantId: merchantId.trim() },
+    select: { id: true, name: true, midtransMerchantId: true },
+  });
+}
+
 module.exports = {
   getAllUsers,
   getAllWastes,
@@ -108,4 +118,5 @@ module.exports = {
   banUser,
   deleteWaste,
   getAnalytics,
+  setStoreMidtransMerchantId,
 };

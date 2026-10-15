@@ -24,6 +24,9 @@ async function refreshPaymentStatus(req, res) {
         ? 'https://app.midtrans.com'
         : 'https://app.sandbox.midtrans.com';
       latest.paymentUrl = `${host}/snap/v2/vtweb/${encodeURIComponent(latest.paymentToken)}`;
+      latest.snapToken = latest.paymentToken;
+      latest.snapClientKey = process.env.MIDTRANS_CLIENT_KEY;
+      latest.snapJsUrl = `${host}/snap/snap.js`;
     }
     return res.json({ success: true, data: latest });
   } catch (error) {

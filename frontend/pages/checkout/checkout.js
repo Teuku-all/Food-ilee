@@ -1,4 +1,4 @@
-import { createCheckout, getShippingRates } from '../../services/order.js';
+import { createCheckout, getShippingRates, refreshOrderPayment } from '../../services/order.js';
 import { getWaste } from '../../services/waste.js';
 import { escapeHtml } from '../../utils/html.js';
 import { showToast, injectToastStyle } from '../../utils/toast.js';
@@ -20,6 +20,7 @@ let selectedRate = null;
 let rateRevision = 0;
 let rateTimer = null;
 let checkoutBusy = false;
+let paymentMethod = 'midtrans';
 
 function formatPrice(value) { return `Rp${Number(value || 0).toLocaleString('id-ID')}`; }
 function readCart() {
@@ -73,8 +74,17 @@ export async function renderCheckout() {
   rates = [];
   selectedRate = null;
   checkoutBusy = false;
+  paymentMethod = 'midtrans';
   const app = document.getElementById('app');
   app.innerHTML = `<div class="co-app">${dashboardHeader('market')}<main class="co-main"><a class="co-back" href="#cart">&larr; Kembali ke keranjang</a><header class="co-heading"><p>PEMBAYARAN AMAN</p><h1>Pembayaran</h1><span>Lengkapi alamat dan pengiriman untuk produk yang Anda pilih.</span></header><div class="co-layout"><div class="co-left"><section class="co-panel"><div class="co-section-head"><span>01</span><div><h2>Alamat penerima</h2><p>Wilayah Indonesia berjenjang. Ongkir dihitung ulang oleh server.</p></div></div><label class="co-label">Alamat tersimpan<select id="co-saved"><option value="">Pilih alamat tersimpan</option></select></label><form id="co-address" class="co-form" novalidate><div class="co-two"><label class="co-label">Nama penerima<input name="recipientName" autocomplete="name" required maxlength="100"></label><label class="co-label">Nomor telepon<input name="phone" autocomplete="tel" inputmode="tel" required maxlength="20"></label></div><label class="co-label">Provinsi<select id="co-province" required><option value="">Pilih provinsi</option></select></label><label class="co-label">Kabupaten/Kota<select id="co-city" required disabled><option value="">Pilih kabupaten/kota</option></select></label><label class="co-label">Kecamatan<select id="co-district" required disabled><option value="">Pilih kecamatan</option></select></label><label class="co-label">Desa/Kelurahan<select id="co-village" required disabled><option value="">Pilih desa/kelurahan</option></select></label><div class="co-two"><label class="co-label">Kode pos<input name="postalCode" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" required></label><label class="co-label">Detail alamat<input name="details" placeholder="Nama jalan, nomor rumah, RT/RW" required maxlength="240"></label></div><label class="co-label">Catatan untuk kurir (opsional)<input name="notes" maxlength="200"></label><button class="co-save-address" type="button" id="co-save-address">Simpan alamat ini</button><p class="co-error" id="co-address-error" role="alert"></p></form></section><section class="co-panel"><div class="co-section-head"><span>02</span><div><h2>Produk yang akan dibayar</h2><p>Rincian dan jumlah produk terpilih. Harga serta stok diperiksa kembali oleh server.</p></div></div><div id="co-items" class="co-items"><div class="co-loading">Memuat produk…</div></div></section><section class="co-panel"><div class="co-section-head"><span>03</span><div><h2>Pengiriman</h2><p>Pilihan kurir dan tarif aktual dari Biteship untuk produk terpilih.</p></div></div><div id="co-rates" class="co-rates"><p>Lengkapi alamat dan pilih produk untuk memuat layanan pengiriman.</p></div></section></div><aside class="co-summary"><h2>Ringkasan pembayaran</h2><div class="co-summary-row"><span>Produk dipilih</span><strong id="co-selected-count">0 produk</strong></div><div class="co-summary-row"><span>Subtotal produk</span><strong id="co-subtotal">—</strong></div><div class="co-summary-row"><span>Diskon</span><strong>Rp0</strong></div><div class="co-summary-row"><span>Pengiriman</span><strong id="co-shipping">Pilih layanan</strong></div><div class="co-summary-total"><span>Total</span><strong id="co-total">—</strong></div><button type="button" id="co-pay" disabled>Checkout produk dipilih</button><p id="co-pay-error" class="co-error" role="alert"></p><small>Total final dihitung dan diverifikasi kembali oleh backend.</small></aside></div></main>${dashboardFooter()}</div>`;
+  const paymentOptions = document.createElement('fieldset');
+  paymentOptions.className = 'co-payment-choice';
+  paymentOptions.innerHTML = `<legend>Metode pembayaran</legend><label><input type="radio" name="payment-method" value="midtrans" checked><span><strong>Bayar online</strong><small>Midtrans · pembayaran di halaman ini</small></span></label><label><input type="radio" name="payment-method" value="cod"><span><strong>Bayar di tempat</strong><small>COD · bayar kepada kurir saat pesanan tiba</small></span></label>`;
+  document.querySelector('.co-summary').insertBefore(paymentOptions, document.getElementById('co-pay'));
+  const snapPanel = document.createElement('section');
+  snapPanel.className = 'co-snap-panel'; snapPanel.hidden = true;
+  snapPanel.innerHTML = '<h2>Pembayaran aman melalui Midtrans</h2><p>Kamu tetap berada di halaman Food Ilee. Status pembayaran dikonfirmasi oleh server.</p><div id="co-snap-container"></div><p id="co-snap-status" role="status"></p><a href="#transaksi">Lihat transaksi</a>';
+  document.querySelector('.co-layout').after(snapPanel);
   injectCheckoutStyles(); injectToastStyle(); bindSharedHeader();
   await loadProducts(navigationRevision);
   if (!isRouteCurrent('#checkout', navigationRevision)) return;
@@ -150,6 +160,11 @@ function bindAddressForm() {
     showToast('Alamat tersimpan di perangkat ini.');
   });
   document.getElementById('co-pay').addEventListener('click', submitCheckout);
+  document.querySelectorAll('input[name="payment-method"]').forEach((radio) => radio.addEventListener('change', () => {
+    paymentMethod = radio.value;
+    invalidateCheckoutKey();
+    loadRates();
+  }));
 }
 
 async function fetchRegions(resource, parent) {
@@ -265,10 +280,12 @@ function updateSummary() {
   const subtotal = chosenItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
   document.getElementById('co-selected-count').textContent = `${chosenItems.length} ${chosenItems.length === 1 ? 'produk' : 'produk'}`;
   document.getElementById('co-subtotal').textContent = formatPrice(subtotal);
-  document.getElementById('co-shipping').textContent = selectedRate ? formatPrice(selectedRate.price) : 'Pilih layanan';
+  document.getElementById('co-shipping').textContent = selectedRate ? `${formatPrice(selectedRate.price)}${paymentMethod === 'cod' && selectedRate.cashOnDeliveryFee ? ` · COD ${formatPrice(selectedRate.cashOnDeliveryFee)} dipotong dari pencairan penjual` : ''}` : 'Pilih layanan';
   document.getElementById('co-total').textContent = formatPrice(subtotal + Number(selectedRate?.price || 0));
   const valid = !validateForm() && chosenItems.length > 0 && selectedRate && !checkoutBusy;
-  document.getElementById('co-pay').disabled = !valid;
+  const payButton = document.getElementById('co-pay');
+  payButton.disabled = !valid;
+  payButton.textContent = paymentMethod === 'cod' ? 'Buat Pesanan COD' : 'Lanjut Bayar di Halaman Ini';
 }
 
 async function loadRates() {
@@ -290,12 +307,12 @@ async function loadRatesNow(revision, navigationRevision = getNavigationRevision
   if (error || !chosenItems.length) { root.innerHTML = `<p>${escapeHtml(error || 'Centang minimal satu produk untuk melihat tarif.')}</p>`; return; }
   root.innerHTML = '<div class="co-loading">Mengambil tarif kurir…</div>';
   try {
-    const result = await getShippingRates(chosenItems.map((item) => ({ wasteId: item.id, quantity: item.quantity })), readAddress());
+    const result = await getShippingRates(chosenItems.map((item) => ({ wasteId: item.id, quantity: item.quantity })), readAddress(), paymentMethod);
     if (revision !== rateRevision || !isRouteCurrent('#checkout', navigationRevision)) return;
     if (!result.success) throw new Error(result.message || 'Tarif pengiriman belum tersedia.');
-    rates = result.data || [];
-    if (!rates.length) { root.innerHTML = '<p class="co-error">Tidak ada layanan pengiriman yang tersedia untuk alamat ini.</p>'; return; }
-    root.innerHTML = rates.map((rate, index) => `<label class="co-rate"><input type="radio" name="co-rate" value="${index}"><span><strong>${escapeHtml(rate.courierName)} · ${escapeHtml(rate.serviceName)}</strong><small>${escapeHtml(rate.duration || 'Estimasi belum tersedia')}</small></span><b>${formatPrice(rate.price)}</b></label>`).join('');
+    rates = (result.data || []).filter((rate) => paymentMethod !== 'cod' || rate.supportsCod);
+    if (!rates.length) { root.innerHTML = `<p class="co-error">${paymentMethod === 'cod' ? 'Tidak ada layanan COD untuk alamat ini. Pilih Midtrans atau kurir lain.' : 'Tidak ada layanan pengiriman yang tersedia untuk alamat ini.'}</p>`; return; }
+    root.innerHTML = rates.map((rate, index) => `<label class="co-rate"><input type="radio" name="co-rate" value="${index}"><span><strong>${escapeHtml(rate.courierName)} · ${escapeHtml(rate.serviceName)}</strong><small>${escapeHtml(rate.duration || 'Estimasi belum tersedia')}${paymentMethod === 'cod' && rate.cashOnDeliveryFee ? ` · Biaya COD ${formatPrice(rate.cashOnDeliveryFee)} (dipotong dari pencairan penjual)` : ''}</small></span><b>${formatPrice(rate.price)}</b></label>`).join('');
     root.querySelectorAll('input').forEach((radio) => radio.addEventListener('change', () => {
       selectedRate = rates[Number(radio.value)]; updateSummary();
     }));
@@ -319,9 +336,9 @@ async function submitCheckout() {
     const current = readAddress();
     const result = await createCheckout(
       chosenItems.map((item) => ({ wasteId: item.id, quantity: item.quantity })),
-      current, selectedRate.company, selectedRate.courierType, checkoutKey(),
+      current, selectedRate.company, selectedRate.courierType, checkoutKey(), paymentMethod,
     );
-    if (!result.success || !result.data?.paymentUrl) throw new Error(result.message || 'Transaksi belum dapat dibuat.');
+    if (!result.success || !result.data) throw new Error(result.message || 'Transaksi belum dapat dibuat.');
     localStorage.setItem(ADDRESS_KEY, JSON.stringify(current));
     const purchasedIds = new Set(chosenItems.map((item) => item.wasteId));
     checkoutItems = checkoutItems.filter((item) => !purchasedIds.has(item.wasteId));
@@ -329,11 +346,62 @@ async function submitCheckout() {
     persistCart(); persistSelection();
     window.dispatchEvent(new Event('foodilee:cart-updated'));
     sessionStorage.removeItem(IDEMPOTENCY_KEY);
-    window.location.assign(result.data.paymentUrl);
+    if (paymentMethod === 'cod') {
+      const needsReview = ['configuration_missing', 'creation_requires_review'].includes(result.data.shippingStatus)
+        || !result.data.biteshipOrderId
+        || result.data.biteshipOrderId.startsWith('creating:');
+      showToast(needsReview
+        ? 'Pesanan tercatat, tetapi pengiriman belum terkonfirmasi. Periksa detail transaksi atau hubungi penjual.'
+        : 'Pesanan COD dibuat. Pembayaran dilakukan kepada kurir saat pesanan tiba.', needsReview ? 'error' : 'success');
+      location.hash = '#transaksi';
+      return;
+    }
+    if (!result.data.snapToken || !result.data.snapClientKey || !result.data.snapJsUrl)
+      throw new Error('Pesanan sudah dibuat, tetapi konfigurasi Snap belum lengkap. Buka transaksi untuk melanjutkan.');
+    button.disabled = true;
+    button.textContent = 'Pesanan dibuat';
+    const snapPanel = document.getElementById('co-snap-panel');
+    snapPanel.hidden = false;
+    snapPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    await loadSnapScript(result.data.snapJsUrl, result.data.snapClientKey);
+    const verifyAndShow = async (message) => {
+      const statusNode = document.getElementById('co-snap-status');
+      statusNode.textContent = message;
+      try {
+        const latest = await refreshOrderPayment(result.data.id);
+        if (!latest.success) throw new Error(latest.message);
+        statusNode.textContent = latest.data.paymentStatus === 'paid'
+          ? 'Pembayaran berhasil diverifikasi. Pesanan sedang diproses.'
+          : `Status backend: ${latest.data.paymentStatus === 'pending' ? 'menunggu pembayaran' : latest.data.paymentStatus}.`;
+      } catch {
+        statusNode.textContent = 'Pembayaran diterima oleh Snap. Konfirmasi server belum tersedia; periksa kembali di halaman transaksi.';
+      }
+    };
+    window.snap.embed(result.data.snapToken, {
+      embedId: 'co-snap-container', language: 'id',
+      onSuccess: () => verifyAndShow('Memverifikasi pembayaran…'),
+      onPending: () => verifyAndShow('Pembayaran menunggu penyelesaian…'),
+      onError: () => verifyAndShow('Pembayaran belum berhasil. Periksa status melalui transaksi.'),
+      onClose: () => verifyAndShow('Pembayaran belum selesai. Pesanan tersimpan di transaksi.'),
+    });
   } catch (error) {
     errorNode.textContent = error.message || 'Transaksi belum dapat dibuat.';
-    checkoutBusy = false; button.textContent = 'Lanjut ke Pembayaran'; updateSummary();
+    checkoutBusy = false;
+    if (selectedItems().length) { button.textContent = 'Lanjut Bayar di Halaman Ini'; updateSummary(); }
   }
+}
+
+function loadSnapScript(src, clientKey) {
+  if (window.snap) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.dataset.clientKey = clientKey;
+    script.dataset.foodileeSnap = 'true';
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('Snap Midtrans gagal dimuat. Pesanan sudah dibuat; lanjutkan dari halaman transaksi.'));
+    document.head.append(script);
+  });
 }
 
 function injectCheckoutStyles() {
@@ -385,6 +453,20 @@ function injectCheckoutStyles() {
     @media(max-width:700px){.co-item{display:grid;grid-template-columns:20px 64px minmax(0,1fr);align-items:start;gap:10px}.co-item img{width:64px;height:64px}.co-item-copy{min-width:0}.co-quantity{grid-column:2/-1;width:auto;justify-content:flex-start;padding-left:0}}
     @media(max-width:560px){.co-main{padding:24px 15px 52px}.co-heading{margin:20px 0;padding-bottom:18px}.co-heading h1{font-size:32px}.co-heading span{font-size:13px}.co-panel,.co-summary{padding:18px;border-radius:17px}.co-section-head{padding-bottom:14px}.co-layout{gap:14px}.co-select-all small{font-size:10px}.co-item{padding:14px 0}.co-quantity{gap:7px}.co-quantity button{width:31px;height:31px}}
     @media(prefers-reduced-motion:reduce){.co-back,.co-back::before,.co-rate,#co-pay{transition:none}}
+    .co-payment-choice{margin:18px 0;padding:13px;border:1px solid #dce7df;border-radius:13px;display:grid;gap:9px}
+    .co-payment-choice legend{padding:0 5px;color:#315746;font-size:12px;font-weight:700}
+    .co-payment-choice label{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #e0e9e3;border-radius:10px;cursor:pointer}
+    .co-payment-choice input{accent-color:#176457}
+    .co-payment-choice span{display:grid;gap:3px}
+    .co-payment-choice strong{color:#244b3b;font-size:12px}
+    .co-payment-choice small{color:#78877e;font-size:10px}
+    .co-snap-panel{margin:24px auto 0;padding:24px;border:1px solid #c6d6cc;border-radius:20px;background:#fff;box-shadow:0 8px 22px #173d3c0b}
+    .co-snap-panel[hidden]{display:none}
+    .co-snap-panel h2{margin:0;color:#174a3b;font-size:20px}
+    .co-snap-panel p{color:#61746a;font-size:13px;line-height:1.6}
+    #co-snap-container{min-height:560px;width:100%}
+    #co-snap-status{font-weight:600}
+    @media(max-width:560px){.co-snap-panel{padding:16px}#co-snap-container{min-height:570px}}
   `;
   document.head.append(style);
 }

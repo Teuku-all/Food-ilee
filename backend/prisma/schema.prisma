@@ -98,6 +98,16 @@ model Store {
 
   ownerId String @unique
 
+  shippingOriginContactName String?
+  shippingOriginContactPhone String?
+  shippingOriginAddress String?
+  shippingOriginPostalCode String?
+  shippingOriginRegion Json?
+  midtransMerchantId String?
+  bankName String?
+  bankAccountNumber String?
+  bankAccountHolder String?
+
   owner User @relation(fields: [ownerId], references: [id])
 
   products WasteProduct[]
@@ -164,10 +174,16 @@ model Order {
   paymentToken String?
   checkoutKey String? @unique
   paymentStatus String @default("pending")
+  paymentMethod String @default("midtrans")
+  codAmount Int?
+  codFee Int @default(0)
+  sellerSettlementAmount Int @default(0)
+  sellerSettlementStatus String @default("not_applicable")
   subtotal Int @default(0)
   discount Int @default(0)
   shippingCost Int @default(0)
   shippingAddress Json?
+  sellerShippingOrigin Json?
   courier String?
   courierService String?
   courierServiceName String?

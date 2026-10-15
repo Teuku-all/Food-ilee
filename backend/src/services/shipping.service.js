@@ -15,7 +15,12 @@ async function biteship(path, body) {
     try {
       response = await fetch(`${BITESHIP_URL}${path}`, {
       method: 'POST',
-      headers: { Authorization: process.env.BITESHIP_API_KEY, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: process.env.BITESHIP_API_KEY.startsWith('Bearer ')
+          ? process.env.BITESHIP_API_KEY
+          : `Bearer ${process.env.BITESHIP_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(body),
       signal: controller.signal,
       });
@@ -93,41 +98,92 @@ function makeItems(items) {
   }));
 }
 
-async function getRates(address, items) {
-  validateAddress(address);
-  await validateRegion(address);
-  requireConfig(['BITESHIP_ORIGIN_POSTAL_CODE', 'BITESHIP_COURIERS']);
-  if (!/^\d{5}$/.test(process.env.BITESHIP_ORIGIN_POSTAL_CODE))
-    throw new Error('BITESHIP_ORIGIN_POSTAL_CODE harus berupa 5 angka.');
-  const result = await biteship('/rates/couriers', {
-    origin_postal_code: Number(process.env.BITESHIP_ORIGIN_POSTAL_CODE),
+async function requestRates(origin, address, items, { codAmount, codType = '7_days', couriers } = {}) {
+  if (!origin || !/^\d{5}$/.test(String(origin.postalCode || '')))
+    throw new Error('Kode pos pickup penjual belum valid. Minta penjual memperbarui alamat tokonya.');
+  requireConfig(['BITESHIP_COURIERS']);
+  const request = {
+    origin_postal_code: Number(origin.postalCode),
     destination_postal_code: Number(address.postalCode),
-    couriers: process.env.BITESHIP_COURIERS,
+    couriers: couriers || process.env.BITESHIP_COURIERS,
     items: makeItems(items),
-  });
-  return (result.pricing || []).map((rate) => ({
+  };
+  if (codAmount) {
+    request.destination_cash_on_delivery = codAmount;
+    request.destination_cash_on_delivery_type = codType;
+  }
+  const result = await biteship('/rates/couriers', request);
+  return result.pricing || [];
+}
+
+function formatRate(rate, codAmount) {
+  const supportsCod = rate.available_for_cash_on_delivery === true;
+  return {
     company: rate.company,
     courierName: rate.courier_name,
     serviceName: rate.courier_service_name,
     serviceCode: rate.courier_service_code || rate.type,
     courierType: rate.type,
-    price: rate.price,
+    // With COD, `price` includes the COD service fee. The buyer pays item + shipping;
+    // the COD fee is recorded separately as a settlement deduction.
+    price: Number(codAmount ? rate.shipping_fee ?? rate.price : rate.price || 0),
+    biteshipPrice: Number(rate.price || 0),
+    cashOnDeliveryFee: rate.cash_on_delivery_fee == null ? null : Number(rate.cash_on_delivery_fee),
+    supportsCod,
+    ...(codAmount ? { codAmount } : {}),
     duration: rate.duration || null,
     collectionMethod: rate.available_collection_method?.[0] || 'pickup',
-  }));
+  };
+}
+
+async function getRates(origin, address, items, { codAmount, codType = '7_days' } = {}) {
+  validateAddress(address);
+  await validateRegion(address);
+  if (!codAmount) {
+    const rates = await requestRates(origin, address, items);
+    return rates.map((rate) => formatRate(rate));
+  }
+  if (!Number.isSafeInteger(Number(codAmount)) || Number(codAmount) <= 0 || Number(codAmount) > 15000000)
+    throw new Error('Nilai COD harus lebih dari nol dan tidak melebihi batas Biteship.');
+  if (!['3_days', '5_days', '7_days'].includes(codType))
+    throw new Error('BITESHIP_COD_SETTLEMENT_DAYS harus bernilai 3_days, 5_days, atau 7_days.');
+  const baseRates = await requestRates(origin, address, items);
+  const eligible = baseRates.filter((rate) => rate.available_for_cash_on_delivery === true);
+  const output = new Array(eligible.length);
+  let cursor = 0;
+  async function worker() {
+    while (cursor < eligible.length) {
+      const index = cursor++;
+      const baseRate = eligible[index];
+      const CODAmount = Number(codAmount) + Number(baseRate.shipping_fee ?? baseRate.price ?? 0);
+      if (CODAmount > 15000000) continue;
+      const codRates = await requestRates(origin, address, items, {
+        codAmount: CODAmount,
+        codType,
+        couriers: baseRate.company,
+      });
+      const quoted = codRates.find((rate) => rate.company === baseRate.company && rate.type === baseRate.type);
+      if (!quoted || quoted.available_for_cash_on_delivery !== true) continue;
+      output[index] = formatRate(quoted, CODAmount);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(3, eligible.length) }, () => worker()));
+  return output.filter(Boolean);
 }
 
 async function createShipment(order, buyer, items) {
-  requireConfig([
-    'BITESHIP_ORIGIN_POSTAL_CODE', 'BITESHIP_ORIGIN_CONTACT_NAME',
-    'BITESHIP_ORIGIN_CONTACT_PHONE', 'BITESHIP_ORIGIN_ADDRESS',
-  ]);
+  const origin = order.sellerShippingOrigin;
+  if (!origin?.contactName || !origin?.contactPhone || !origin?.address || !/^\d{5}$/.test(String(origin?.postalCode || '')))
+    throw new Error('Snapshot alamat pickup penjual tidak lengkap.');
   const address = order.shippingAddress;
+  const codDays = process.env.BITESHIP_COD_SETTLEMENT_DAYS || '7_days';
+  if (order.paymentMethod === 'cod' && !['3_days', '5_days', '7_days'].includes(codDays))
+    throw new Error('BITESHIP_COD_SETTLEMENT_DAYS harus bernilai 3_days, 5_days, atau 7_days.');
   const result = await biteship('/orders', {
-    origin_contact_name: process.env.BITESHIP_ORIGIN_CONTACT_NAME,
-    origin_contact_phone: process.env.BITESHIP_ORIGIN_CONTACT_PHONE,
-    origin_address: process.env.BITESHIP_ORIGIN_ADDRESS,
-    origin_postal_code: Number(process.env.BITESHIP_ORIGIN_POSTAL_CODE),
+    origin_contact_name: origin.contactName,
+    origin_contact_phone: origin.contactPhone,
+    origin_address: origin.address,
+    origin_postal_code: Number(origin.postalCode),
     destination_contact_name: address.recipientName,
     destination_contact_phone: address.phone,
     destination_contact_email: buyer.email || undefined,
@@ -135,6 +191,12 @@ async function createShipment(order, buyer, items) {
     destination_postal_code: Number(address.postalCode),
     courier_company: order.courier,
     courier_type: order.courierService,
+    ...(order.paymentMethod === 'cod'
+      ? {
+          destination_cash_on_delivery: order.codAmount,
+          destination_cash_on_delivery_type: codDays,
+        }
+      : {}),
     delivery_type: 'now',
     origin_collection_method: order.shippingAddress.collectionMethod || 'pickup',
     reference_id: order.id,

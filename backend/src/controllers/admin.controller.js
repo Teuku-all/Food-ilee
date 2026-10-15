@@ -108,6 +108,15 @@ async function getAnalytics(req, res) {
   }
 }
 
+async function setStoreMidtransMerchantId(req, res) {
+  try {
+    const store = await adminService.setStoreMidtransMerchantId(req.params.id, req.body.merchantId);
+    res.status(200).json({ success: true, data: store });
+  } catch (error) {
+    res.status(error.code === 'P2025' ? 404 : 400).json({ success: false, message: error.message });
+  }
+}
+
 module.exports = {
   getAllUsers,
   getAllWastes,
@@ -115,4 +124,5 @@ module.exports = {
   banUser,
   deleteWaste,
   getAnalytics,
+  setStoreMidtransMerchantId,
 };
