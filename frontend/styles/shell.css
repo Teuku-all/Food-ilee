@@ -1,13 +1,15 @@
 :root {
-  --fi-deep: #004847;
-  --fi-green: #087b78;
-  --fi-mint: #c3e5e3;
-  --fi-lilac: #d7e9e8;
-  --fi-ink: #173d3c;
+  --fi-deep: #071a12;
+  --fi-green: #1d5637;
+  --fi-mint: #a3e6b8;
+  --fi-lilac: #dff3e5;
+  --fi-ink: #173d2c;
   --fi-muted: #56716f;
-  --fi-line: #bfd4d2;
-  --fi-soft: #e5efee;
-  --fi-card: #edf6f5;
+  --fi-line: #c9dfd0;
+  --fi-soft: #edf7ef;
+  --fi-card: #f5fbf6;
+  --fi-blue: #1d4e89;
+  --fi-blue-bright: #4da3ff;
   --fi-radius: 22px;
 }
 html {
@@ -39,7 +41,7 @@ body {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 20px;
-  background: linear-gradient(112deg, #003f40 0%, #005653 56%, #087b78 100%);
+  background: linear-gradient(112deg, #071a12 0%, #123524 52%, #1d5637 100%);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -81,9 +83,10 @@ body {
   font-weight: 500;
   text-decoration: none;
   transition:
-    background 0.18s,
-    color 0.18s,
-    transform 0.18s;
+    background 0.24s ease,
+    color 0.24s ease,
+    transform 0.24s cubic-bezier(0.2, 0.7, 0.25, 1),
+    box-shadow 0.24s ease;
 }
 .fi-nav-link svg,
 .fi-account-toggle svg,
@@ -98,8 +101,10 @@ body {
 }
 .fi-nav-link:hover,
 .fi-nav-link.is-active {
-  background: rgba(255, 255, 255, 0.16);
+  background: linear-gradient(120deg, #39a96b, #1d4e89);
   color: #fff;
+  box-shadow: 0 5px 15px #071a1238;
+  transform: translateY(-1px);
 }
 .fi-account {
   width: 212px;
@@ -242,39 +247,32 @@ body {
 }
 .fi-footer {
   position: relative;
-  padding: 0 max(36px, calc((100vw - 1310px) / 2));
-  border-top: 0;
+  padding: 0 max(24px, calc((100vw - 1310px) / 2));
+  border-top: 1px solid #e8eeeb;
+  background: #fff;
   color: #4f5a56;
 }
-.fi-footer::before {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #b7d0ca 18%, #a8c9c1 50%, #b7d0ca 82%, transparent);
-  content: '';
-}
 .fi-footer-grid {
-  min-height: 270px;
+  min-height: 0;
   max-width: 1310px;
   margin: 0 auto;
-  padding: 58px 38px 40px;
+  padding: 36px 28px 28px;
   display: grid;
-  grid-template-columns: minmax(240px, 1.5fr) repeat(3, minmax(140px, 1fr));
+  grid-template-columns: minmax(220px, 1.5fr) repeat(3, minmax(130px, 1fr));
   align-items: start;
-  gap: clamp(28px, 4vw, 58px);
+  gap: clamp(20px, 3vw, 42px);
 }
 .fi-footer-grid > div {
   min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 11px;
-  font-size: 12px;
+  gap: 9px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 .fi-footer-grid h3 {
-  margin: 2px 0 8px;
+  margin: 0 0 5px;
   color: #26312c;
   font-size: 14px;
   font-weight: 600;
@@ -304,18 +302,19 @@ body {
   object-fit: contain;
 }
 .fi-footer-brand p {
-  max-width: 275px;
-  margin: 2px 0;
+  max-width: 260px;
+  margin: 0;
   color: #626d68;
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.6;
 }
 .fi-footer-bottom {
-  min-height: 68px;
-  border-top: 1px solid var(--fi-line);
+  min-height: 54px;
+  border-top: 1px solid #edf1ef;
   display: grid;
   place-items: center;
   color: #66716c;
+  line-height: 1.5;
   font-size: 11px;
   text-align: center;
 }
@@ -721,8 +720,9 @@ body {
 }
 
 .fi-nav-link[aria-current='page'] {
-  background: rgba(255, 255, 255, 0.16);
+  background: linear-gradient(120deg, #39a96b, #1d4e89);
   color: #fff;
+  box-shadow: 0 5px 15px #071a1238;
 }
 
 .fi-account-menu-links a[aria-current='page'] {
@@ -737,4 +737,33 @@ body {
 
 .fi-account-menu-actions > a {
   color: #315754;
+}
+/* Shared entrance motion keeps dialogs consistent across every page. */
+dialog[open] {
+  animation: fi-dialog-enter 0.28s cubic-bezier(0.2, 0.7, 0.25, 1) both;
+}
+dialog[open]::backdrop {
+  animation: fi-backdrop-enter 0.22s ease-out both;
+}
+@keyframes fi-dialog-enter {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes fi-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fi-card,
+.fi-product,
+.fi-stat {
+  transition: transform 0.24s cubic-bezier(0.2, 0.7, 0.25, 1), box-shadow 0.24s ease, border-color 0.24s ease;
+}
+.fi-card:hover,
+.fi-product:hover,
+.fi-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px #12352418;
+}
+@media (prefers-reduced-motion: reduce) {
+  dialog[open], dialog[open]::backdrop { animation: none !important; }
 }

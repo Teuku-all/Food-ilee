@@ -1,8 +1,12 @@
 :root {
-  --green: #087b78;
-  --green-dark: #005654;
+  --green: #1d5637;
+  --green-dark: #071a12;
   --gray: #56716f;
-  --border: #bfd4d2;
+  --border: #c9dfd0;
+  --green-bright: #39a96b;
+  --green-soft: #a3e6b8;
+  --blue: #1d4e89;
+  --blue-bright: #4da3ff;
   --white: #ffffff;
   --danger: #dc2626;
 
