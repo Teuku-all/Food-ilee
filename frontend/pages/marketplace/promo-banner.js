@@ -23,7 +23,7 @@ export function injectMarketplacePromoStyle() {
     .mp-promo{
       --promo-lift:-7px;--promo-zoom:1.045;--promo-arrow:3px;
       position:relative;isolation:isolate;display:grid;grid-template-columns:1.15fr 1fr;
-      margin-top:30px;overflow:hidden;border:1px solid #31746b;border-radius:28px;
+      margin:30px 0 32px;overflow:hidden;border:1px solid #31746b;border-radius:28px;
       background:linear-gradient(120deg,#004847,#0b5c50);color:#fff;
       box-shadow:0 14px 30px #123a2a20;
       transition:transform 300ms cubic-bezier(.2,.7,.2,1),box-shadow 300ms ease;
@@ -51,7 +51,7 @@ export function injectMarketplacePromoStyle() {
       .mp-promo:hover .mp-promo-cta>span{transform:translate(var(--promo-arrow),calc(-1 * var(--promo-arrow)))}
     }
     @media(max-width:760px){
-      .mp-promo{grid-template-columns:1fr;border-radius:23px;margin-top:24px}
+      .mp-promo{grid-template-columns:1fr;border-radius:23px;margin:24px 0 26px}
       .mp-promo-copy{padding:25px 24px 28px}
       .mp-promo h2{font-size:32px;letter-spacing:-.8px}
       .mp-promo-visual{min-height:170px}

@@ -292,9 +292,9 @@ body {
   color: #b74740;
 }
 .fi-page {
-  max-width: 1304px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 46px 0 75px;
+  padding: 36px 0 58px;
   min-height: calc(100vh - 450px);
 }
 .fi-enter {
@@ -350,6 +350,10 @@ body {
   color: var(--fi-deep);
   font-size: 23px;
   font-weight: 700;
+}
+.fi-footer-brand > a em {
+  color: #25834e;
+  font-style: normal;
 }
 .fi-footer-brand > a img {
   width: 40px;
@@ -470,7 +474,7 @@ body {
     padding: 0 5%;
   }
   .fi-page {
-    margin: 0 5%;
+    margin: 0 3.5%;
   }
   .fi-footer {
     padding: 0 4%;
@@ -509,8 +513,8 @@ body {
     height: 15px;
   }
   .fi-page {
-    margin: 0 15px;
-    padding: 28px 0 50px;
+    margin: 0 13px;
+    padding: 23px 0 40px;
   }
   .fi-footer {
     padding: 0 15px;

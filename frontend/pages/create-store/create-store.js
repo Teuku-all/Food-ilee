@@ -13,7 +13,7 @@ export async function renderCreateStore() {
     const result = await getMyStore();
     if (!isRouteCurrent('#buat-toko', navigationRevision)) return;
     if (result.success && result.data) {
-      location.hash = '#kelola-toko';
+      location.hash = '#tambah-limbah';
       return;
     }
   } catch {
@@ -53,7 +53,7 @@ export async function renderCreateStore() {
       const result = await createStore(data);
       if (!result.success) throw new Error(result.message || 'Toko belum dapat dibuat.');
       showToast('Toko berhasil dibuat.');
-      location.hash = '#kelola-toko';
+      location.hash = '#tambah-limbah';
     } catch (error) {
       showToast(error.message || 'Toko belum dapat dibuat.', 'error');
       button.disabled = false;
