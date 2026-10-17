@@ -18,12 +18,12 @@ const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const upload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024,
+    fileSize: 4 * 1024 * 1024,
     files: 1,
   },
   fileFilter: (req, file, callback) => {
     if (allowedImageTypes.has(file.mimetype)) return callback(null, true);
-    const error = new Error('Unggah foto JPG, PNG, atau WebP dengan ukuran maksimal 5 MB.');
+    const error = new Error('Unggah foto JPG, PNG, atau WebP dengan ukuran maksimal 4 MB.');
     error.status = 400;
     callback(error);
   },

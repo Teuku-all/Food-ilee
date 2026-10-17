@@ -1,10 +1,8 @@
 import { getToken } from '../utils/storage.js';
 
 const configuredApiBase = globalThis.FOODILEE_CONFIG?.apiBaseUrl;
-const backendOrigin =
-  globalThis.location?.hostname && globalThis.location.hostname !== 'localhost'
-    ? `${globalThis.location.protocol === 'https:' ? 'https:' : 'http:'}//${globalThis.location.hostname}:5000`
-    : 'http://localhost:5000';
+const isLocal = ['localhost', '127.0.0.1'].includes(globalThis.location?.hostname);
+const backendOrigin = isLocal ? 'http://localhost:5000' : '';
 
 export const API_BASE_URL = (configuredApiBase || `${backendOrigin}/api`).replace(/\/+$/, '');
 export const SOCKET_BASE_URL =

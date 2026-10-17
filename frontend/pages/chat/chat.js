@@ -15,6 +15,7 @@ let socketConnectHandler = null;
 let socketMessageHandler = null;
 let socketStatusHandler = null;
 let socketBindRevision = 0;
+let chatPollTimer = null;
 const loadedChatsThisVisit = new Set();
 
 window.addEventListener('hashchange', () => {
@@ -94,6 +95,10 @@ function renderConversation(chatId, revision) {
 
 async function bindLiveChat(chatId, revision) {
   const bindRevision = ++socketBindRevision;
+  if (globalThis.FOODILEE_CONFIG?.realtime === false) {
+    startChatPolling(chatId, revision);
+    return;
+  }
   liveSocket = getSocket();
   if (joinedChatId && joinedChatId !== chatId) liveSocket?.emit('leave_chat', joinedChatId);
   if (socketConnectHandler) liveSocket?.off('connect', socketConnectHandler);
@@ -102,9 +107,13 @@ async function bindLiveChat(chatId, revision) {
   try {
     liveSocket = await connectSocket();
   } catch {
+    startChatPolling(chatId, revision);
     return; // Pengiriman pesan tetap tersedia melalui REST.
   }
-  if (!liveSocket) return;
+  if (!liveSocket) {
+    startChatPolling(chatId, revision);
+    return;
+  }
   if (bindRevision !== socketBindRevision) return;
   if (!isRouteCurrent('#chat', revision) || selectedChatId !== chatId) {
     liveSocket.disconnect();
@@ -115,6 +124,7 @@ async function bindLiveChat(chatId, revision) {
     try {
       liveSocket = await connectSocket();
     } catch {
+      startChatPolling(chatId, revision);
       return;
     }
   }
@@ -151,6 +161,8 @@ async function bindLiveChat(chatId, revision) {
 
 function leaveSocketChat() {
   socketBindRevision += 1;
+  if (chatPollTimer) clearInterval(chatPollTimer);
+  chatPollTimer = null;
   loadedChatsThisVisit.clear();
   if (joinedChatId) liveSocket?.emit('leave_chat', joinedChatId);
   joinedChatId = '';
@@ -162,6 +174,34 @@ function leaveSocketChat() {
   socketStatusHandler = null;
   if (liveSocket?.connected) liveSocket.disconnect();
   liveSocket = null;
+}
+
+function startChatPolling(chatId, revision) {
+  if (chatPollTimer) clearInterval(chatPollTimer);
+  const poll = async () => {
+    if (!isRouteCurrent('#chat', revision) || selectedChatId !== chatId) return;
+    try {
+      const messages = await getMessages(chatId);
+      if (!isRouteCurrent('#chat', revision) || selectedChatId !== chatId) return;
+      const box = document.querySelector('[data-chat-messages]');
+      if (!box) return;
+      for (const message of messages) {
+        const existed = Boolean(box.querySelector(`[data-message-id="${CSS.escape(String(message.id))}"]`));
+        saveCachedMessage(chatId, message);
+        if (existed) {
+          if (message.senderId === currentUserId) updateMessageStatus(message);
+          continue;
+        }
+        appendMessage(box, message);
+        updateChatPreview(chatId, message.text);
+      }
+      if (messages.length) box.scrollTop = box.scrollHeight;
+    } catch {
+      // A later polling cycle retries transient API or network failures.
+    }
+  };
+  poll();
+  chatPollTimer = setInterval(poll, 5000);
 }
 
 function chatItem(chat) {

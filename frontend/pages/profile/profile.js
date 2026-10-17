@@ -120,10 +120,10 @@ function openEditProfile(user) {
       showToast('Pilih foto JPG, PNG, atau WebP.', 'error');
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 4 * 1024 * 1024) {
       avatarInput.value = '';
       cropLoading.hidden = true;
-      showToast('Ukuran foto maksimal 5 MB.', 'error');
+      showToast('Ukuran foto maksimal 4 MB.', 'error');
       return;
     }
     if (cropObjectUrl) URL.revokeObjectURL(cropObjectUrl);

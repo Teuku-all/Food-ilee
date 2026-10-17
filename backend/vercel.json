@@ -1,0 +1,8 @@
+{
+  "buildCommand": "npm run db:generate",
+  "functions": {
+    "src/app.js": {
+      "maxDuration": 60
+    }
+  }
+}
