@@ -2,6 +2,7 @@ import { getWaste } from '../../services/waste.js';
 import { escapeHtml } from '../../utils/html.js';
 import { bindSharedHeader, dashboardFooter, dashboardHeader } from '../../ui/shell.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
+import { icon } from '../../ui/icons.js';
 
 const CART_KEY = 'foodilee_checkout_cart';
 const SELECTED_KEY = 'foodilee_checkout_selected';
@@ -77,7 +78,7 @@ function renderCartItems() {
   const countNode = document.getElementById('ca-list-count');
   if (!cartItems.length) {
     countNode.textContent = 'Belum ada produk di keranjang';
-    root.innerHTML = '<div class="ca-empty"><span>🛒</span><strong>Keranjang Anda masih kosong</strong><p>Temukan produk yang ingin dimanfaatkan dari marketplace.</p><a href="#marketplace">Jelajahi marketplace</a></div>';
+    root.innerHTML = `<div class="ca-empty"><span>${icon('cart')}</span><strong>Keranjang Anda masih kosong</strong><p>Temukan produk yang ingin dimanfaatkan dari marketplace.</p><a href="#marketplace">Jelajahi marketplace</a></div>`;
     updateCartSummary();
     bindCartActions();
     return;
@@ -141,22 +142,22 @@ function injectCartStyles() {
   const style = document.createElement('style');
   style.id = 'cart-page-style';
   style.textContent = `
-    .ca-app{min-height:100vh;background:#dce8e6;color:#173d3c;font-family:Inter,Arial,sans-serif}
+    .ca-app{min-height:100vh;background:#DAF1DE;color:#163832;font-family:Inter,Arial,sans-serif}
     .ca-main{max-width:1240px;margin:auto;padding:36px 28px 78px}
-    .ca-back{width:max-content;min-height:40px;padding:0 15px 0 11px;border:1px solid #bdd5c8;border-radius:999px;display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,#f8fcf9,#eaf5ef);color:#17604d;font-size:12px;font-weight:700;text-decoration:none;box-shadow:0 4px 12px #173d3c0c;transition:transform 180ms ease,box-shadow 180ms ease}
-    .ca-back:hover{transform:translateY(-2px);box-shadow:0 8px 18px #173d3c16}
+    .ca-back{width:max-content;min-height:40px;padding:0 15px 0 11px;border:1px solid #bdd5c8;border-radius:999px;display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,#f8fcf9,#eaf5ef);color:#17604d;font-size:12px;font-weight:700;text-decoration:none;box-shadow:0 4px 12px #1638320c;transition:transform 180ms ease,box-shadow 180ms ease}
+    .ca-back:hover{transform:translateY(-2px);box-shadow:0 8px 18px #16383216}
     .ca-heading{margin:22px 0 24px;padding-bottom:21px;border-bottom:1px solid #bfcec5}
-    .ca-heading>p{width:max-content;margin:0 0 11px;padding:7px 11px;border:1px solid #c7e0ce;border-radius:999px;background:#edf7ef;color:#356d4b;font-size:9px;font-weight:700;letter-spacing:.12em}
+    .ca-heading>p{width:max-content;margin:0 0 11px;padding:7px 11px;border:1px solid #c7e0ce;border-radius:999px;background:#DAF1DE;color:#356d4b;font-size:9px;font-weight:700;letter-spacing:.12em}
     .ca-heading h1{margin:0;color:#104b3e;font-size:clamp(32px,4vw,42px);line-height:1.12;letter-spacing:-1.4px}
     .ca-heading span{display:block;margin-top:9px;color:#61746a;font-size:14px;line-height:1.6}
     .ca-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:start;gap:22px}
-    .ca-list-panel,.ca-summary{border:1px solid #c4d5ca;border-radius:20px;background:#fff;box-shadow:0 10px 28px #173d3c0b}
+    .ca-list-panel,.ca-summary{border:1px solid #c4d5ca;border-radius:20px;background:#fff;box-shadow:0 10px 28px #1638320b}
     .ca-list-panel{min-width:0;padding:22px 23px}
     .ca-list-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:18px}
     .ca-list-heading h2,.ca-summary h2{margin:0;color:#174a3b;font-size:18px}
     .ca-list-heading p{margin:5px 0 0;color:#718078;font-size:12px}
     .ca-select-all{display:flex;align-items:center;gap:8px;color:#315746;font-size:12px;font-weight:650;white-space:nowrap;cursor:pointer}
-    .ca-select-all input,.ca-check input{width:18px;height:18px;margin:0;accent-color:#176457;cursor:pointer}
+    .ca-select-all input,.ca-check input{width:18px;height:18px;margin:0;accent-color:#235347;cursor:pointer}
     .ca-table-head,.ca-item{display:grid;grid-template-columns:minmax(180px,1fr) 120px 130px 28px 28px;align-items:center;gap:14px}
     .ca-table-head{min-height:40px;padding:0 8px;border-top:1px solid #cbd8d0;border-bottom:1px solid #cbd8d0;color:#68786f;font-size:10px;font-weight:700;letter-spacing:.03em}
     .ca-table-head span:first-child{grid-column:1}
@@ -191,10 +192,10 @@ function injectCartStyles() {
     .ca-summary>button{width:100%;min-height:46px;padding:0 14px;border:0;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:10px;background:#07594b;color:#fff;font:650 12px Inter,Arial,sans-serif;cursor:pointer;transition:transform 160ms ease,box-shadow 160ms ease,background 160ms ease}
     .ca-summary>button:not(:disabled):hover{transform:translateY(-1px);background:#064c41;box-shadow:0 8px 18px #07594b28}
     .ca-summary>button:disabled{background:#aebdb4;cursor:not-allowed}
-    .ca-continue{display:block;margin-top:13px;color:#176457;font-size:11px;font-weight:650;text-align:center;text-decoration:none}
+    .ca-continue{display:block;margin-top:13px;color:#235347;font-size:11px;font-weight:650;text-align:center;text-decoration:none}
     .ca-continue:hover{text-decoration:underline}
     .ca-empty{min-height:250px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
-    .ca-empty>span{width:48px;height:48px;margin-bottom:12px;border-radius:15px;display:grid;place-items:center;background:#edf7ef;font-size:23px}
+    .ca-empty>span{width:48px;height:48px;margin-bottom:12px;border-radius:15px;display:grid;place-items:center;background:#DAF1DE;font-size:23px}
     .ca-empty strong{color:#24483a;font-size:14px}
     .ca-empty p{margin:7px 0 14px;color:#78857d;font-size:12px}
     .ca-empty a{padding:10px 15px;border-radius:999px;background:#07594b;color:white;font-size:11px;text-decoration:none}

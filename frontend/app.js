@@ -49,6 +49,7 @@ const landingSectionRoutes = new Set([
   '#pasar',
   '#teknologi',
 ]);
+let lastStartedRoute = null;
 
 window.addEventListener('foodilee:session-expired', (event) => {
   if (event.detail?.token && event.detail.token !== getToken()) return;
@@ -57,13 +58,16 @@ window.addEventListener('foodilee:session-expired', (event) => {
   if (protectedRoutes.has(location.hash)) location.hash = '#login';
 });
 
-async function router() {
+async function router(route = location.hash || '#beranda') {
+  if (landingSectionRoutes.has(route) && document.querySelector('.landing-page')) {
+    document.getElementById(route.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   document.querySelectorAll('dialog').forEach((dialog) => {
     if (dialog.open) dialog.close();
     dialog.remove();
   });
-  const route = location.hash || '#beranda';
-  if (landingSectionRoutes.has(route) && document.querySelector('.landing-page')) return;
   const navigationRevision = beginNavigation();
   const token = getToken();
   if (protectedRoutes.has(route) && !token) {
@@ -158,9 +162,14 @@ function showStartupError(error) {
 }
 
 async function startApp() {
+  const requestedRoute = location.hash || '#beranda';
+  if (requestedRoute === lastStartedRoute) return;
+  lastStartedRoute = requestedRoute;
   try {
-    await router();
+    await router(requestedRoute);
   } catch (error) {
+    if ((location.hash || '#beranda') !== requestedRoute) return;
+    lastStartedRoute = null;
     showStartupError(error);
   }
 }

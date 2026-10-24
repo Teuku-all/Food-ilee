@@ -1,15 +1,15 @@
 :root {
-  --fi-deep: #071a12;
-  --fi-green: #1d5637;
-  --fi-mint: #a3e6b8;
-  --fi-lilac: #dff3e5;
-  --fi-ink: #173d2c;
+  --fi-deep: #051F20;
+  --fi-green: #163832;
+  --fi-mint: #8EB69B;
+  --fi-lilac: #DAF1DE;
+  --fi-ink: #0B2B26;
   --fi-muted: #56716f;
   --fi-line: #c9dfd0;
-  --fi-soft: #edf7ef;
+  --fi-soft: #DAF1DE;
   --fi-card: #f5fbf6;
-  --fi-blue: #1d4e89;
-  --fi-blue-bright: #4da3ff;
+  --fi-blue: #235347;
+  --fi-blue-bright: #8EB69B;
   --fi-radius: 22px;
 }
 html {
@@ -17,7 +17,7 @@ html {
 }
 body {
   margin: 0;
-  background: #dce8e6;
+  background: #DAF1DE;
   color: var(--fi-ink);
   font-family: Inter, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -31,7 +31,7 @@ body {
 
 .fi-app {
   min-height: 100vh;
-  background: #dce8e6;
+  background: #DAF1DE;
 }
 .fi-header {
   height: 76px;
@@ -41,7 +41,7 @@ body {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 20px;
-  background: linear-gradient(112deg, #071a12 0%, #123524 52%, #1d5637 100%);
+  background: linear-gradient(112deg, #051F20 0%, #0B2B26 52%, #163832 100%);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -101,9 +101,9 @@ body {
 }
 .fi-nav-link:hover,
 .fi-nav-link.is-active {
-  background: linear-gradient(120deg, #39a96b, #1d4e89);
+  background: linear-gradient(120deg, #8EB69B, #235347);
   color: #fff;
-  box-shadow: 0 5px 15px #071a1238;
+  box-shadow: 0 5px 15px #051F2038;
   transform: translateY(-1px);
 }
 .fi-header-actions {
@@ -147,12 +147,12 @@ body {
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
-  border: 2px solid #123524;
+  border: 2px solid #0B2B26;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  background: #a3e6b8;
-  color: #123524;
+  background: #8EB69B;
+  color: #0B2B26;
   font-size: 10px;
   font-weight: 800;
   line-height: 1;
@@ -201,7 +201,7 @@ body {
   border: 2px solid rgba(228, 248, 241, 0.78);
   box-shadow: 0 0 0 2px #ffffff14;
   background: linear-gradient(145deg, #effbf5, #c5ead2);
-  color: #075653;
+  color: #163832;
   font-weight: 600;
 }
 .fi-avatar img {
@@ -297,9 +297,6 @@ body {
   padding: 36px 0 58px;
   min-height: calc(100vh - 450px);
 }
-.fi-enter {
-  animation: fi-content-enter 0.36s cubic-bezier(0.2, 0.7, 0.25, 1) both;
-}
 .fi-footer {
   position: relative;
   padding: 0 max(24px, calc((100vw - 1310px) / 2));
@@ -389,7 +386,11 @@ body {
   background: #fff;
   color: #234b3c;
   box-shadow: 0 12px 38px #14392c24;
-  animation: fi-content-enter 0.2s ease;
+  animation: fi-toast-enter 0.2s ease both;
+}
+@keyframes fi-toast-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .fi-toast.error {
   border-color: #f1d6d3;
@@ -420,7 +421,7 @@ body {
 .fi-button:hover {
   transform: translateY(-1px);
   background: var(--fi-green);
-  box-shadow: 0 7px 16px #0054481c;
+  box-shadow: 0 7px 16px #1638321c;
 }
 .fi-button:disabled {
   opacity: 0.65;
@@ -454,7 +455,7 @@ body {
 }
 .fi-input:focus {
   border-color: #83aa98;
-  box-shadow: 0 0 0 3px #00544812;
+  box-shadow: 0 0 0 3px #16383212;
 }
 .fi-label {
   display: block;
@@ -612,7 +613,7 @@ body {
   height: 36px;
   border: 1px solid rgba(228, 248, 241, 0.55);
   background: #e4f3ee;
-  color: #075653;
+  color: #163832;
   font-size: 13px;
 }
 .fi-account-meta {
@@ -677,7 +678,7 @@ body {
   height: 42px;
   border: 1px solid #b8d5d0;
   background: #d9eeea;
-  color: #075653;
+  color: #163832;
   font-size: 14px;
 }
 .fi-account-menu-identity {
@@ -736,7 +737,7 @@ body {
 .fi-account-menu button:hover {
   transform: translateX(2px);
   background: #e5f1ef;
-  color: #075653;
+  color: #163832;
 }
 .fi-account-menu-actions {
   padding-top: 7px;
@@ -767,7 +768,6 @@ body {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fi-enter,
   .fi-account-menu.open {
     animation: none !important;
   }
@@ -783,19 +783,19 @@ body {
 }
 
 .fi-nav-link[aria-current='page'] {
-  background: linear-gradient(120deg, #39a96b, #1d4e89);
+  background: linear-gradient(120deg, #8EB69B, #235347);
   color: #fff;
-  box-shadow: 0 5px 15px #071a1238;
+  box-shadow: 0 5px 15px #051F2038;
 }
 
 .fi-account-menu-links a[aria-current='page'] {
   background: #e5f1ef;
-  color: #075653;
+  color: #163832;
   font-weight: 650;
 }
 
 .fi-account-menu-links a[aria-current='page'] svg {
-  color: #087b78;
+  color: #235347;
 }
 
 .fi-account-menu-actions > a {
@@ -825,7 +825,7 @@ dialog[open]::backdrop {
 .fi-product:hover,
 .fi-stat:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 34px #12352418;
+  box-shadow: 0 14px 34px #0B2B2618;
 }
 @media (prefers-reduced-motion: reduce) {
   dialog[open], dialog[open]::backdrop { animation: none !important; }

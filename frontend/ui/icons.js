@@ -30,8 +30,25 @@ const paths = {
   eye: '<path d="M2.5 12s3.4-6.2 9.5-6.2 9.5 6.2 9.5 6.2-3.4 6.2-9.5 6.2S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.7"/>',
   recycle:
     '<path d="m7 7 2-3 3 0 2 3M17 7h3l1.5 2-1.5 3M17 17l-2 3h-3l-2-3M7 17H4l-1.5-2L4 12"/><path d="m9 4 2 3-4 0M21.5 9 18 10l2 3M10 20l1-4 3 2M2.5 15 6 14l-2-3"/>',
+  compost: '<path d="M4 18c4-2 6-7 16-12-1 9-4 14-10 14-3 0-5-1-6-2Z"/><path d="M4 21c3-5 7-8 12-11"/>',
+  upload: '<path d="M12 16V4m-5 5 5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+  home: '<path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9Z"/><path d="M9 21v-7h6v7"/>',
 };
 
 export function icon(name, className = 'fi-icon') {
   return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.guide}</svg>`;
+}
+
+export function brandLogo() {
+  return `<span class="fi-brand-mark" aria-hidden="true">${icon('leaf')}</span><span class="fi-brand-wordmark">Food <strong>Ilee</strong></span>`;
+}
+
+export function brandHeader() {
+  return '<img class="fi-brand-symbol" src="./assets/foodilee-logo.png" alt=""><span class="fi-brand-wordmark">Food <strong>Ilee</strong></span>';
+}
+
+export function brandImage({ tone = 'light' } = {}) {
+  if (tone === 'dark')
+    return '<img class="fi-brand-image" src="./assets/foodilee-wordmark-dark.png" alt="">';
+  return '<img class="fi-brand-image" src="./assets/foodilee-wordmark.png" alt="">';
 }

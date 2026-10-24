@@ -86,58 +86,17 @@ dialog {
   }
 }
 
-@keyframes fi-content-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.mp-main,
-.tx-main {
-  animation: fi-content-enter 360ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
-}
-
-.mp-card {
-  animation: fi-content-enter 380ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
-}
-
-.mp-card:nth-child(2) {
-  animation-delay: 45ms;
-}
-
-.mp-card:nth-child(3) {
-  animation-delay: 90ms;
-}
-
-.mp-card:nth-child(4) {
-  animation-delay: 135ms;
-}
-
 .tx-order-card {
   transition:
     transform 200ms ease,
     box-shadow 200ms ease,
     border-color 200ms ease;
-  animation: fi-content-enter 340ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
 }
 
 .tx-order-card:hover {
   transform: translateY(-2px);
   border-color: #c8dcd4;
   box-shadow: 0 16px 38px #153d2d10;
-}
-
-.tx-order-card:nth-child(2) {
-  animation-delay: 45ms;
-}
-
-.tx-order-card:nth-child(3) {
-  animation-delay: 90ms;
 }
 
 .fi-nav-link,

@@ -1,7 +1,7 @@
 import { getCachedCurrentUser, getCurrentUser } from '../services/user.js';
 import { removeToken } from '../utils/storage.js';
 import { escapeHtml } from '../utils/html.js';
-import { icon } from './icons.js';
+import { brandHeader, brandImage, icon } from './icons.js';
 
 const links = [
   ['Marketplace', '#marketplace', 'market'],
@@ -38,7 +38,7 @@ export function dashboardHeader(active = '') {
 
   return `
     <header class="fi-header">
-      <a class="fi-header-brand" href="#dashboard" aria-label="Food Ilee"><img src="./assets/foodilee-wordmark.png" alt="Food Ilee"></a>
+      <a class="fi-header-brand" href="#dashboard" aria-label="Food Ilee">${brandHeader()}</a>
       <nav class="fi-nav" aria-label="Navigasi utama">${nav}</nav>
       <div class="fi-header-actions">
         <a class="fi-cart-link" href="#cart" aria-label="Keranjang belanja, 0 barang" title="Keranjang belanja">
@@ -71,14 +71,14 @@ export function dashboardHeader(active = '') {
 }
 
 export function dashboardFooter() {
-  return `<footer class="fi-footer"><div class="fi-footer-grid"><div class="fi-footer-brand"><a href="#beranda"><img src="./assets/foodilee-logo.png" alt=""><span>Food <em>Ilee</em></span></a><p>Membangun jembatan antara limbah pangan dan inovasi berkelanjutan untuk masa depan bumi.</p></div><div><h3>Jelajahi</h3><a href="#marketplace">Marketplace</a><a href="#tambah-limbah">Tambah Limbah</a><a href="#tanya-ai">Tanya AI</a></div><div><h3>Akun</h3><a href="#profil">Profil Anda</a><a href="#transaksi">Riwayat Transaksi</a><a href="#kelola-toko">Kelola Toko</a></div><div><h3>Bantuan</h3><a href="#panduan">Panduan Food Ilee</a><a href="mailto:halo@foodilee.id">Hubungi Kami</a><span>Indonesia</span></div></div><div class="fi-footer-bottom">© 2026 Food Ilee · Memberdayakan sirkularitas untuk Indonesia hijau.</div></footer>`;
+  return `<footer class="fi-footer"><div class="fi-footer-grid"><div class="fi-footer-brand"><a href="#beranda" aria-label="Food Ilee">${brandImage({ tone: 'dark' })}</a><p>Membangun jembatan antara limbah pangan dan inovasi berkelanjutan untuk masa depan bumi.</p></div><div><h3>Jelajahi</h3><a href="#marketplace">Marketplace</a><a href="#tambah-limbah">Tambah Limbah</a><a href="#tanya-ai">Tanya AI</a></div><div><h3>Akun</h3><a href="#profil">Profil Anda</a><a href="#transaksi">Riwayat Transaksi</a><a href="#kelola-toko">Kelola Toko</a></div><div><h3>Bantuan</h3><a href="#panduan">Panduan Food Ilee</a><a href="mailto:halo@foodilee.id">Hubungi Kami</a><span>Indonesia</span></div></div><div class="fi-footer-bottom">© 2026 Food Ilee · Memberdayakan sirkularitas untuk Indonesia hijau.</div></footer>`;
 }
 
 export function renderShell(active, content, { footer = true } = {}) {
   injectShellStyles();
   const app = document.getElementById('app');
   shellRenderVersion += 1;
-  app.innerHTML = `<div class="fi-app">${dashboardHeader(active)}<div class="fi-page fi-enter">${content}</div>${footer ? dashboardFooter() : ''}</div>`;
+  app.innerHTML = `<div class="fi-app">${dashboardHeader(active)}<div class="fi-page">${content}</div>${footer ? dashboardFooter() : ''}</div>`;
   bindShell(shellRenderVersion);
 }
 

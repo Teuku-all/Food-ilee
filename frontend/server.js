@@ -1,18 +1,25 @@
 import { createServer } from 'node:http';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = path.dirname(fileURLToPath(import.meta.url));
+const sourceRoot = path.dirname(fileURLToPath(import.meta.url));
+const servingBuild = process.argv.includes('--dist');
+const root = servingBuild ? path.join(sourceRoot, 'dist') : sourceRoot;
 const port = Number(process.env.FRONTEND_PORT || 5501);
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
   '.ico': 'image/x-icon',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+  '.avif': 'image/avif',
 };
 
 const server = createServer(async (request, response) => {
@@ -27,10 +34,26 @@ const server = createServer(async (request, response) => {
     }
 
     const contents = await readFile(filePath);
-    response.writeHead(200, {
+    const extension = path.extname(filePath).toLowerCase();
+    const isImage = ['.png', '.jpg', '.jpeg', '.webp', '.avif', '.svg', '.ico'].includes(extension);
+    const isHashedAsset =
+      servingBuild && requestedPath.startsWith('/assets/') && /\.[a-f0-9]{12}\.[^.]+$/i.test(filePath);
+    const cacheControl = isHashedAsset
+      ? 'public, max-age=31536000, immutable'
+      : isImage
+        ? 'public, max-age=0, must-revalidate'
+        : 'no-store';
+    const etag = isImage ? `"${createHash('sha256').update(contents).digest('hex')}"` : null;
+    const headers = {
       'Content-Type': contentTypes[path.extname(filePath)] || 'application/octet-stream',
-      'Cache-Control': 'no-store',
-    });
+      'Cache-Control': cacheControl,
+    };
+    if (etag) headers.ETag = etag;
+    if (etag && request.headers['if-none-match'] === etag) {
+      response.writeHead(304, headers).end();
+      return;
+    }
+    response.writeHead(200, headers);
     response.end(contents);
   } catch (error) {
     const status = error.code === 'ENOENT' ? 404 : 500;

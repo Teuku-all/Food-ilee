@@ -61,6 +61,17 @@ To enable Google sign-in, create a Google OAuth web client ID in Google Cloud Co
 
 To run the API without the development file watcher, use `npm run start:backend`.
 
+### Frontend production assets
+
+Create the deployable frontend directory with `npm --prefix frontend run build`. The build writes
+`frontend/dist`, gives bundled local images and SVGs content-based filenames, and updates their
+references in the copied HTML, CSS, and JavaScript. Preview that output locally with
+`npm --prefix frontend run preview`.
+
+The Vercel frontend project serves the versioned files in `dist/assets` with long-lived browser
+caching. The local development server revalidates images with ETags, while HTML and code stay
+uncached. Images uploaded to an external image host follow that host's own cache policy.
+
 ## Environment variables
 
 See [`backend/.env.example`](backend/.env.example) for the configuration template. Never commit `.env` files or real API credentials. `DATABASE_URL` and `JWT_SECRET` are needed for normal backend operation. Integration credentials are needed by the corresponding features.

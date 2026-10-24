@@ -1,16 +1,35 @@
 :root {
-  --green: #1d5637;
-  --green-dark: #071a12;
-  --gray: #56716f;
-  --border: #c9dfd0;
-  --green-bright: #39a96b;
-  --green-soft: #a3e6b8;
-  --blue: #1d4e89;
-  --blue-bright: #4da3ff;
+  /* The six colors from the supplied Food Ilee reference palette. */
+  --fi-forest-950: #051f20;
+  --fi-forest-900: #0b2b26;
+  --fi-forest-800: #163832;
+  --fi-forest-700: #235347;
+  --fi-sage: #8eb69b;
+  --fi-mist: #daf1de;
+
+  --fi-deep: var(--fi-forest-950);
+  --fi-green: var(--fi-forest-700);
+  --fi-mint: var(--fi-sage);
+  --fi-lilac: var(--fi-mist);
+  --fi-ink: var(--fi-forest-900);
+  --fi-muted: #4c695b;
+  --fi-line: #bfd8c6;
+  --fi-soft: #edf7ef;
+  --fi-card: #ffffff;
+  --fi-blue: var(--fi-forest-700);
+  --fi-blue-bright: var(--fi-sage);
+  --fi-radius: 22px;
+
+  --green: var(--fi-forest-700);
+  --green-dark: var(--fi-forest-950);
+  --gray: var(--fi-muted);
+  --border: var(--fi-line);
+  --green-bright: var(--fi-sage);
+  --green-soft: var(--fi-mist);
+  --blue: var(--fi-forest-700);
+  --blue-bright: var(--fi-sage);
   --white: #ffffff;
   --danger: #dc2626;
-
-  --shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-
+  --shadow: 0 4px 10px rgb(5 31 32 / 8%);
   --radius: 14px;
 }

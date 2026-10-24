@@ -1,0 +1,729 @@
+/* Shared brand treatment for every route. Page styles may set layout independently. */
+:root {
+  --fi-deep: var(--fi-forest-950);
+  --fi-green: var(--fi-forest-700);
+  --fi-mint: var(--fi-sage);
+  --fi-lilac: var(--fi-mist);
+  --fi-ink: var(--fi-forest-900);
+  --fi-muted: #4c695b;
+  --fi-line: #bfd8c6;
+  --fi-soft: #edf7ef;
+  --fi-card: #ffffff;
+  --fi-blue: var(--fi-forest-700);
+  --fi-blue-bright: var(--fi-sage);
+}
+
+html,
+body,
+#app,
+#app button,
+#app input,
+#app textarea,
+#app select {
+  font-family: Inter, Arial, sans-serif;
+}
+
+body,
+#app .fi-app,
+#app .mp-app {
+  background-color: var(--fi-mist);
+  color: var(--fi-ink);
+}
+
+#app .fi-header,
+#app .landing-page .landing-nav {
+  background: linear-gradient(
+    110deg,
+    var(--fi-forest-950) 0%,
+    var(--fi-forest-900) 34%,
+    var(--fi-forest-800) 69%,
+    var(--fi-forest-700) 100%
+  );
+  border-bottom-color: rgb(218 241 222 / 18%);
+}
+
+#app .fi-nav-link:hover,
+#app .fi-nav-link.is-active,
+#app .landing-page .landing-nav .fi-nav-link:hover {
+  background: var(--fi-sage);
+  color: var(--fi-forest-950);
+  box-shadow: 0 5px 16px rgb(5 31 32 / 16%);
+}
+
+#app .fi-header-brand,
+#app .auth-brand,
+#app .fi-footer-brand > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: Inter, Arial, sans-serif;
+  font-weight: 750;
+  letter-spacing: -0.045em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+#app .auth-wordmark {
+  align-items: center;
+  gap: 10px;
+  font-family: Inter, Arial, sans-serif;
+  font-weight: 750;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+}
+
+#app .fi-header-brand,
+#app .auth-brand {
+  color: #ffffff;
+}
+
+#app .fi-brand-mark {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(218 241 222 / 42%);
+  border-radius: 12px;
+  background: var(--fi-sage);
+  color: var(--fi-forest-900);
+}
+
+#app .fi-brand-mark .fi-icon {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.9;
+}
+
+#app .fi-brand-wordmark {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 21px;
+  font-weight: 750;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+#app .fi-brand-wordmark strong {
+  color: var(--fi-mist);
+  font: inherit;
+}
+
+#app .auth-wordmark,
+#app .fi-footer-brand > a {
+  color: var(--fi-forest-900);
+}
+
+#app .auth-wordmark .fi-brand-wordmark strong,
+#app .fi-footer-brand .fi-brand-wordmark strong {
+  color: var(--fi-forest-700);
+}
+
+#app .fi-footer-brand .fi-brand-mark,
+#app .auth-wordmark .fi-brand-mark {
+  border-color: var(--fi-line);
+  background: var(--fi-mist);
+}
+
+#app .fi-footer {
+  border-top-color: var(--fi-line);
+  background: #ffffff;
+}
+
+#app .fi-footer-grid h3,
+#app .fi-footer-grid a:hover {
+  color: var(--fi-forest-900);
+}
+
+#app .fi-button:not(.fi-button-outline),
+#app .mp-card-action,
+#app .auth-submit {
+  background: var(--fi-forest-700);
+  color: #ffffff;
+}
+
+#app .fi-button:not(.fi-button-outline):hover,
+#app .mp-card-action:hover,
+#app .auth-submit:hover {
+  background: var(--fi-forest-800);
+}
+
+#app .landing-join {
+  background: var(--fi-mist);
+  color: var(--fi-forest-900);
+}
+
+#app .landing-join:hover {
+  background: var(--fi-sage);
+  color: var(--fi-forest-950);
+}
+
+#app .landing-hero:after {
+  background: linear-gradient(
+    90deg,
+    rgb(5 31 32 / 94%) 0%,
+    rgb(11 43 38 / 81%) 49%,
+    rgb(22 56 50 / 34%) 100%
+  );
+}
+
+#app .landing-impact {
+  background: var(--fi-forest-800);
+}
+
+#app .landing-page .landing-eyebrow span,
+#app .landing-page .landing-value-icon,
+#app .landing-page .landing-step-symbol {
+  background: var(--fi-mist);
+  color: var(--fi-forest-800);
+}
+
+#app .landing-page .landing-value-icon.accent,
+#app .landing-page .landing-value-icon.mint,
+#app .landing-page .landing-step-symbol.accent,
+#app .landing-page .landing-step-symbol.mint {
+  background: var(--fi-sage);
+  color: var(--fi-forest-950);
+}
+
+#app .landing-page .landing-section h2,
+#app .landing-page .landing-final h2 {
+  color: var(--fi-forest-900);
+}
+
+#app .landing-page .landing-section h2 em,
+#app .landing-page .landing-final h2 em {
+  color: var(--fi-forest-700);
+}
+
+#app .landing-page .landing-hero h1 em,
+#app .landing-page .landing-impact h2 em {
+  color: var(--fi-sage);
+}
+
+#app .landing-page .landing-how,
+#app .landing-page .landing-final {
+  background: var(--fi-mist);
+}
+
+#app .landing-page .landing-values article {
+  background: rgb(255 255 255 / 72%);
+}
+
+#app .landing-page .landing-ai-visual {
+  background: linear-gradient(143deg, var(--fi-mist), var(--fi-sage));
+}
+
+#app .landing-page .landing-story {
+  display: grid;
+  grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+  min-height: 560px;
+  margin: 84px auto 96px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--fi-line);
+  border-radius: 30px;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgb(5 31 32 / 9%);
+}
+
+#app .landing-story-visual {
+  position: relative;
+  min-height: 480px;
+  overflow: hidden;
+  background: var(--fi-forest-900);
+}
+
+#app .landing-story-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(.8);
+  transition: transform .7s cubic-bezier(.2, .7, .2, 1);
+}
+
+#app .landing-story:hover .landing-story-visual img {
+  transform: scale(1.035);
+}
+
+#app .landing-story-stamp {
+  position: absolute;
+  right: 22px;
+  bottom: 22px;
+  left: 22px;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 15px;
+  border: 1px solid rgb(218 241 222 / 30%);
+  border-radius: 999px;
+  background: rgb(5 31 32 / 83%);
+  color: var(--fi-mist);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  backdrop-filter: blur(10px);
+}
+
+#app .landing-story-stamp .fi-icon {
+  width: 17px;
+  height: 17px;
+}
+
+#app .landing-story-copy {
+  align-self: center;
+  padding: clamp(34px, 5vw, 72px);
+}
+
+#app .landing-story-kicker {
+  margin: 0 0 17px;
+  color: var(--fi-forest-700);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .15em;
+}
+
+#app .landing-page .landing-story h2 {
+  max-width: 580px;
+  margin: 0;
+  font-size: clamp(30px, 3.3vw, 46px);
+  line-height: 1.14;
+  letter-spacing: -.045em;
+}
+
+#app .landing-story-copy > p:not(.landing-story-kicker) {
+  max-width: 500px;
+  margin: 18px 0 25px;
+  color: var(--fi-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+#app .landing-story-points {
+  display: grid;
+  gap: 0;
+  margin-bottom: 28px;
+}
+
+#app .landing-story-points > div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 0;
+  border-top: 1px solid var(--fi-line);
+}
+
+#app .landing-story-points > div > span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--fi-mist);
+  color: var(--fi-forest-700);
+}
+
+#app .landing-story-points > div > span .fi-icon {
+  width: 19px;
+  height: 19px;
+}
+
+#app .landing-story-points p {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+}
+
+#app .landing-story-points strong {
+  color: var(--fi-forest-900);
+  font-size: 13px;
+}
+
+#app .landing-story-points small {
+  color: var(--fi-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+#app .landing-story-action {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: var(--fi-forest-700);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background .2s ease, transform .2s ease;
+}
+
+#app .landing-story-action:hover {
+  transform: translateY(-2px);
+  background: var(--fi-forest-800);
+}
+
+#app .landing-story-action .fi-icon {
+  width: 16px;
+  height: 16px;
+}
+
+#app .landing-page .category-feed {
+  background: var(--fi-forest-800) url('../assets/foodilee-login-hero.png') center / cover;
+}
+
+#app .landing-page .category-compost {
+  background: var(--fi-forest-800) url('../assets/landing-compost-demo.jpg') center / cover;
+}
+
+#app .landing-page .category-community {
+  background: var(--fi-forest-800) url('../assets/landing-community-demo.jpg') center / cover;
+}
+
+#app .landing-page .landing-category::before {
+  background: linear-gradient(180deg, rgb(5 31 32 / 9%), rgb(5 31 32 / 88%));
+}
+
+#app .landing-page .landing-market {
+  padding-bottom: 52px;
+}
+
+#app .landing-page .landing-ai {
+  padding-top: 70px;
+}
+
+#app .auth-hero,
+#app .register-page .auth-hero {
+  background-image: linear-gradient(90deg, rgb(5 31 32 / 88%), rgb(22 56 50 / 48%)),
+    url('../assets/foodilee-login-hero.png');
+}
+
+#app .mp-app {
+  --mp-deep: var(--fi-forest-900);
+  --mp-green: var(--fi-forest-700);
+  --mp-ink: var(--fi-forest-900);
+  --mp-muted: var(--fi-muted);
+  --mp-line: var(--fi-line);
+}
+
+#app .mp-intro {
+  background: radial-gradient(ellipse at 86% 18%, rgb(142 182 155 / 34%), transparent 34%),
+    linear-gradient(115deg, #ffffff, var(--fi-mist) 65%, var(--fi-sage));
+}
+
+#app .mp-intro h1 {
+  color: var(--fi-forest-900);
+}
+
+#app .mp-intro-copy > p:last-child {
+  color: var(--fi-muted);
+}
+
+#app .mp-search-row .mp-categories button.active {
+  background: var(--fi-forest-700);
+}
+
+#app .mp-intro-orbit .fi-icon {
+  width: 34px;
+  height: 34px;
+}
+
+#app .mp-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#app .mp-meta .fi-icon {
+  width: 14px;
+  height: 14px;
+}
+
+#app .mp-guidance {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  margin: 54px 0 80px;
+  padding: 27px 30px;
+  border: 1px solid rgb(218 241 222 / 28%);
+  border-radius: 25px;
+  background: linear-gradient(110deg, var(--fi-forest-950), var(--fi-forest-800), var(--fi-forest-700));
+  color: #ffffff;
+}
+
+#app .mp-guidance-icon {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border-radius: 17px;
+  background: var(--fi-sage);
+  color: var(--fi-forest-950);
+}
+
+#app .mp-guidance-icon .fi-icon {
+  width: 27px;
+  height: 27px;
+}
+
+#app .mp-guidance p {
+  margin: 0 0 7px;
+  color: var(--fi-sage);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .14em;
+}
+
+#app .mp-guidance h2 {
+  margin: 0 0 6px;
+  color: #ffffff;
+  font-size: clamp(18px, 2vw, 24px);
+  letter-spacing: -.03em;
+}
+
+#app .mp-guidance div > span {
+  color: var(--fi-mist);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+#app .mp-guidance a {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 9px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: var(--fi-mist);
+  color: var(--fi-forest-950);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background .2s ease, transform .2s ease;
+}
+
+#app .mp-guidance a:hover {
+  transform: translateY(-2px);
+  background: var(--fi-sage);
+}
+
+#app .mp-guidance a .fi-icon {
+  width: 16px;
+  height: 16px;
+}
+
+#app .db-chart-empty {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0 17px;
+}
+
+#app .db-chart-empty > div {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-height: 138px;
+  padding: 17px 15px;
+  border: 1px solid var(--fi-line);
+  border-radius: 17px;
+  background: var(--fi-mist);
+}
+
+#app .db-chart-empty > div > span {
+  display: grid;
+  width: 33px;
+  height: 33px;
+  place-items: center;
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--fi-forest-700);
+}
+
+#app .db-chart-empty .fi-icon {
+  width: 18px;
+  height: 18px;
+}
+
+#app .db-chart-empty strong {
+  color: var(--fi-forest-900);
+  font-size: 12px;
+}
+
+#app .db-chart-empty small {
+  color: var(--fi-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+#app .db-chart-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--fi-forest-700);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#app .db-chart-action .fi-icon,
+#app .db-empty > span .fi-icon {
+  width: 18px;
+  height: 18px;
+}
+
+#app :where(.fi-icon) {
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#app :where(
+  .db-stat-icon,
+  .db-tip-icon,
+  .wa-drop-icon,
+  .wa-category-icon,
+  .wa-impact-icon,
+  .st-store-avatar,
+  .st-empty > span,
+  .ai-tip-card > span,
+  .ai-bot-avatar,
+  .ai-welcome > span,
+  .ch-welcome > span,
+  .ch-inbox-empty > span,
+  .tx-merchant-icon,
+  .tx-art-leaf,
+  .mp-empty-mark,
+  .ca-empty > span
+) > .fi-icon {
+  width: 1em;
+  height: 1em;
+}
+
+#app :where(a, button, input, textarea, select):focus-visible {
+  outline-color: var(--fi-sage);
+}
+
+@media (max-width: 900px) {
+  #app .db-chart-empty {
+    grid-template-columns: 1fr;
+  }
+
+  #app .db-chart-empty > div {
+    min-height: 0;
+  }
+
+  #app .landing-page .landing-story {
+    grid-template-columns: 1fr;
+    margin-right: 24px;
+    margin-left: 24px;
+  }
+
+  #app .landing-story-visual {
+    min-height: 320px;
+    max-height: 420px;
+  }
+
+  #app .mp-guidance {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  #app .mp-guidance a {
+    grid-column: 2;
+    width: fit-content;
+  }
+}
+
+@media (max-width: 760px) {
+  #app .landing-page .landing-about-grid,
+  #app .landing-page .landing-how-heading,
+  #app .landing-page .landing-market-head {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 17px;
+  }
+
+  #app .landing-page .landing-values,
+  #app .landing-page .landing-steps,
+  #app .landing-page .landing-market-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  #app .landing-page .landing-values article,
+  #app .landing-page .landing-steps article {
+    min-height: 0;
+  }
+
+  #app .landing-page .landing-step-line {
+    display: none;
+  }
+
+  #app .landing-page .landing-how > .landing-join {
+    margin-left: 0;
+  }
+
+  #app .landing-page .landing-market {
+    padding-bottom: 40px;
+  }
+}
+
+@media (max-width: 640px) {
+  #app .landing-page .landing-story {
+    margin: 44px 17px 62px;
+    border-radius: 22px;
+  }
+
+  #app .landing-story-visual {
+    min-height: 235px;
+  }
+
+  #app .landing-story-copy {
+    padding: 27px 22px 29px;
+  }
+
+  #app .landing-story-stamp {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    font-size: 8px;
+  }
+
+  #app .mp-guidance {
+    grid-template-columns: 1fr;
+    gap: 13px;
+    margin: 32px 0 55px;
+    padding: 23px 21px;
+  }
+
+  #app .mp-guidance a {
+    grid-column: 1;
+  }
+
+  #app .fi-brand-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+
+  #app .fi-brand-mark .fi-icon {
+    width: 19px;
+    height: 19px;
+  }
+
+  #app .fi-brand-wordmark {
+    font-size: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #app .landing-story-visual img,
+  #app .landing-story-action,
+  #app .mp-guidance a {
+    transition: none;
+  }
+}

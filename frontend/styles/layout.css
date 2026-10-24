@@ -1,0 +1,217 @@
+:root {
+  --fi-layout-width: 1360px;
+  --fi-layout-gutter: clamp(16px, 3.4vw, 44px);
+}
+
+/* One shared page frame keeps every signed-in screen aligned to the same grid. */
+#app .fi-app > .fi-page {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--fi-layout-width);
+  margin-inline: auto;
+  padding: 32px var(--fi-layout-gutter) 56px;
+}
+
+#app .fi-header:not(.landing-nav) {
+  box-sizing: border-box;
+  padding-right: max(var(--fi-layout-gutter), calc((100vw - var(--fi-layout-width)) / 2 + var(--fi-layout-gutter)));
+  padding-left: max(var(--fi-layout-gutter), calc((100vw - var(--fi-layout-width)) / 2 + var(--fi-layout-gutter)));
+}
+
+#app .fi-footer { padding-right: 0; padding-left: 0; }
+#app .fi-footer-grid, #app .fi-footer-bottom {
+  box-sizing: border-box;
+  width: min(100%, var(--fi-layout-width));
+  margin-inline: auto;
+  padding-right: var(--fi-layout-gutter);
+  padding-left: var(--fi-layout-gutter);
+}
+
+#app .landing-page header.fi-header.landing-nav {
+  padding-right: max(var(--fi-layout-gutter), calc((100vw - var(--fi-layout-width)) / 2 + var(--fi-layout-gutter)));
+  padding-left: max(var(--fi-layout-gutter), calc((100vw - var(--fi-layout-width)) / 2 + var(--fi-layout-gutter)));
+}
+
+#app .fi-header-brand .fi-brand-image {
+  display: block;
+  width: 170px;
+  max-width: min(100%, 170px);
+  height: auto;
+  object-fit: contain;
+}
+
+#app .fi-footer-brand > a {
+  box-sizing: border-box;
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+#app .fi-footer-brand > a .fi-brand-image {
+  display: block;
+  width: 198px;
+  max-width: min(100%, 198px);
+  height: auto;
+  object-fit: contain;
+}
+
+#app .fi-app > .fi-page > :is(.db-page, .ai-page, .cs-page, .pr-page, .st-page, .wa-page, .ch-page, .nt-page) {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin-inline: auto;
+}
+
+#app .fi-app > .fi-page > .ch-page,
+#app .fi-app > .fi-page > .nt-page {
+  max-width: 1120px;
+}
+
+/* Standalone screens share the same outer width and side gutters. */
+#app .mp-main,
+#app .tx-main,
+#app .ca-main,
+#app .co-main,
+#app .fi-guide-page {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--fi-layout-width);
+  margin-inline: auto;
+  padding-right: var(--fi-layout-gutter);
+  padding-left: var(--fi-layout-gutter);
+}
+
+#app .fi-guide-page { padding-top: 32px; padding-bottom: 60px; }
+
+/* Keep section artwork edge-to-edge while its content follows the page grid. */
+#app .landing-page .landing-section:not(.landing-how):not(.landing-impact):not(.landing-final) {
+  box-sizing: border-box;
+  width: min(100%, var(--fi-layout-width));
+  margin-inline: auto;
+  padding-right: var(--fi-layout-gutter);
+  padding-left: var(--fi-layout-gutter);
+}
+
+#app .landing-page .landing-story {
+  box-sizing: border-box;
+  width: min(calc(100% - var(--fi-layout-gutter) - var(--fi-layout-gutter)), var(--fi-layout-width));
+  margin-right: auto;
+  margin-left: auto;
+  padding: 0;
+}
+
+#app .landing-page .landing-how,
+#app .landing-page .landing-impact {
+  padding-right: max(var(--fi-layout-gutter), calc((100vw - 1272px) / 2));
+  padding-left: max(var(--fi-layout-gutter), calc((100vw - 1272px) / 2));
+}
+
+#app .landing-page .landing-hero-content {
+  box-sizing: border-box;
+  width: min(100%, var(--fi-layout-width));
+  padding-right: calc(var(--fi-layout-gutter) + 24px);
+  padding-left: calc(var(--fi-layout-gutter) + 24px);
+}
+
+#app .landing-page .landing-footer {
+  padding-right: max(var(--fi-layout-gutter), calc((100vw - 1272px) / 2));
+  padding-left: max(var(--fi-layout-gutter), calc((100vw - 1272px) / 2));
+}
+
+#app .landing-reveal {
+  filter: none;
+  transform: translateY(12px);
+  transition: opacity 360ms ease, transform 360ms cubic-bezier(.2, .7, .25, 1);
+  backface-visibility: visible;
+}
+
+#app .landing-reveal.is-visible { transform: translateY(0); }
+#app .landing-category.landing-reveal.is-visible:hover,
+#app .landing-values article.landing-reveal.is-visible:hover { transform: translateY(-4px); }
+
+@media (prefers-reduced-motion: reduce) {
+  #app .landing-reveal, #app .landing-reveal.is-visible { opacity: 1; transform: none; transition: none; }
+}
+
+@media (max-width: 768px) {
+  #app .fi-app > .fi-page { padding-top: 24px; padding-bottom: 42px; }
+  #app .mp-main, #app .tx-main, #app .ca-main, #app .co-main { padding-top: 25px; padding-bottom: 46px; }
+  #app .landing-page .landing-section:not(.landing-how):not(.landing-impact):not(.landing-final) { padding-top: 64px; padding-bottom: 64px; }
+  #app .landing-page .landing-hero-content { padding-right: var(--fi-layout-gutter); padding-left: var(--fi-layout-gutter); }
+}
+
+@media (max-width: 480px) {
+  :root { --fi-layout-gutter: 16px; }
+  #app .fi-app > .fi-page { padding-top: 20px; padding-bottom: 36px; }
+  #app .mp-main, #app .tx-main, #app .ca-main, #app .co-main { padding-top: 20px; padding-bottom: 38px; }
+  #app .fi-guide-page { padding-top: 20px; padding-bottom: 40px; }
+}
+
+/* A compact lockup keeps the supplied brand mark readable in both nav bars. */
+#app .fi-header-brand { gap: 9px; }
+#app .fi-header-brand .fi-brand-symbol {
+  display: block;
+  width: 43px;
+  height: 38px;
+  flex: none;
+  object-fit: contain;
+}
+#app .fi-header-brand .fi-brand-wordmark { font-size: 21px; }
+#app .fi-header-brand .fi-brand-wordmark strong { color: var(--fi-sage); }
+@media (max-width: 640px) {
+  #app .fi-header-brand .fi-brand-symbol { width: 38px; height: 34px; }
+  #app .fi-header-brand .fi-brand-wordmark { font-size: 19px; }
+}
+
+/* Keep the account action circular and centered on compact dashboard headers. */
+@media (max-width: 1100px) {
+  #app .fi-header-actions .fi-account { width: 46px; }
+  #app .fi-header-actions .fi-account-toggle {
+    box-sizing: border-box;
+    width: 46px;
+    min-width: 46px;
+    height: 46px;
+    padding: 4px;
+    border-radius: 50%;
+    justify-content: center;
+  }
+  #app .fi-header-actions .fi-account-toggle .fi-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+  }
+  #app .fi-header-actions .fi-account-meta,
+  #app .fi-header-actions .fi-account-chevron { display: none; }
+}
+
+#app .landing-page .landing-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 25px;
+}
+#app .landing-page .landing-highlights span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgb(218 241 222 / 24%);
+  border-radius: 999px;
+  background: rgb(5 31 32 / 34%);
+  color: #e2f1e8;
+  font-size: 10px;
+  letter-spacing: .01em;
+}
+#app .landing-page .landing-highlights i {
+  color: var(--fi-sage);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+}
+@media (max-width: 640px) {
+  #app .landing-page .landing-highlights { gap: 7px; margin-top: 21px; }
+  #app .landing-page .landing-highlights span { min-height: 31px; padding-inline: 10px; font-size: 9px; }
+}
