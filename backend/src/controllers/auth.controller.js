@@ -42,6 +42,23 @@ async function login(req, res) {
   }
 }
 
+async function googleLogin(req, res) {
+  try {
+    const result = await authService.loginWithGoogle(req.body.credential);
+
+    res.status(200).json({
+      success: true,
+      message: 'Login berhasil',
+      data: result,
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({
+      success: false,
+      message: error.message || 'Login Google gagal.',
+    });
+  }
+}
+
 async function currentUser(req, res) {
   try {
     res.status(200).json({
@@ -59,5 +76,6 @@ async function currentUser(req, res) {
 module.exports = {
   register,
   login,
+  googleLogin,
   currentUser,
 };

@@ -27,3 +27,18 @@ export async function registerUser(data) {
     'Pendaftaran belum berhasil.',
   );
 }
+
+export async function loginWithGoogle(credential) {
+  return apiRequest(
+    '/auth/google',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ credential }),
+    },
+    'Login dengan Google belum berhasil.',
+    { throwOnError: true },
+  );
+}
