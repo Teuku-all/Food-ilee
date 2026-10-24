@@ -10,6 +10,8 @@ Rates diminta server ke `POST /v1/rates/couriers`. Saat checkout, backend memint
 
 Pickup memakai alamat terstruktur pada profil toko: provinsi, kabupaten/kota, kecamatan, desa/kelurahan, detail jalan, dan kode pos, ditambah nama serta telepon kontak. Satu checkout hanya dapat memuat produk dari satu toko, sehingga satu order Biteship memiliki satu titik asal. Pesanan menyimpan snapshot alamat pickup agar perubahan profil tidak mengubah alamat order yang sudah dibuat. Konfigurasikan `BITESHIP_API_KEY`, `BITESHIP_COURIERS`, dan `BITESHIP_WEBHOOK_SECRET` di backend; variabel `BITESHIP_ORIGIN_*` global tidak lagi digunakan.
 
+Request instalasi webhook yang tidak membawa body menerima respons `200` dengan body `ok`, tanpa mengubah pesanan. Notifikasi pengiriman yang berisi event tetap harus membawa token yang cocok dengan `BITESHIP_WEBHOOK_SECRET`.
+
 ## Pembagian pembayaran Midtrans
 
 Pembagian dana langsung ke merchant penjual memakai fitur **Transaction Split untuk Partner Solutions**, yang tidak tersedia otomatis pada setiap akun Snap. Agar checkout bisa dipakai sekarang dengan akun Midtrans biasa, biarkan `MIDTRANS_SPLIT_ENABLED=false`: pembayaran masuk ke akun Midtrans Food Ilee, sementara `sellerSettlementAmount` dan `sellerSettlementStatus=pending_manual` mencatat nominal produk yang perlu diselesaikan Food Ilee kepada penjual. Isi rekening penerima pada profil toko dan lakukan payout/rekonsiliasi secara manual; sistem ini tidak mengirim transfer bank otomatis.

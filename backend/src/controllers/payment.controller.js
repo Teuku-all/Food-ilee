@@ -91,6 +91,12 @@ async function midtransWebhook(req, res) {
 }
 
 async function biteshipWebhook(req, res) {
+  const body = req.body;
+  const emptyPayload =
+    body == null ||
+    (typeof body === 'object' && !Array.isArray(body) && Object.keys(body).length === 0);
+  if (emptyPayload) return res.status(200).send('ok');
+
   const secret = process.env.BITESHIP_WEBHOOK_SECRET;
   if (!secret) return res.status(503).json({ success: false, message: 'Webhook pengiriman belum dikonfigurasi' });
   const supplied = String(req.get('authorization') || '').replace(/^Bearer\s+/i, '');
