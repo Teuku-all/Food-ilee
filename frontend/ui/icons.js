@@ -43,10 +43,6 @@ export function brandLogo() {
   return `<span class="fi-brand-mark" aria-hidden="true">${icon('leaf')}</span><span class="fi-brand-wordmark">Food <strong>Ilee</strong></span>`;
 }
 
-export function brandHeader() {
-  return '<img class="fi-brand-symbol" src="./assets/foodilee-logo.png" alt=""><span class="fi-brand-wordmark">Food <strong>Ilee</strong></span>';
-}
-
 export function brandImage({ tone = 'light' } = {}) {
   if (tone === 'dark')
     return '<img class="fi-brand-image" src="./assets/foodilee-wordmark-dark.png" alt="">';

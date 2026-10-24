@@ -1,7 +1,7 @@
 import { getCachedCurrentUser, getCurrentUser } from '../services/user.js';
 import { removeToken } from '../utils/storage.js';
 import { escapeHtml } from '../utils/html.js';
-import { brandHeader, brandImage, icon } from './icons.js';
+import { brandImage, icon } from './icons.js';
 
 const links = [
   ['Marketplace', '#marketplace', 'market'],
@@ -38,7 +38,7 @@ export function dashboardHeader(active = '') {
 
   return `
     <header class="fi-header">
-      <a class="fi-header-brand" href="#dashboard" aria-label="Food Ilee">${brandHeader()}</a>
+      <a class="fi-header-brand" href="#dashboard" aria-label="Food Ilee">${brandImage()}</a>
       <nav class="fi-nav" aria-label="Navigasi utama">${nav}</nav>
       <div class="fi-header-actions">
         <a class="fi-cart-link" href="#cart" aria-label="Keranjang belanja, 0 barang" title="Keranjang belanja">

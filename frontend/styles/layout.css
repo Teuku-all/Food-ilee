@@ -138,6 +138,7 @@
 @media (max-width: 768px) {
   #app .fi-app > .fi-page { padding-top: 24px; padding-bottom: 42px; }
   #app .mp-main, #app .tx-main, #app .ca-main, #app .co-main { padding-top: 25px; padding-bottom: 46px; }
+  #app .tx-main { padding-top: 18px; }
   #app .landing-page .landing-section:not(.landing-how):not(.landing-impact):not(.landing-final) { padding-top: 64px; padding-bottom: 64px; }
   #app .landing-page .landing-hero-content { padding-right: var(--fi-layout-gutter); padding-left: var(--fi-layout-gutter); }
 }
@@ -146,23 +147,21 @@
   :root { --fi-layout-gutter: 16px; }
   #app .fi-app > .fi-page { padding-top: 20px; padding-bottom: 36px; }
   #app .mp-main, #app .tx-main, #app .ca-main, #app .co-main { padding-top: 20px; padding-bottom: 38px; }
+  #app .tx-main { padding-top: 14px; }
   #app .fi-guide-page { padding-top: 20px; padding-bottom: 40px; }
 }
 
-/* A compact lockup keeps the supplied brand mark readable in both nav bars. */
-#app .fi-header-brand { gap: 9px; }
-#app .fi-header-brand .fi-brand-symbol {
-  display: block;
-  width: 43px;
-  height: 38px;
-  flex: none;
-  object-fit: contain;
+/* Use the full Food Ilee wordmark in each header, scaled for small screens. */
+#app .fi-header-brand .fi-brand-image {
+  width: 170px;
+  max-width: min(100%, 170px);
+  height: auto;
 }
-#app .fi-header-brand .fi-brand-wordmark { font-size: 21px; }
-#app .fi-header-brand .fi-brand-wordmark strong { color: var(--fi-sage); }
 @media (max-width: 640px) {
-  #app .fi-header-brand .fi-brand-symbol { width: 38px; height: 34px; }
-  #app .fi-header-brand .fi-brand-wordmark { font-size: 19px; }
+  #app .fi-header-brand .fi-brand-image { width: 140px; max-width: min(100%, 140px); }
+}
+@media (max-width: 380px) {
+  #app .fi-header-brand .fi-brand-image { width: 122px; max-width: min(100%, 122px); }
 }
 
 /* Keep the account action circular and centered on compact dashboard headers. */
@@ -214,4 +213,44 @@
 @media (max-width: 640px) {
   #app .landing-page .landing-highlights { gap: 7px; margin-top: 21px; }
   #app .landing-page .landing-highlights span { min-height: 31px; padding-inline: 10px; font-size: 9px; }
+}
+
+/* Compact footer rhythm across signed-in pages and the landing page. */
+#app .fi-footer-grid {
+  padding-top: 22px;
+  padding-bottom: 18px;
+  gap: clamp(16px, 2.2vw, 30px);
+}
+#app .fi-footer-grid > div {
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+#app .fi-footer-grid h3 {
+  margin-bottom: 2px;
+  font-size: 12px;
+}
+#app .fi-footer-brand p {
+  max-width: 230px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+#app .fi-footer-brand > a .fi-brand-image {
+  width: 176px;
+  max-width: min(100%, 176px);
+}
+#app .fi-footer-bottom {
+  min-height: 42px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+  font-size: 10px;
+}
+@media (max-width: 640px) {
+  #app .fi-footer-grid {
+    padding-top: 20px;
+    padding-bottom: 14px;
+    gap: 17px 14px;
+  }
+  #app .fi-footer-grid > div { gap: 5px; }
+  #app .fi-footer-bottom { min-height: 38px; padding-block: 7px; }
 }
