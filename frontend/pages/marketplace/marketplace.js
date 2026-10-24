@@ -23,6 +23,7 @@ let marketplaceStores = [];
 let marketplaceMap = null;
 let marketplaceStoreLayer = null;
 let marketplaceStoreLoadError = '';
+let marketplaceMapLoading = false;
 let marketplaceLocationLabel = 'Banda Aceh';
 
 const demoMarketplaceProducts = [
@@ -71,6 +72,7 @@ export async function renderMarketplace() {
   marketplaceMap?.remove();
   marketplaceMap = null;
   marketplaceStoreLayer = null;
+  marketplaceMapLoading = false;
   const revision = getNavigationRevision();
   const app = document.getElementById('app');
   activeCategory = 'Semua';
@@ -94,8 +96,8 @@ export async function renderMarketplace() {
           <div class="mp-results-copy"><p class="mp-results-eyebrow"><span aria-hidden="true">${icon('leaf')}</span> PILIHAN YANG LEBIH BIJAK</p><div class="mp-results-title-row"><h2>Temukan bahan terbaik</h2><span class="mp-result-pill" id="mp-result-count" aria-live="polite">Memuat pilihan…</span></div><p class="mp-results-help">Bahan organik untuk kebutuhan pakan ternak dan kompos.</p></div>
           <label class="mp-sort-label" for="mp-sort"><span class="mp-sort-icon" aria-hidden="true">${icon('orders')}</span><span class="mp-sort-copy"><small>URUTKAN PRODUK</small><select id="mp-sort"><option value="newest">Terbaru</option><option value="price-low">Harga terendah</option><option value="price-high">Harga tertinggi</option></select></span></label>
         </section>
-        <section class="mp-location-panel"><div><h2>Produk dan toko di sekitar</h2><p id="mp-location-status" role="status">Pilih lokasi untuk memfilter produk berdasarkan jarak.</p></div><div class="mp-location-controls"><label for="mp-radius">Jarak pencarian<select id="mp-radius"><option value="3">3 km</option><option value="5">5 km</option><option value="10" selected>10 km</option><option value="25">25 km</option><option value="0">Semua jarak</option></select></label><button type="button" class="mp-use-location" id="mp-use-location">Gunakan lokasi saya</button></div></section>
-        <section class="mp-map-panel" aria-label="Peta lokasi toko"><div class="mp-map-heading"><h2>Lokasi toko</h2><span id="mp-map-status" role="status">Memuat peta…</span></div><div id="mp-store-map" class="mp-store-map" role="application" aria-label="Peta toko terdekat"></div></section>
+        <section class="mp-location-panel"><div><h2>Produk dan toko di sekitar</h2><p id="mp-location-status" role="status">Pilih lokasi untuk memfilter produk berdasarkan jarak.</p></div><div class="mp-location-controls"><label for="mp-radius">Jarak pencarian<select id="mp-radius"><option value="3">3 km</option><option value="5">5 km</option><option value="10" selected>10 km</option><option value="25">25 km</option><option value="0">Semua jarak</option></select></label><button type="button" class="mp-use-location" id="mp-use-location">Gunakan lokasi saya</button><button type="button" class="mp-toggle-map" id="mp-toggle-map" aria-expanded="false" aria-controls="mp-map-panel">Lihat peta toko</button></div></section>
+        <section class="mp-map-panel" id="mp-map-panel" aria-label="Peta lokasi toko" hidden><div class="mp-map-heading"><h2>Lokasi toko</h2><span id="mp-map-status" role="status">Peta akan dimuat saat dibuka.</span></div><div id="mp-store-map" class="mp-store-map" role="application" aria-label="Peta toko terdekat"></div></section>
         <section class="mp-grid" id="mp-grid" aria-live="polite" aria-busy="true">${marketplaceLoadingSkeleton()}</section>
         <aside class="mp-guidance" aria-label="Mulai berkontribusi"><span class="mp-guidance-icon">${icon('leaf')}</span><div><p>JADI BAGIAN DARI SIKLUSNYA</p><h2>Punya bahan organik yang masih bisa dimanfaatkan?</h2><span>Bagikan foto, jumlah, dan lokasi agar orang yang tepat bisa menemukannya.</span></div><a href="#tambah-limbah">Buat penawaran ${icon('arrow')}</a></aside>
       </main>
@@ -130,7 +132,6 @@ export async function renderMarketplace() {
     const demoBanner = document.getElementById('mp-demo-banner');
     if (demoBanner) demoBanner.hidden = !isDemoMarketplace;
     updateMarketplaceLocationStatus();
-    mountMarketplaceMap(revision);
     renderProducts();
   } catch (error) {
     if (!isRouteCurrent('#marketplace', revision)) return;
@@ -171,6 +172,27 @@ export async function renderMarketplace() {
   }
 
   function bindMarketplaceLocationControls() {
+    document.getElementById('mp-toggle-map')?.addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      const panel = document.getElementById('mp-map-panel');
+      if (!panel) return;
+      const shouldOpen = panel.hidden;
+      panel.hidden = !shouldOpen;
+      button.setAttribute('aria-expanded', String(shouldOpen));
+      button.textContent = shouldOpen ? 'Sembunyikan peta' : 'Lihat peta toko';
+      if (!shouldOpen) return;
+      if (marketplaceMap) {
+        requestAnimationFrame(() => marketplaceMap?.invalidateSize());
+        return;
+      }
+      if (marketplaceMapLoading) return;
+      marketplaceMapLoading = true;
+      try {
+        await mountMarketplaceMap(getNavigationRevision());
+      } finally {
+        marketplaceMapLoading = false;
+      }
+    });
     document.getElementById('mp-radius')?.addEventListener('change', (event) => {
       marketplaceRadius = Number(event.currentTarget.value);
       updateMarketplaceLocationStatus();
@@ -781,11 +803,13 @@ function injectMarketplaceExperienceStyles() {
     .mp-location-panel{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 14px;padding:18px 20px;border:1px solid #d3e3d8;border-radius:18px;background:#f7fbf7}
     .mp-location-panel h2,.mp-map-heading h2{margin:0;color:#174a3b;font-size:16px}
     .mp-location-panel p{margin:5px 0 0;color:#718074;font-size:12px;line-height:1.5}
-    .mp-location-controls{display:flex;align-items:flex-end;gap:10px}
+    .mp-location-controls{display:flex;align-items:flex-end;flex-wrap:wrap;gap:10px}
     .mp-location-controls label{display:grid;gap:5px;color:#607267;font-size:10px;font-weight:700}
     .mp-location-controls select{min-width:100px;height:38px;padding:0 10px;border:1px solid #d3e1d7;border-radius:10px;background:#fff;color:#214735}
-    .mp-use-location{min-height:38px;padding:0 14px;border:0;border-radius:10px;background:#235347;color:#fff;font-size:11px;font-weight:650;cursor:pointer}
+    .mp-use-location,.mp-toggle-map{min-height:38px;padding:0 14px;border:0;border-radius:10px;background:#235347;color:#fff;font-size:11px;font-weight:650;cursor:pointer}
+    .mp-toggle-map{border:1px solid #c9dbcf;background:#fff;color:#235347}
     .mp-map-panel{margin:0 0 25px;padding:14px;border:1px solid #d9e5dc;border-radius:20px;background:#fff;box-shadow:0 8px 22px #16383209}
+    .mp-map-panel[hidden]{display:none}
     .mp-map-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 2px 10px}
     .mp-map-heading span{color:#718074;font-size:11px}
     .mp-store-map{height:350px;overflow:hidden;border-radius:14px;background:#e8efeb}
