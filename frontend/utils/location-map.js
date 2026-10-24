@@ -47,14 +47,27 @@ export function validCoordinates(latitude, longitude) {
 }
 
 export function addMapTiles(leaflet, map) {
-  return leaflet
-    .tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 19,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    })
+  const attribution =
+    'Tiles &copy; Esri, HERE, Garmin, &copy; OpenStreetMap contributors, and the GIS user community';
+  const base = leaflet
+    .tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxZoom: 19,
+        attribution,
+      },
+    )
     .addTo(map);
+  leaflet
+    .tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxZoom: 19,
+        attribution,
+      },
+    )
+    .addTo(map);
+  return base;
 }
 
 export async function mountLocationPicker({
