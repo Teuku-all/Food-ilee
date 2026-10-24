@@ -12,6 +12,7 @@ router.post('/checkout', authMiddleware, orderController.createCheckout);
 
 router.get('/my', authMiddleware, orderController.getMyOrders);
 router.get('/sales', authMiddleware, orderController.getMySales);
+router.post('/:id/cancel', authMiddleware, orderController.cancelMyOrder);
 router.get('/:id', authMiddleware, orderController.getMyOrder);
 
 router.patch('/:id/status', authMiddleware, orderController.updateOrderStatus);

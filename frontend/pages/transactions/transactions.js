@@ -1,4 +1,4 @@
-import { createReview, getMyOrders, getOrder, refreshOrderPayment } from '../../services/order.js';
+import { cancelOrder, createReview, getMyOrders, getOrder, refreshOrderPayment } from '../../services/order.js';
 import { escapeHtml } from '../../utils/html.js';
 import { showToast, injectToastStyle } from '../../utils/toast.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
@@ -187,7 +187,7 @@ function renderOrders() {
           .toUpperCase(),
       )}</span></div></div><span class="tx-status tx-status-${status.tone}">${escapeHtml(status.label)}</span></header>
       <div class="tx-order-content"><img class="tx-item-image" src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'"><div class="tx-item-info"><h2>${escapeHtml(title)}</h2><p>${quantity.toLocaleString('id-ID')} kg <span>×</span> ${formatRupiah(unitPrice)}</p><span class="tx-impact">${escapeHtml(PAYMENT_STATUS[order.paymentStatus] || 'Status pembayaran belum tersedia')} · Pengiriman: ${escapeHtml(SHIPPING_STATUS[order.shippingStatus] || order.shippingStatus || 'Belum tersedia')}</span><span class="tx-impact">\u267b Membantu mengurangi ${Math.round(quantity * 0.3)} kg emisi CO\u2082</span></div><div class="tx-total"><span>Total Belanja</span><strong>${formatRupiah(total)}</strong></div></div>
-      <footer class="tx-order-actions">${order.paymentStatus === 'pending' && order.paymentMethod !== 'cod' && order.snapToken ? `<button class="tx-button tx-button-primary" type="button" data-pay-snap="${id}">Lanjutkan Pembayaran</button>` : ''}${order.paymentStatus === 'pending' && order.paymentMethod !== 'cod' ? `<button class="tx-button tx-button-outline" type="button" data-payment-status="${id}">Periksa Pembayaran</button>` : ''}${shipped && order.trackingUrl ? `<a class="tx-button tx-button-outline" target="_blank" rel="noopener" href="${escapeHtml(order.trackingUrl)}">Lacak Paket</a>` : ''}<button class="tx-button tx-button-outline" type="button" data-detail="${id}">Lihat Detail</button>${completed ? `<button class="tx-button tx-button-primary" type="button" data-review="${id}">Beri Ulasan</button>` : ''}</footer>
+      <footer class="tx-order-actions">${order.paymentStatus === 'pending' && order.paymentMethod !== 'cod' && order.snapToken ? `<button class="tx-button tx-button-primary" type="button" data-pay-snap="${id}">Lanjutkan Pembayaran</button>` : ''}${order.paymentStatus === 'pending' && order.paymentMethod !== 'cod' ? `<button class="tx-button tx-button-outline" type="button" data-payment-status="${id}">Periksa Pembayaran</button>` : ''}${order.status === 'pending' && order.paymentStatus === 'pending' && order.paymentMethod === 'midtrans' ? `<button class="tx-button tx-button-outline" type="button" data-cancel-order="${id}">Batalkan Pesanan</button>` : ''}${shipped && order.trackingUrl ? `<a class="tx-button tx-button-outline" target="_blank" rel="noopener" href="${escapeHtml(order.trackingUrl)}">Lacak Paket</a>` : ''}<button class="tx-button tx-button-outline" type="button" data-detail="${id}">Lihat Detail</button>${completed ? `<button class="tx-button tx-button-primary" type="button" data-review="${id}">Beri Ulasan</button>` : ''}</footer>
     </article>`;
     })
     .join('');
@@ -232,6 +232,26 @@ function renderOrders() {
       button.disabled = false;
       button.textContent = 'Periksa Pembayaran';
       showToast(error.message || 'Status pembayaran belum dapat diperiksa.', 'error');
+    }
+  }));
+  list.querySelectorAll('[data-cancel-order]').forEach((button) => button.addEventListener('click', async () => {
+    const orderId = button.dataset.cancelOrder;
+    if (!window.confirm('Batalkan pesanan ini? Pesanan yang sudah dibayar tidak dapat dibatalkan lewat fitur ini.')) return;
+    const revision = getNavigationRevision();
+    button.disabled = true;
+    button.textContent = 'Membatalkan…';
+    try {
+      const result = await cancelOrder(orderId);
+      if (!result.success) throw new Error(result.message || 'Pesanan belum dapat dibatalkan.');
+      if (!isRouteCurrent('#transaksi', revision)) return;
+      const index = allOrders.findIndex((item) => item.id === orderId);
+      if (index >= 0) allOrders[index] = result.data;
+      renderOrders();
+      showToast('Pesanan berhasil dibatalkan.');
+    } catch (error) {
+      if (!isRouteCurrent('#transaksi', revision)) return;
+      showToast(error.message || 'Pesanan belum dapat dibatalkan.', 'error');
+      await loadOrders(revision);
     }
   }));
   list

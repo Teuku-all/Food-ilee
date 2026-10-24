@@ -359,6 +359,77 @@ async function getMyOrder(orderId, buyerId) {
   });
 }
 
+async function cancelMyOrder(orderId, buyerId) {
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, buyerId },
+    include: { items: true },
+  });
+  if (!order) {
+    const error = new Error('Pesanan tidak ditemukan.');
+    error.statusCode = 404;
+    throw error;
+  }
+  if (order.status === 'cancelled' && order.paymentStatus !== 'paid') return getMyOrder(orderId, buyerId);
+  if (order.status !== 'pending' || order.paymentStatus !== 'pending' || order.paymentMethod !== 'midtrans') {
+    const error = new Error('Pesanan hanya dapat dibatalkan sebelum pembayaran berhasil.');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  let transactionStatus;
+  try {
+    const transaction = await snap.transaction.status(`ORDER-${order.id}`);
+    transactionStatus = transaction.transaction_status === 'capture' && transaction.fraud_status !== 'accept'
+      ? transaction.fraud_status === 'challenge' ? 'challenge' : 'deny'
+      : transaction.transaction_status;
+    if (transactionStatus === 'pending') {
+      const cancelled = await snap.transaction.cancel(`ORDER-${order.id}`);
+      transactionStatus = cancelled.transaction_status;
+    }
+  } catch (cause) {
+    const error = new Error('Status pembayaran belum dapat dipastikan. Pesanan belum dibatalkan; coba lagi.');
+    error.statusCode = 502;
+    error.cause = cause;
+    throw error;
+  }
+
+  if (transactionStatus === 'settlement' || transactionStatus === 'capture') {
+    await updatePaymentStatus(order.id, transactionStatus);
+    const error = new Error('Pembayaran sudah berhasil. Pesanan tidak dapat dibatalkan melalui fitur ini.');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  if (!['cancel', 'expire', 'deny', 'failure'].includes(transactionStatus)) {
+    const error = new Error('Transaksi belum berhasil dibatalkan di penyedia pembayaran. Pesanan belum dibatalkan.');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.order.updateMany({
+      where: { id: orderId, buyerId, status: 'pending', paymentStatus: 'pending' },
+      data: { status: 'cancelled', paymentStatus: 'cancelled' },
+    });
+    if (!updated.count) {
+      const latest = await tx.order.findFirst({ where: { id: orderId, buyerId } });
+      if (latest?.status === 'cancelled' && latest.paymentStatus !== 'paid') return;
+      const error = new Error('Status pesanan berubah saat pembatalan. Muat ulang transaksi.');
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const items = order.items.length ? order.items : [{ wasteId: order.wasteId, quantity: order.quantity }];
+    for (const item of items) {
+      await tx.wasteProduct.update({
+        where: { id: item.wasteId },
+        data: { stock: { increment: item.quantity } },
+      });
+    }
+  });
+  return getMyOrder(orderId, buyerId);
+}
+
 async function updatePaymentStatus(orderId, status) {
   const paymentStatus = status === 'settlement' || status === 'capture' ? 'paid' : status;
   const orderStatus =
@@ -565,6 +636,7 @@ module.exports = {
   createOrder,
   getMyOrders,
   getMyOrder,
+  cancelMyOrder,
   updatePaymentStatus,
   updateShippingStatus,
   getMySales,

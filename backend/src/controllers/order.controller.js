@@ -104,6 +104,15 @@ async function getMyOrder(req, res) {
   }
 }
 
+async function cancelMyOrder(req, res) {
+  try {
+    const order = await orderService.cancelMyOrder(req.params.id, req.user.id);
+    res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+  }
+}
+
 async function getMySales(req, res) {
   try {
     const orders = await orderService.getMySales(req.user.id);
@@ -132,6 +141,7 @@ module.exports = {
   createCheckout,
   getMyOrders,
   getMyOrder,
+  cancelMyOrder,
   getMySales,
   updateOrderStatus,
 };

@@ -36,6 +36,7 @@ Pembayaran online ditampilkan dengan Snap Embedded di halaman checkout Food Ilee
 - `POST /api/orders/checkout` — hitung ulang harga dan stok; membuat transaksi Snap untuk pembayaran online atau order cash jemput langsung.
 - `GET /api/orders/my` — daftar pesanan milik pengguna login.
 - `GET /api/orders/:id` — detail pesanan milik pengguna login.
+- `POST /api/orders/:id/cancel` — pembeli dapat membatalkan pesanan Midtrans yang masih menunggu pembayaran; backend membatalkan transaksi ke Midtrans dan memulihkan stok satu kali. Pesanan yang sudah dibayar atau mulai diproses tidak dapat dibatalkan lewat fitur ini, dan refund tidak dilakukan otomatis.
 - `GET /api/payments/:id/status` — periksa status Midtrans dari server.
 - `POST /api/payments/midtrans/webhook` — verifikasi notifikasi Midtrans.
 - `POST /api/payments/biteship/webhook` — autentikasi dan terapkan notifikasi status/waybill Biteship.

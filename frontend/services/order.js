@@ -31,6 +31,9 @@ export function getMyOrders() {
 export function getOrder(id) {
   return request(`/orders/${encodeURIComponent(id)}`);
 }
+export function cancelOrder(id) {
+  return request(`/orders/${encodeURIComponent(id)}/cancel`, { method: 'POST' });
+}
 export function refreshOrderPayment(id) {
   return request(`/payments/${encodeURIComponent(id)}/status`);
 }
