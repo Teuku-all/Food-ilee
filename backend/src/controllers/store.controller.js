@@ -8,6 +8,8 @@ async function createStore(req, res) {
       description: req.body.description,
 
       location: req.body.location,
+      latitude: req.body.latitude,
+      longitude: req.body.longitude,
 
       image: req.file ? req.file.path : null,
 
@@ -54,12 +56,23 @@ async function getMyStore(req, res) {
   }
 }
 
+async function getStores(req, res) {
+  try {
+    const stores = await storeService.getStores();
+    res.status(200).json({ success: true, data: stores });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
+
 async function updateStore(req, res) {
   try {
     const store = await storeService.updateStore(req.user.id, {
       name: req.body.name,
       description: req.body.description,
       location: req.body.location,
+      latitude: req.body.latitude,
+      longitude: req.body.longitude,
       image: req.file ? req.file.path : undefined,
       shippingOriginContactName: req.body.shippingOriginContactName,
       shippingOriginContactPhone: req.body.shippingOriginContactPhone,
@@ -79,5 +92,6 @@ async function updateStore(req, res) {
 module.exports = {
   createStore,
   getMyStore,
+  getStores,
   updateStore,
 };

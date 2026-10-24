@@ -19,6 +19,13 @@ export async function getMyStore() {
   });
 }
 
+export async function getStores() {
+  const token = getToken();
+  return apiRequest('/stores', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 export async function updateMyStore(formData) {
   return apiRequest('/stores/me', {
     method: 'PUT',

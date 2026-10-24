@@ -10,6 +10,8 @@ const storeController = require('../controllers/store.controller');
 
 router.post('/', authMiddleware, upload.single('image'), storeController.createStore);
 
+router.get('/', authMiddleware, storeController.getStores);
+
 router.get('/me', authMiddleware, storeController.getMyStore);
 
 router.put('/me', authMiddleware, upload.single('image'), storeController.updateStore);

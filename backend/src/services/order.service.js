@@ -42,11 +42,16 @@ function shippingOrigin(store) {
     address: store.shippingOriginAddress,
     postalCode: store.shippingOriginPostalCode,
     region: store.shippingOriginRegion,
+    latitude: store.latitude,
+    longitude: store.longitude,
   };
   if ([origin.contactName, origin.contactPhone, origin.address, origin.postalCode]
     .some((value) => typeof value !== 'string' || !value.trim()))
     throw new Error('Alamat pickup penjual belum lengkap. Penjual harus melengkapi alamat pengiriman di profil toko.');
   if (!/^\d{5}$/.test(origin.postalCode.trim())) throw new Error('Kode pos pickup penjual harus terdiri dari 5 angka.');
+  if (!Number.isFinite(origin.latitude) || origin.latitude < -90 || origin.latitude > 90
+    || !Number.isFinite(origin.longitude) || origin.longitude < -180 || origin.longitude > 180)
+    throw new Error('Titik lokasi pickup penjual belum dipilih. Minta penjual memperbarui alamat toko.');
   return {
     ...origin,
     contactName: origin.contactName.trim(),

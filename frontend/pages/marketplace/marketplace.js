@@ -8,6 +8,8 @@ import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js
 import { skeleton } from '../../ui/skeleton.js';
 import { marketplacePromoBanner, injectMarketplacePromoStyle } from './promo-banner.js';
 import { icon } from '../../ui/icons.js';
+import { getStores } from '../../services/store.js';
+import { loadLeaflet, validCoordinates } from '../../utils/location-map.js';
 
 let marketplaceProducts = [];
 let activeCategory = 'Semua';
@@ -15,6 +17,12 @@ let activeSearch = '';
 let activeSort = 'newest';
 let currentMarketplaceUserId = '';
 let isDemoMarketplace = false;
+let marketplaceLocation = null;
+let marketplaceRadius = 10;
+let marketplaceStores = [];
+let marketplaceMap = null;
+let marketplaceStoreLayer = null;
+let marketplaceStoreLoadError = '';
 
 const demoMarketplaceProducts = [
   {
@@ -59,12 +67,19 @@ const demoMarketplaceProducts = [
 ];
 
 export async function renderMarketplace() {
+  marketplaceMap?.remove();
+  marketplaceMap = null;
+  marketplaceStoreLayer = null;
   const revision = getNavigationRevision();
   const app = document.getElementById('app');
   activeCategory = 'Semua';
   activeSearch = '';
   activeSort = 'newest';
   currentMarketplaceUserId = '';
+  marketplaceStores = [];
+  marketplaceStoreLoadError = '';
+  marketplaceRadius = 10;
+  marketplaceLocation = getSavedMarketplaceLocation();
   app.innerHTML = `
     <div class="mp-app">
       ${dashboardHeader('market')}
@@ -77,6 +92,8 @@ export async function renderMarketplace() {
           <div class="mp-results-copy"><p class="mp-results-eyebrow"><span aria-hidden="true">${icon('leaf')}</span> PILIHAN YANG LEBIH BIJAK</p><div class="mp-results-title-row"><h2>Temukan bahan terbaik</h2><span class="mp-result-pill" id="mp-result-count" aria-live="polite">Memuat pilihan…</span></div><p class="mp-results-help">Bahan organik untuk kebutuhan pakan ternak dan kompos.</p></div>
           <label class="mp-sort-label" for="mp-sort"><span class="mp-sort-icon" aria-hidden="true">${icon('orders')}</span><span class="mp-sort-copy"><small>URUTKAN PRODUK</small><select id="mp-sort"><option value="newest">Terbaru</option><option value="price-low">Harga terendah</option><option value="price-high">Harga tertinggi</option></select></span></label>
         </section>
+        <section class="mp-location-panel"><div><h2>Produk dan toko di sekitar</h2><p id="mp-location-status" role="status">Pilih lokasi untuk memfilter produk berdasarkan jarak.</p></div><div class="mp-location-controls"><label for="mp-radius">Jarak pencarian<select id="mp-radius"><option value="3">3 km</option><option value="5">5 km</option><option value="10" selected>10 km</option><option value="25">25 km</option><option value="0">Semua jarak</option></select></label><button type="button" class="mp-use-location" id="mp-use-location">Gunakan lokasi saya</button></div></section>
+        <section class="mp-map-panel" aria-label="Peta lokasi toko"><div class="mp-map-heading"><h2>Lokasi toko</h2><span id="mp-map-status" role="status">Memuat peta…</span></div><div id="mp-store-map" class="mp-store-map" role="application" aria-label="Peta toko terdekat"></div></section>
         <section class="mp-grid" id="mp-grid" aria-live="polite" aria-busy="true">${marketplaceLoadingSkeleton()}</section>
         <aside class="mp-guidance" aria-label="Mulai berkontribusi"><span class="mp-guidance-icon">${icon('leaf')}</span><div><p>JADI BAGIAN DARI SIKLUSNYA</p><h2>Punya bahan organik yang masih bisa dimanfaatkan?</h2><span>Bagikan foto, jumlah, dan lokasi agar orang yang tepat bisa menemukannya.</span></div><a href="#tambah-limbah">Buat penawaran ${icon('arrow')}</a></aside>
       </main>
@@ -88,17 +105,30 @@ export async function renderMarketplace() {
   injectToastStyle();
   bindSharedHeader();
   bindMarketplaceControls();
+  bindMarketplaceLocationControls();
 
   try {
-    const [result] = await Promise.all([getWastes(), loadUser(revision)]);
+    const [result, storesResult] = await Promise.all([
+      getWastes(),
+      getStores().catch((error) => ({ success: false, message: error.message })),
+      loadUser(revision),
+    ]);
     if (!isRouteCurrent('#marketplace', revision)) return;
     if (result.success === false) throw new Error(result.message || 'Produk belum dapat dimuat.');
     document.getElementById('mp-grid')?.removeAttribute('aria-busy');
     marketplaceProducts = Array.isArray(result.data) ? result.data : [];
+    marketplaceStores = storesResult.success && Array.isArray(storesResult.data) ? storesResult.data : [];
+    if (!storesResult.success) {
+      marketplaceStoreLoadError = storesResult.message || 'Lokasi toko belum dapat dimuat.';
+      const status = document.getElementById('mp-map-status');
+      if (status) status.textContent = marketplaceStoreLoadError;
+    }
     isDemoMarketplace = marketplaceProducts.length === 0;
     if (isDemoMarketplace) marketplaceProducts = demoMarketplaceProducts;
     const demoBanner = document.getElementById('mp-demo-banner');
     if (demoBanner) demoBanner.hidden = !isDemoMarketplace;
+    updateMarketplaceLocationStatus();
+    mountMarketplaceMap(revision);
     renderProducts();
   } catch (error) {
     if (!isRouteCurrent('#marketplace', revision)) return;
@@ -109,6 +139,136 @@ export async function renderMarketplace() {
     document.getElementById('mp-retry')?.addEventListener('click', renderMarketplace);
   }
 }
+
+  function getSavedMarketplaceLocation() {
+    try {
+      const savedAddress = JSON.parse(localStorage.getItem('foodilee_shipping_address') || 'null');
+      if (validCoordinates(savedAddress?.latitude, savedAddress?.longitude))
+        return { latitude: Number(savedAddress.latitude), longitude: Number(savedAddress.longitude) };
+      const savedLocation = JSON.parse(localStorage.getItem('foodilee_marketplace_location') || 'null');
+      if (validCoordinates(savedLocation?.latitude, savedLocation?.longitude))
+        return { latitude: Number(savedLocation.latitude), longitude: Number(savedLocation.longitude) };
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  function distanceInKm(first, second) {
+    const radians = (degrees) => degrees * Math.PI / 180;
+    const latitudeDelta = radians(second.latitude - first.latitude);
+    const longitudeDelta = radians(second.longitude - first.longitude);
+    const value = Math.sin(latitudeDelta / 2) ** 2
+      + Math.cos(radians(first.latitude)) * Math.cos(radians(second.latitude))
+      * Math.sin(longitudeDelta / 2) ** 2;
+    return 6371 * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
+  }
+
+  function bindMarketplaceLocationControls() {
+    document.getElementById('mp-radius')?.addEventListener('change', (event) => {
+      marketplaceRadius = Number(event.currentTarget.value);
+      updateMarketplaceLocationStatus();
+      refreshMarketplaceMap();
+      renderProducts();
+    });
+    document.getElementById('mp-use-location')?.addEventListener('click', () => {
+      const status = document.getElementById('mp-location-status');
+      if (!navigator.geolocation) {
+        status.textContent = 'Perangkat ini tidak mendukung lokasi otomatis. Peta tetap dapat dijelajahi.';
+        return;
+      }
+      status.textContent = 'Mencari lokasi perangkat…';
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => {
+          marketplaceLocation = { latitude: coords.latitude, longitude: coords.longitude };
+          localStorage.setItem('foodilee_marketplace_location', JSON.stringify(marketplaceLocation));
+          updateMarketplaceLocationStatus();
+          refreshMarketplaceMap();
+          renderProducts();
+        },
+        () => {
+          status.textContent = 'Lokasi tidak tersedia. Izinkan akses lokasi atau pilih Semua jarak.';
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 },
+      );
+    });
+  }
+
+  function updateMarketplaceLocationStatus() {
+    const status = document.getElementById('mp-location-status');
+    if (!status) return;
+    if (!marketplaceLocation) {
+      status.textContent = 'Lokasi belum dipilih; semua produk ditampilkan. Gunakan lokasi perangkat untuk memfilter produk terdekat.';
+      return;
+    }
+    status.textContent = marketplaceRadius
+      ? `Menampilkan produk dalam radius ${marketplaceRadius} km dari lokasi Anda.`
+      : 'Menampilkan produk dari semua lokasi.';
+  }
+
+  async function mountMarketplaceMap(revision) {
+    const status = document.getElementById('mp-map-status');
+    try {
+      const leaflet = await loadLeaflet();
+      if (!isRouteCurrent('#marketplace', revision)) return;
+      const element = document.getElementById('mp-store-map');
+      if (!element) return;
+      marketplaceMap = leaflet.map(element);
+      leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      }).addTo(marketplaceMap);
+      marketplaceStoreLayer = leaflet.layerGroup().addTo(marketplaceMap);
+      refreshMarketplaceMap();
+      requestAnimationFrame(() => marketplaceMap?.invalidateSize());
+    } catch (error) {
+      if (status) status.textContent = error.message;
+    }
+  }
+
+  function refreshMarketplaceMap() {
+    if (!marketplaceMap || !marketplaceStoreLayer) return;
+    const visibleStores = marketplaceStores.filter((store) =>
+      validCoordinates(store.latitude, store.longitude)
+      && (!marketplaceLocation || !marketplaceRadius
+        || distanceInKm(marketplaceLocation, store) <= marketplaceRadius),
+    );
+    marketplaceStoreLayer.clearLayers();
+    const leaflet = window.L;
+    const points = [];
+    for (const store of visibleStores) {
+      const point = [Number(store.latitude), Number(store.longitude)];
+      points.push(point);
+      const distance = marketplaceLocation
+        ? `<br><small>${distanceInKm(marketplaceLocation, store).toFixed(1)} km dari lokasi Anda</small>`
+        : '';
+      leaflet.circleMarker(point, {
+        radius: 8,
+        color: '#fff',
+        weight: 2,
+        fillColor: '#235347',
+        fillOpacity: 1,
+      })
+        .bindPopup(`<strong>${escapeHtml(store.name || 'Toko Food Ilee')}</strong><br>${escapeHtml(store.location || 'Lokasi toko')}${distance}`)
+        .addTo(marketplaceStoreLayer);
+    }
+    if (marketplaceLocation) {
+      const point = [marketplaceLocation.latitude, marketplaceLocation.longitude];
+      points.push(point);
+      leaflet.circleMarker(point, {
+        radius: 7,
+        color: '#fff',
+        weight: 2,
+        fillColor: '#3879cc',
+        fillOpacity: 1,
+      }).bindPopup('Lokasi Anda').addTo(marketplaceStoreLayer);
+    }
+    if (points.length > 1) marketplaceMap.fitBounds(points, { padding: [24, 24], maxZoom: 15 });
+    else if (points.length === 1) marketplaceMap.setView(points[0], 14);
+    else marketplaceMap.setView([-2.5, 118], 5);
+    const status = document.getElementById('mp-map-status');
+    if (status) status.textContent = marketplaceStoreLoadError || `${visibleStores.length} toko ditampilkan pada peta.`;
+  }
 
 function marketplaceLoadingSkeleton() {
   return Array.from({ length: 6 }, () => `<article class="mp-card" aria-hidden="true"><div class="mp-card-image-wrap">${skeleton('100%', '205px')}</div><div class="mp-card-body">${skeleton('75px', '18px', 'pill')}<div style="height:12px"></div>${skeleton('70%', '18px')}<div style="height:12px"></div>${skeleton('80%', '11px')}<div style="height:14px"></div>${skeleton('100%', '39px', 'pill')}</div></article>`).join('');
@@ -175,20 +335,33 @@ function categoryFor(product) {
   return /kompos|pupuk|kulit buah|ampas kopi/.test(text) ? 'Kompos' : 'Pakan Ternak';
 }
 
+function storeForProduct(product) {
+  return product.store
+    || marketplaceStores.find((store) => store.ownerId === product.seller?.id)
+    || null;
+}
+
 function sellerDisplayName(product) {
-  return product.store?.name || 'Toko Food Ilee';
+  return storeForProduct(product)?.name || 'Toko Food Ilee';
 }
 
 function renderProducts() {
   const grid = document.getElementById('mp-grid');
   if (!grid) return;
+  const nearbyProducts = marketplaceLocation && marketplaceRadius
+    ? marketplaceProducts.filter((product) => {
+        const store = storeForProduct(product);
+        return validCoordinates(store?.latitude, store?.longitude)
+          && distanceInKm(marketplaceLocation, store) <= marketplaceRadius;
+      })
+    : marketplaceProducts;
   const categoryProducts =
     activeCategory === 'Semua'
-      ? marketplaceProducts
-      : marketplaceProducts.filter((product) => categoryFor(product) === activeCategory);
+      ? nearbyProducts
+      : nearbyProducts.filter((product) => categoryFor(product) === activeCategory);
   const products = (activeSearch
     ? categoryProducts.filter((product) =>
-        [product.title, product.description, product.location, product.store?.name, product.category]
+        [product.title, product.description, product.location, storeForProduct(product)?.name, product.category]
           .filter(Boolean)
           .join(' ')
           .toLocaleLowerCase('id-ID')
@@ -207,19 +380,25 @@ function renderProducts() {
   const resultCount = document.getElementById('mp-result-count');
   if (resultCount) resultCount.textContent = `${products.length} pilihan tersedia`;
   if (!products.length) {
-    const hasFilters = activeCategory !== 'Semua' || activeSearch;
-    grid.innerHTML = `<div class="mp-empty"><div class="mp-empty-mark">${icon('leaf')}</div><h2>${hasFilters ? 'Produk tidak ditemukan' : marketplaceProducts.length ? 'Belum ada produk di kategori ini' : 'Belum ada produk tersedia'}</h2><p>${hasFilters ? 'Coba kata kunci lain atau ubah kategori pencarian.' : marketplaceProducts.length ? 'Pilih kategori lain untuk menjelajahi produk.' : 'Produk limbah pangan yang tersedia akan muncul di sini.'}</p>${!hasFilters && !marketplaceProducts.length ? '<a href="#tambah-limbah">Mulai tambahkan limbah <span>→</span></a>' : ''}</div>`;
+    const hasFilters = activeCategory !== 'Semua' || activeSearch || Boolean(marketplaceLocation && marketplaceRadius);
+    const noNearbyProducts = Boolean(marketplaceLocation && marketplaceRadius && !nearbyProducts.length);
+    grid.innerHTML = `<div class="mp-empty"><div class="mp-empty-mark">${icon('leaf')}</div><h2>${noNearbyProducts ? 'Belum ada produk di sekitar' : hasFilters ? 'Produk tidak ditemukan' : marketplaceProducts.length ? 'Belum ada produk di kategori ini' : 'Belum ada produk tersedia'}</h2><p>${noNearbyProducts ? 'Perluas jarak pencarian atau pilih semua lokasi untuk melihat produk lainnya.' : hasFilters ? 'Coba kata kunci lain atau ubah kategori pencarian.' : marketplaceProducts.length ? 'Pilih kategori lain untuk menjelajahi produk.' : 'Produk limbah pangan yang tersedia akan muncul di sini.'}</p>${!hasFilters && !marketplaceProducts.length ? '<a href="#tambah-limbah">Mulai tambahkan limbah <span>→</span></a>' : ''}</div>`;
     if (hasFilters) {
       const resetButton = document.createElement('button');
       resetButton.type = 'button';
       resetButton.textContent = 'Hapus filter dan lihat semua';
       resetButton.addEventListener('click', () => {
         activeSearch = '';
+        marketplaceRadius = 0;
+        const radiusSelect = document.getElementById('mp-radius');
+        if (radiusSelect) radiusSelect.value = '0';
         const searchInput = document.getElementById('mp-search-input');
         if (searchInput) searchInput.value = '';
         const clearSearch = document.getElementById('mp-search-clear');
         if (clearSearch) clearSearch.hidden = true;
         document.querySelector('.mp-categories [data-category="Semua"]')?.click();
+        updateMarketplaceLocationStatus();
+        refreshMarketplaceMap();
       });
       grid.querySelector('.mp-empty')?.append(resetButton);
     }
@@ -233,7 +412,11 @@ function renderProducts() {
       const relativeAge = Number.isNaN(uploaded.getTime())
         ? 'Tersedia sekarang'
         : `Diperbarui ${uploaded.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}`;
-      return `<article class="mp-card"><div class="mp-card-image-wrap"><img class="mp-card-image" src="${escapeHtml(product.image || './assets/landing-food-demo.jpg')}" alt="${escapeHtml(product.title)}" loading="lazy" onerror="this.onerror=null;this.src='./assets/landing-food-demo.jpg'"><span class="mp-category-tag ${category === 'Kompos' ? 'compost' : ''}">${category}</span>${product.isDemo ? '<span class="mp-demo-tag">CONTOH</span>' : ''}</div><div class="mp-card-body"><div class="mp-title-row"><h2>${escapeHtml(product.title || 'Limbah Organik')}</h2><strong>${formatPrice(product.price)}</strong></div><div class="mp-meta"><span>${icon('box')} ${Number(product.stock || 0).toLocaleString('id-ID')} kg</span><i>&#8226;</i><span>${icon('pin')} ${escapeHtml(product.location || seller)}</span></div><p class="mp-updated">${relativeAge}</p><button class="mp-card-action" type="button" data-product-id="${escapeHtml(product.id)}">Lihat Detail <span>&rarr;</span></button></div></article>`;
+      const store = storeForProduct(product);
+      const distance = marketplaceLocation && validCoordinates(store?.latitude, store?.longitude)
+        ? `${distanceInKm(marketplaceLocation, store).toFixed(1)} km`
+        : '';
+      return `<article class="mp-card"><div class="mp-card-image-wrap"><img class="mp-card-image" src="${escapeHtml(product.image || './assets/landing-food-demo.jpg')}" alt="${escapeHtml(product.title)}" loading="lazy" onerror="this.onerror=null;this.src='./assets/landing-food-demo.jpg'"><span class="mp-category-tag ${category === 'Kompos' ? 'compost' : ''}">${category}</span>${product.isDemo ? '<span class="mp-demo-tag">CONTOH</span>' : ''}</div><div class="mp-card-body"><div class="mp-title-row"><h2>${escapeHtml(product.title || 'Limbah Organik')}</h2><strong>${formatPrice(product.price)}</strong></div><div class="mp-meta"><span>${icon('box')} ${Number(product.stock || 0).toLocaleString('id-ID')} kg</span><i>&#8226;</i><span>${icon('pin')} ${distance ? `${escapeHtml(distance)} · ` : ''}${escapeHtml(product.location || seller)}</span></div><p class="mp-updated">${relativeAge}</p><button class="mp-card-action" type="button" data-product-id="${escapeHtml(product.id)}">Lihat Detail <span>&rarr;</span></button></div></article>`;
     })
     .join('');
   grid.querySelectorAll('[data-product-id]').forEach((button) =>
@@ -595,6 +778,18 @@ function injectMarketplaceExperienceStyles() {
     .mp-app .mp-sort-copy{display:grid;gap:3px}
     .mp-app .mp-sort-copy small{color:#819084;font-size:8px;font-weight:800;letter-spacing:.1em}
     .mp-app .mp-sort-label select{min-width:144px;height:24px;padding:0 22px 0 0;border:0;border-radius:0;background-color:transparent;color:#214735;font-size:11px;font-weight:700}
+    .mp-location-panel{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 14px;padding:18px 20px;border:1px solid #d3e3d8;border-radius:18px;background:#f7fbf7}
+    .mp-location-panel h2,.mp-map-heading h2{margin:0;color:#174a3b;font-size:16px}
+    .mp-location-panel p{margin:5px 0 0;color:#718074;font-size:12px;line-height:1.5}
+    .mp-location-controls{display:flex;align-items:flex-end;gap:10px}
+    .mp-location-controls label{display:grid;gap:5px;color:#607267;font-size:10px;font-weight:700}
+    .mp-location-controls select{min-width:100px;height:38px;padding:0 10px;border:1px solid #d3e1d7;border-radius:10px;background:#fff;color:#214735}
+    .mp-use-location{min-height:38px;padding:0 14px;border:0;border-radius:10px;background:#235347;color:#fff;font-size:11px;font-weight:650;cursor:pointer}
+    .mp-map-panel{margin:0 0 25px;padding:14px;border:1px solid #d9e5dc;border-radius:20px;background:#fff;box-shadow:0 8px 22px #16383209}
+    .mp-map-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 2px 10px}
+    .mp-map-heading span{color:#718074;font-size:11px}
+    .mp-store-map{height:350px;overflow:hidden;border-radius:14px;background:#e8efeb}
+    @media(max-width:640px){.mp-location-panel{align-items:stretch;flex-direction:column;padding:15px}.mp-location-controls{align-items:flex-end}.mp-location-controls label{flex:1}.mp-location-controls select{width:100%}.mp-use-location{padding:0 10px}.mp-store-map{height:300px}.mp-map-heading{align-items:flex-start;flex-direction:column;gap:4px}}
     @media(max-width:760px){.mp-app .mp-results-head{align-items:flex-start;flex-direction:column;gap:15px;margin:26px 0 16px;padding:18px;border-radius:19px}.mp-app .mp-results-head h2{font-size:21px}.mp-app .mp-sort-label{box-sizing:border-box;width:100%}.mp-app .mp-sort-copy{flex:1;display:flex;align-items:center;justify-content:space-between;gap:12px}.mp-app .mp-sort-label select{min-width:0}}
     @media(max-width:380px){.mp-app .mp-results-title-row{align-items:flex-start;flex-direction:column;gap:7px}.mp-app .mp-results-head h2{font-size:20px}.mp-app .mp-results-help{max-width:260px}}
   `;

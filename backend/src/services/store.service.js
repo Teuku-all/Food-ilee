@@ -8,13 +8,29 @@ const SHIPPING_FIELDS = [
 ];
 const BANK_FIELDS = ['bankName', 'bankAccountNumber', 'bankAccountHolder'];
 
+function coordinatesData(data, { partial = false } = {}) {
+  const hasLatitude = data.latitude !== undefined && String(data.latitude).trim() !== '';
+  const hasLongitude = data.longitude !== undefined && String(data.longitude).trim() !== '';
+  if (!hasLatitude && !hasLongitude) {
+    if (!partial) throw new Error('Pilih titik lokasi toko pada peta.');
+    return {};
+  }
+  const latitude = Number(data.latitude);
+  const longitude = Number(data.longitude);
+  if (!hasLatitude || !hasLongitude || !Number.isFinite(latitude) || latitude < -90 || latitude > 90
+    || !Number.isFinite(longitude) || longitude < -180 || longitude > 180)
+    throw new Error('Koordinat lokasi toko tidak valid. Pilih ulang titik pada peta.');
+  return { latitude, longitude };
+}
+
 function storeProfileData(data, { partial = false } = {}) {
   const shipping = shippingOriginData(data, { partial });
+  const coordinates = coordinatesData(data, { partial });
   if (!partial && SHIPPING_FIELDS.some((key) => !shipping[key]))
     throw new Error('Lengkapi nama kontak, telepon, alamat pickup, dan kode pos pengiriman toko.');
   const bank = Object.fromEntries(BANK_FIELDS.map((key) => [key, data[key]]));
   const hasAnyBank = Object.values(bank).some((value) => value !== undefined && String(value).trim());
-  if (partial && !hasAnyBank) return shipping;
+  if (partial && !hasAnyBank) return { ...shipping, ...coordinates };
   if (!partial && !hasAnyBank) throw new Error('Isi nama bank, nomor rekening, dan nama pemilik rekening toko.');
   if (hasAnyBank && BANK_FIELDS.some((key) => typeof bank[key] !== 'string' || !bank[key].trim()))
     throw new Error('Lengkapi nama bank, nomor rekening, dan nama pemilik rekening toko.');
@@ -22,6 +38,7 @@ function storeProfileData(data, { partial = false } = {}) {
     throw new Error('Nomor rekening harus terdiri dari 6–30 angka.');
   return {
     ...shipping,
+    ...coordinates,
     ...(hasAnyBank ? {
       bankName: bank.bankName.trim(),
       bankAccountNumber: bank.bankAccountNumber.replace(/[ -]/g, ''),
@@ -102,6 +119,21 @@ async function getMyStore(ownerId) {
   });
 }
 
+async function getStores() {
+  return prisma.store.findMany({
+    where: { latitude: { not: null }, longitude: { not: null } },
+    select: {
+      id: true,
+      ownerId: true,
+      name: true,
+      location: true,
+      latitude: true,
+      longitude: true,
+      image: true,
+    },
+  });
+}
+
 async function updateStore(ownerId, data) {
   const profile = storeProfileData(data, { partial: true });
   const existing = await prisma.store.findUnique({ where: { ownerId } });
@@ -121,5 +153,6 @@ async function updateStore(ownerId, data) {
 module.exports = {
   createStore,
   getMyStore,
+  getStores,
   updateStore,
 };

@@ -47,6 +47,9 @@ function validateAddress(address) {
   }
   if (!/^\d{5}$/.test(address.postalCode)) throw new Error('Kode pos harus terdiri dari 5 angka.');
   if (!/^\+?[0-9\s()-]{8,20}$/.test(address.phone)) throw new Error('Nomor telepon penerima tidak valid.');
+  if (!Number.isFinite(address.latitude) || address.latitude < -90 || address.latitude > 90
+    || !Number.isFinite(address.longitude) || address.longitude < -180 || address.longitude > 180)
+    throw new Error('Pilih titik lokasi alamat penerima pada peta.');
 }
 
 async function validateRegion(address) {
@@ -107,6 +110,10 @@ async function requestRates(origin, address, items, { codAmount, codType = '7_da
     destination_postal_code: Number(address.postalCode),
     couriers: couriers || process.env.BITESHIP_COURIERS,
     items: makeItems(items),
+    ...(origin.latitude != null && origin.longitude != null
+      ? { origin_coordinate: { latitude: origin.latitude, longitude: origin.longitude } }
+      : {}),
+    destination_coordinate: { latitude: address.latitude, longitude: address.longitude },
   };
   if (codAmount) {
     request.destination_cash_on_delivery = codAmount;
@@ -189,6 +196,10 @@ async function createShipment(order, buyer, items) {
     destination_contact_email: buyer.email || undefined,
     destination_address: addressText(address),
     destination_postal_code: Number(address.postalCode),
+    ...(origin.latitude != null && origin.longitude != null
+      ? { origin_coordinate: { latitude: origin.latitude, longitude: origin.longitude } }
+      : {}),
+    destination_coordinate: { latitude: address.latitude, longitude: address.longitude },
     courier_company: order.courier,
     courier_type: order.courierService,
     ...(order.paymentMethod === 'cod'

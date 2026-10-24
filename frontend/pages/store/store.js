@@ -7,6 +7,7 @@ import { icon } from '../../ui/icons.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { bindRegionAddress } from '../../utils/region-address.js';
+import { mountLocationPicker } from '../../utils/location-map.js';
 
 const statusNames = {
   pending: 'Menunggu Pembayaran',
@@ -168,7 +169,6 @@ function editProduct(product) {
   document.body.append(dialog);
   dialog.showModal();
   const form = dialog.querySelector('form');
-  const regionAddress = bindRegionAddress(form, 'store', store.shippingOriginRegion || {});
   dialog
     .querySelectorAll('[data-cancel],.st-dialog-close')
     .forEach((button) => button.addEventListener('click', () => dialog.close()));
@@ -198,7 +198,19 @@ function editStore(store) {
   document.body.append(dialog);
   dialog.showModal();
   const form = dialog.querySelector('form');
+  const mapSection = document.createElement('div');
+  mapSection.innerHTML = '<label class="fi-label fi-map-label">Titik lokasi toko <small>Pilih titik pickup dengan klik atau geser penanda di peta.</small></label><div id="store-map" class="fi-location-map" role="application" aria-label="Peta pemilih lokasi toko"></div><div class="fi-map-controls"><button type="button" class="fi-button fi-button-outline" id="store-locate">Gunakan lokasi perangkat</button><span id="store-map-status" role="status">Memuat peta…</span></div><input type="hidden" name="latitude"><input type="hidden" name="longitude">';
+  form.querySelector('[name="shippingOriginAddress"]').before(mapSection);
   const regionAddress = bindRegionAddress(form, 'store', store.shippingOriginRegion || {});
+  const mapStatus = form.querySelector('#store-map-status');
+  mountLocationPicker({
+    element: form.querySelector('#store-map'),
+    latitudeInput: form.elements.latitude,
+    longitudeInput: form.elements.longitude,
+    status: mapStatus,
+    locateButton: form.querySelector('#store-locate'),
+    initialLocation: store,
+  }).catch((error) => { mapStatus.textContent = error.message; });
   dialog
     .querySelectorAll('[data-cancel],.st-dialog-close')
     .forEach((button) => button.addEventListener('click', () => dialog.close()));
@@ -209,6 +221,8 @@ function editStore(store) {
     submit.disabled = true;
     try {
       const pickup = (await regionAddress).read();
+      if (!form.elements.latitude.value || !form.elements.longitude.value)
+        throw new Error('Pilih titik lokasi pickup toko pada peta.');
       const data = new FormData(form);
       data.set('shippingOriginAddress', pickup.address);
       data.set('shippingOriginRegion', JSON.stringify(pickup.region));

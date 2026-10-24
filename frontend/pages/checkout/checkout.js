@@ -4,6 +4,7 @@ import { escapeHtml } from '../../utils/html.js';
 import { showToast, injectToastStyle } from '../../utils/toast.js';
 import { bindSharedHeader, dashboardFooter, dashboardHeader } from '../../ui/shell.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
+import { mountLocationPicker, validCoordinates } from '../../utils/location-map.js';
 
 const REGION_API = 'https://www.emsifa.com/api-wilayah-indonesia/v2';
 const CART_KEY = 'foodilee_checkout_cart';
@@ -22,6 +23,7 @@ let rateTimer = null;
 let checkoutBusy = false;
 let paymentMethod = 'midtrans';
 let deliveryMethod = 'courier';
+let addressMap = null;
 
 function formatPrice(value) { return `Rp${Number(value || 0).toLocaleString('id-ID')}`; }
 function readCart() {
@@ -67,6 +69,8 @@ function savedAddress() {
 }
 
 export async function renderCheckout() {
+  addressMap?.destroy();
+  addressMap = null;
   const navigationRevision = getNavigationRevision();
   cartEntries = readCart();
   selectedWasteIds = readSelectedItems(cartEntries);
@@ -99,6 +103,8 @@ export async function renderCheckout() {
   bindAddressForm();
   bindDeliveryOptions();
   await loadRegionOptions(navigationRevision);
+  if (!isRouteCurrent('#checkout', navigationRevision)) return;
+  bindCheckoutMap();
 }
 
 async function loadProducts(navigationRevision) {
@@ -147,7 +153,34 @@ function readAddress() {
     cityCode: get('co-city').value, city: get('co-city').selectedOptions[0]?.textContent || '',
     districtCode: get('co-district').value, district: get('co-district').selectedOptions[0]?.textContent || '',
     villageCode: get('co-village').value, village: get('co-village').selectedOptions[0]?.textContent || '',
+    latitude: form.elements.latitude?.value ? Number(form.elements.latitude.value) : null,
+    longitude: form.elements.longitude?.value ? Number(form.elements.longitude.value) : null,
   };
+}
+
+function bindCheckoutMap() {
+  const form = document.getElementById('co-address');
+  const section = document.createElement('div');
+  section.innerHTML = '<label class="co-label fi-map-label">Titik lokasi alamat <small>Pilih titik rumah/penerima dengan klik atau geser penanda di peta.</small></label><div id="co-map" class="fi-location-map" role="application" aria-label="Peta pemilih lokasi alamat penerima"></div><div class="fi-map-controls"><button type="button" class="fi-button fi-button-outline" id="co-locate">Gunakan lokasi perangkat</button><span id="co-map-status" role="status">Memuat peta…</span></div><input type="hidden" name="latitude"><input type="hidden" name="longitude">';
+  document.getElementById('co-save-address').before(section);
+  const saved = savedAddress();
+  const status = form.querySelector('#co-map-status');
+  mountLocationPicker({
+    element: form.querySelector('#co-map'),
+    latitudeInput: form.elements.latitude,
+    longitudeInput: form.elements.longitude,
+    status,
+    locateButton: form.querySelector('#co-locate'),
+    initialLocation: saved,
+    onChange: (latitude, longitude) => {
+      if (latitude === null || longitude === null) return;
+      address = readAddress();
+      invalidateCheckoutKey();
+      updateSummary();
+      loadRates();
+    },
+  }).then((picker) => { addressMap = picker; })
+    .catch((error) => { status.textContent = error.message; });
 }
 
 function bindAddressForm() {
@@ -310,6 +343,8 @@ function applyAddress(value) {
   const form = document.getElementById('co-address');
   for (const key of ['recipientName', 'phone', 'postalCode', 'details', 'notes']) if (form.elements[key]) form.elements[key].value = value[key] || '';
   document.getElementById('co-province').value = value.provinceCode || '';
+  if (validCoordinates(value.latitude, value.longitude)) addressMap?.setLocation(value.latitude, value.longitude);
+  else addressMap?.clearLocation();
   const navigationRevision = getNavigationRevision();
   cascade('province', value, navigationRevision).then(() => {
     if (!isRouteCurrent('#checkout', navigationRevision)) return;
@@ -324,6 +359,7 @@ function validateForm() {
   const current = readAddress();
   if (addressFields.some((key) => !String(current[key] || '').trim())) return 'Pilih semua wilayah hingga desa/kelurahan dan lengkapi detail alamat.';
   if (!/^\d{5}$/.test(current.postalCode)) return 'Kode pos harus terdiri dari 5 angka.';
+  if (!validCoordinates(current.latitude, current.longitude)) return 'Pilih titik lokasi alamat penerima pada peta.';
   return '';
 }
 

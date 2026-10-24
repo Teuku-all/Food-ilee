@@ -11,6 +11,8 @@ async function createWaste(data) {
           shippingOriginAddress: true,
           shippingOriginPostalCode: true,
           shippingOriginRegion: true,
+          latitude: true,
+          longitude: true,
           bankName: true,
           bankAccountNumber: true,
           bankAccountHolder: true,
@@ -31,6 +33,8 @@ async function createWaste(data) {
   if (!store.shippingOriginRegion || ['provinceCode', 'province', 'cityCode', 'city', 'districtCode', 'district', 'villageCode', 'village', 'details']
     .some((key) => !String(store.shippingOriginRegion[key] || '').trim()))
     throw new Error('Pilih provinsi hingga desa/kelurahan pada alamat pickup toko sebelum mengunggah produk.');
+  if (store.latitude == null || store.longitude == null)
+    throw new Error('Pilih titik lokasi pickup toko pada peta sebelum mengunggah produk.');
   if (!/^\d{5}$/.test(store.shippingOriginPostalCode) || !/^\d{6,30}$/.test(store.bankAccountNumber))
     throw new Error('Periksa kembali kode pos pickup dan nomor rekening toko.');
   const waste = await prisma.wasteProduct.create({
@@ -136,7 +140,7 @@ async function getAllWastes(query) {
         },
       },
 
-      store: { select: { id: true, name: true, description: true, location: true, image: true, ownerId: true } },
+      store: { select: { id: true, name: true, description: true, location: true, image: true, ownerId: true, latitude: true, longitude: true } },
     },
 
     orderBy,
@@ -237,7 +241,7 @@ async function getWasteById(id) {
         },
       },
 
-      store: { select: { id: true, name: true, description: true, location: true, image: true, ownerId: true } },
+      store: { select: { id: true, name: true, description: true, location: true, image: true, ownerId: true, latitude: true, longitude: true } },
     },
   });
 
