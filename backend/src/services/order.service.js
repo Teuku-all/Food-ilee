@@ -359,6 +359,15 @@ async function getMyOrder(orderId, buyerId) {
   });
 }
 
+function expiredMidtransStatus(error) {
+  const response = error?.ApiResponse || error?.rawHttpClientData?.data || {};
+  const statusCode = Number(response.status_code || error?.httpStatusCode);
+  const message = `${response.status_message || ''} ${error?.message || ''}`.toLowerCase();
+  if (statusCode === 407 || String(response.transaction_status || '').toLowerCase() === 'expire') return 'expire';
+  if (statusCode === 404 && /transaction.*(not found|does not exist|doesn't exist)/i.test(message)) return 'expire';
+  return null;
+}
+
 async function cancelMyOrder(orderId, buyerId) {
   const order = await prisma.order.findFirst({
     where: { id: orderId, buyerId },
@@ -378,16 +387,57 @@ async function cancelMyOrder(orderId, buyerId) {
 
   let transactionStatus;
   try {
-    const transaction = await snap.transaction.status(`ORDER-${order.id}`);
-    transactionStatus = transaction.transaction_status === 'capture' && transaction.fraud_status !== 'accept'
-      ? transaction.fraud_status === 'challenge' ? 'challenge' : 'deny'
-      : transaction.transaction_status;
+    const readTransactionStatus = async () => {
+      let transaction;
+      try {
+        transaction = await snap.transaction.status(`ORDER-${order.id}`);
+      } catch (error) {
+        const expiredStatus = expiredMidtransStatus(error);
+        if (expiredStatus) return expiredStatus;
+        throw error;
+      }
+      if (Number(transaction.status_code) === 407
+        || String(transaction.transaction_status || '').toLowerCase() === 'expire') return 'expire';
+      if (Number(transaction.gross_amount) !== Number(order.total)) {
+        const error = new Error('Nominal transaksi Midtrans tidak sesuai dengan pesanan.');
+        error.statusCode = 409;
+        throw error;
+      }
+      const status = String(transaction.transaction_status || '').toLowerCase();
+      const fraudStatus = String(transaction.fraud_status || '').toLowerCase();
+      return status === 'capture' && fraudStatus !== 'accept'
+        ? fraudStatus === 'challenge' ? 'challenge' : 'deny'
+        : status;
+    };
+    transactionStatus = await readTransactionStatus();
     if (transactionStatus === 'pending') {
-      const cancelled = await snap.transaction.cancel(`ORDER-${order.id}`);
-      transactionStatus = cancelled.transaction_status;
+      try {
+        const cancelled = await snap.transaction.cancel(`ORDER-${order.id}`);
+        transactionStatus = Number(cancelled.status_code) === 407
+          ? 'expire'
+          : String(cancelled.transaction_status || '').toLowerCase();
+      } catch (cancelError) {
+        // The transaction may expire or settle between the status check and cancel request.
+        transactionStatus = expiredMidtransStatus(cancelError) || await readTransactionStatus().catch(() => {
+          throw cancelError;
+        });
+      }
     }
   } catch (cause) {
+    if (cause.statusCode) throw cause;
+    console.error('Midtrans could not confirm order cancellation:', {
+      httpStatusCode: cause.httpStatusCode || cause.status,
+      statusCode: cause.ApiResponse?.status_code,
+      statusMessage: cause.ApiResponse?.status_message,
+      message: cause.message,
+    });
     const error = new Error('Status pembayaran belum dapat dipastikan. Pesanan belum dibatalkan; coba lagi.');
+    const httpStatus = cause.httpStatusCode || cause.status;
+    if (httpStatus === 401 || httpStatus === 403) {
+      error.message = 'Midtrans menolak akses pemeriksaan pembayaran. Periksa Server Key dan mode Sandbox/Production pada backend.';
+    } else if (httpStatus) {
+      error.message += ` (respons Midtrans HTTP ${httpStatus}).`;
+    }
     error.statusCode = 502;
     error.cause = cause;
     throw error;
@@ -406,7 +456,7 @@ async function cancelMyOrder(orderId, buyerId) {
     throw error;
   }
 
-  return prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     const updated = await tx.order.updateMany({
       where: { id: orderId, buyerId, status: 'pending', paymentStatus: 'pending' },
       data: { status: 'cancelled', paymentStatus: 'cancelled' },
