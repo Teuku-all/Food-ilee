@@ -406,7 +406,7 @@ async function cancelMyOrder(orderId, buyerId) {
     throw error;
   }
 
-  return prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     const updated = await tx.order.updateMany({
       where: { id: orderId, buyerId, status: 'pending', paymentStatus: 'pending' },
       data: { status: 'cancelled', paymentStatus: 'cancelled' },
