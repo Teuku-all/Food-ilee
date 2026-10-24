@@ -6,9 +6,11 @@ Form memakai API statis Emsifa v2: `https://www.emsifa.com/api-wilayah-indonesia
 
 ## Biteship
 
-Rates diminta server ke `POST /v1/rates/couriers`. Saat checkout, backend meminta ulang tarif dan menggunakan nilai dari respons Biteship, bukan harga yang dikirim browser. Paket memakai satuan produk marketplace yang ditampilkan sebagai kilogram dan dikonversi ke gram untuk API. Sesudah pembayaran terverifikasi, backend membuat order Biteship dan menyimpan waybill/tracking yang tersedia.
+Untuk pengiriman kurir, rates diminta server ke `POST /v1/rates/couriers`. Saat checkout, backend meminta ulang tarif dan menggunakan nilai dari respons Biteship, bukan harga yang dikirim browser. Paket memakai satuan produk marketplace yang ditampilkan sebagai kilogram dan dikonversi ke gram untuk API. Sesudah pembayaran online terverifikasi, backend membuat order Biteship dan menyimpan waybill/tracking yang tersedia.
 
-Pickup memakai alamat terstruktur pada profil toko: provinsi, kabupaten/kota, kecamatan, desa/kelurahan, detail jalan, dan kode pos, ditambah nama serta telepon kontak. Satu checkout hanya dapat memuat produk dari satu toko, sehingga satu order Biteship memiliki satu titik asal. Pesanan menyimpan snapshot alamat pickup agar perubahan profil tidak mengubah alamat order yang sudah dibuat. Konfigurasikan `BITESHIP_API_KEY`, `BITESHIP_COURIERS`, dan `BITESHIP_WEBHOOK_SECRET` di backend; variabel `BITESHIP_ORIGIN_*` global tidak lagi digunakan.
+Pickup memakai alamat terstruktur pada profil toko: provinsi, kabupaten/kota, kecamatan, desa/kelurahan, detail jalan, dan kode pos, ditambah nama serta telepon kontak. Satu checkout hanya dapat memuat produk dari satu toko, sehingga satu order Biteship memiliki satu titik asal. Pesanan menyimpan snapshot alamat pickup agar perubahan profil tidak mengubah alamat order yang sudah dibuat. Konfigurasikan `BITESHIP_API_KEY`, `BITESHIP_COURIERS=gojek,grab`, dan `BITESHIP_WEBHOOK_SECRET` di backend; konfigurasi tersebut membatasi tarif ke GoSend (`gojek`) dan GrabExpress (`grab`) yang tersedia untuk alamat terkait. Variabel `BITESHIP_ORIGIN_*` global tidak lagi digunakan.
+
+Pembeli juga dapat memilih jemput langsung di toko. Pilihan ini tidak membuat shipment Biteship dan tidak memerlukan alamat tujuan. Lokasi serta kontak pickup diambil dari snapshot alamat toko pada pesanan. Pembayaran cash hanya tersedia untuk jemput langsung; uang dibayarkan kepada penjual saat pengambilan. Penjual mengonfirmasi pesanan selesai setelah menerima cash. Pengiriman GoSend dan GrabExpress hanya tersedia dengan pembayaran online.
 
 Request instalasi webhook yang tidak membawa body menerima respons `200` dengan body `ok`, tanpa mengubah pesanan. Notifikasi pengiriman yang berisi event tetap harus membawa token yang cocok dengan `BITESHIP_WEBHOOK_SECRET`.
 
@@ -26,16 +28,10 @@ Rujukan resmi: [Midtrans Partner Checkout — Transaction Split](https://docs.mi
 
 Pembayaran online ditampilkan dengan Snap Embedded di halaman checkout Food Ilee. Client Key dan Snap token dikirim ke browser dari backend; Server Key tetap berada di backend. Snap callback hanya memperbarui tampilan—status akhir tetap dibaca ulang dari Midtrans oleh backend.
 
-## COD Biteship
-
-COD hanya ditawarkan untuk layanan yang pada respons tarif Biteship menyatakan COD tersedia. Backend meminta tarif COD berdasarkan nilai produk + ongkir, menyimpan biaya COD secara terpisah, dan mengirim nilai tagihan tersebut bersama `BITESHIP_COD_SETTLEMENT_DAYS` (`3_days`, `5_days`, atau `7_days`) saat membuat shipment. Pembeli membayar produk + ongkir ke kurir; biaya layanan COD dipotong dari pencairan penjual. Shipment COD dibuat saat checkout karena pembayaran terjadi ketika kurir menyerahkan barang; status pesanan baru menjadi paid setelah webhook Biteship mengonfirmasi `delivered`. Pembatalan atau pengembalian yang dikonfirmasi membatalkan pesanan dan mengembalikan stok secara idempoten.
-
-Hasil COD dicairkan menurut pengaturan/akun COD Biteship, bukan melalui Midtrans Partner Split. Dana tidak otomatis terbagi ke rekening tiap penjual oleh integrasi ini; Food Ilee perlu mengelola pencatatan dan settlement seller terpisah sampai tersedia integrasi payout khusus.
-
 ## Endpoint Food Ilee
 
-- `POST /api/orders/rates` — validasi item, alamat, merchant split, lalu mengambil tarif aktual.
-- `POST /api/orders/checkout` — hitung ulang harga, stok, ongkir, buat order dan transaksi Snap dengan aturan split.
+- `POST /api/orders/rates` — validasi item dan mengambil tarif GoSend/GrabExpress, atau mengembalikan lokasi jemput toko.
+- `POST /api/orders/checkout` — hitung ulang harga dan stok; membuat transaksi Snap untuk pembayaran online atau order cash jemput langsung.
 - `GET /api/orders/my` — daftar pesanan milik pengguna login.
 - `GET /api/orders/:id` — detail pesanan milik pengguna login.
 - `GET /api/payments/:id/status` — periksa status Midtrans dari server.

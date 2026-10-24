@@ -40,7 +40,13 @@ async function createOrder(req, res) {
 
 async function getShippingRates(req, res) {
   try {
-    const data = await orderService.getRates(req.user.id, req.body.items, req.body.address, req.body.paymentMethod || 'midtrans');
+    const data = await orderService.getRates(
+      req.user.id,
+      req.body.items,
+      req.body.address,
+      req.body.paymentMethod || 'midtrans',
+      req.body.deliveryMethod || 'courier',
+    );
     res.json({ success: true, data });
   } catch (error) {
     const unavailable = /BITESHIP|Biteship|tidak dapat dihubungi|timeout|waktu|layanan data/i.test(error.message);
@@ -56,7 +62,7 @@ async function createCheckout(req, res) {
       : 'https://app.sandbox.midtrans.com';
     res.status(201).json({
       success: true,
-      data: order.paymentMethod === 'cod'
+      data: order.paymentMethod !== 'midtrans'
         ? order
         : {
             ...order,

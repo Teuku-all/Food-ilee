@@ -15,13 +15,13 @@ async function request(path, options = {}) {
 export function createOrder(wasteId, quantity) {
   return request('/orders', { method: 'POST', body: JSON.stringify({ wasteId, quantity }) });
 }
-export function getShippingRates(items, address, paymentMethod = 'midtrans') {
-  return request('/orders/rates', { method: 'POST', body: JSON.stringify({ items, address, paymentMethod }) });
+export function getShippingRates(items, address, paymentMethod = 'midtrans', deliveryMethod = 'courier') {
+  return request('/orders/rates', { method: 'POST', body: JSON.stringify({ items, address, paymentMethod, deliveryMethod }) });
 }
-export function createCheckout(items, address, courier, courierType, checkoutKey, paymentMethod = 'midtrans') {
+export function createCheckout(items, address, courier, courierType, checkoutKey, paymentMethod = 'midtrans', deliveryMethod = 'courier') {
   return request('/orders/checkout', {
     method: 'POST',
-    body: JSON.stringify({ items, address, courier, courierType, checkoutKey, paymentMethod }),
+    body: JSON.stringify({ items, address, courier, courierType, checkoutKey, paymentMethod, deliveryMethod }),
   });
 }
 

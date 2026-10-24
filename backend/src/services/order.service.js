@@ -3,6 +3,7 @@ const notificationService = require('./notification.service');
 const snap = require('../config/midtrans');
 const { randomUUID } = require('crypto');
 const shippingService = require('./shipping.service');
+const supportedCouriers = new Set(['gojek', 'grab']);
 
 async function getCheckoutItems(requestItems, buyerId) {
   if (!Array.isArray(requestItems) || !requestItems.length || requestItems.length > 20)
@@ -40,11 +41,19 @@ function shippingOrigin(store) {
     contactPhone: store.shippingOriginContactPhone,
     address: store.shippingOriginAddress,
     postalCode: store.shippingOriginPostalCode,
+    region: store.shippingOriginRegion,
   };
-  if (Object.values(origin).some((value) => typeof value !== 'string' || !value.trim()))
+  if ([origin.contactName, origin.contactPhone, origin.address, origin.postalCode]
+    .some((value) => typeof value !== 'string' || !value.trim()))
     throw new Error('Alamat pickup penjual belum lengkap. Penjual harus melengkapi alamat pengiriman di profil toko.');
   if (!/^\d{5}$/.test(origin.postalCode.trim())) throw new Error('Kode pos pickup penjual harus terdiri dari 5 angka.');
-  return Object.fromEntries(Object.entries(origin).map(([key, value]) => [key, value.trim()]));
+  return {
+    ...origin,
+    contactName: origin.contactName.trim(),
+    contactPhone: origin.contactPhone.trim(),
+    address: origin.address.trim(),
+    postalCode: origin.postalCode.trim(),
+  };
 }
 
 function midtransSplit(store, subtotal) {
@@ -61,16 +70,29 @@ function midtransSplit(store, subtotal) {
   };
 }
 
-async function getRates(buyerId, items, address, paymentMethod = 'midtrans') {
-  if (!['midtrans', 'cod'].includes(paymentMethod)) throw new Error('Metode pembayaran tidak didukung.');
+async function getRates(buyerId, items, address, paymentMethod = 'midtrans', deliveryMethod = 'courier') {
+  if (!['midtrans', 'cash'].includes(paymentMethod)) throw new Error('Metode pembayaran tidak didukung.');
+  if (!['courier', 'pickup'].includes(deliveryMethod)) throw new Error('Metode pengiriman tidak didukung.');
+  if (paymentMethod === 'cash' && deliveryMethod !== 'pickup')
+    throw new Error('Pembayaran cash hanya tersedia untuk jemput langsung di toko.');
   const normalized = await getCheckoutItems(items, buyerId);
   if (normalized.some((item) => item.stock < item.quantity)) throw new Error('Stok satu atau beberapa produk tidak mencukupi.');
   const subtotal = normalized.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   if (paymentMethod === 'midtrans') midtransSplit(normalized[0].store, subtotal);
   const origin = shippingOrigin(normalized[0].store);
-  return shippingService.getRates(origin, address, normalized, paymentMethod === 'cod'
-    ? { codAmount: subtotal, codType: process.env.BITESHIP_COD_SETTLEMENT_DAYS || '7_days' }
-    : {});
+  if (deliveryMethod === 'pickup') {
+    return [{
+      company: 'pickup',
+      courierType: 'pickup',
+      courierName: 'Jemput langsung',
+      serviceName: 'Ambil di toko penjual',
+      price: 0,
+      collectionMethod: 'pickup',
+      pickupAddress: origin,
+    }];
+  }
+  const rates = await shippingService.getRates(origin, address, normalized);
+  return rates.filter((rate) => supportedCouriers.has(rate.company));
 }
 
 function paymentUrl(token) {
@@ -79,34 +101,47 @@ function paymentUrl(token) {
   return `${host}/snap/v2/vtweb/${encodeURIComponent(token)}`;
 }
 
-async function createCheckout(buyerId, { items, address, courier, courierType, checkoutKey, paymentMethod = 'midtrans' }) {
-  if (!['midtrans', 'cod'].includes(paymentMethod)) throw new Error('Metode pembayaran tidak didukung.');
+async function createCheckout(buyerId, {
+  items, address, courier, courierType, checkoutKey, paymentMethod = 'midtrans', deliveryMethod = 'courier',
+}) {
+  if (!['midtrans', 'cash'].includes(paymentMethod)) throw new Error('Metode pembayaran tidak didukung.');
+  if (!['courier', 'pickup'].includes(deliveryMethod)) throw new Error('Metode pengiriman tidak didukung.');
+  if (paymentMethod === 'cash' && deliveryMethod !== 'pickup')
+    throw new Error('Pembayaran cash hanya tersedia untuk jemput langsung di toko.');
+  if (deliveryMethod === 'courier' && paymentMethod !== 'midtrans')
+    throw new Error('Pengiriman GoSend dan GrabExpress hanya mendukung pembayaran online.');
   if (paymentMethod === 'midtrans' && !process.env.MIDTRANS_CLIENT_KEY?.trim())
     throw new Error('MIDTRANS_CLIENT_KEY belum dikonfigurasi pada backend.');
   if (typeof checkoutKey !== 'string' || !/^[a-f0-9-]{36}$/i.test(checkoutKey))
     throw new Error('Kunci checkout tidak valid. Muat ulang halaman dan coba lagi.');
   const previous = await prisma.order.findFirst({ where: { buyerId, checkoutKey }, include: { items: true, waste: true } });
   if (previous) return { ...previous, paymentUrl: paymentUrl(previous.paymentToken) };
-  shippingService.validateAddress(address);
+  if (deliveryMethod === 'courier') shippingService.validateAddress(address);
   const normalized = await getCheckoutItems(items, buyerId);
   if (normalized.some((item) => item.stock < item.quantity)) throw new Error('Stok satu atau beberapa produk tidak mencukupi.');
   const origin = shippingOrigin(normalized[0].store);
-  const rates = await shippingService.getRates(origin, address, normalized, paymentMethod === 'cod'
-    ? {
-        codAmount: normalized.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
-        codType: process.env.BITESHIP_COD_SETTLEMENT_DAYS || '7_days',
-      }
-    : {});
-  const selected = rates.find((rate) => rate.company === courier && rate.courierType === courierType);
-  if (!selected || !Number.isSafeInteger(Number(selected.price)) || selected.price < 0)
-    throw new Error('Layanan pengiriman berubah. Muat ulang pilihan ongkir.');
+  let selected;
+  if (deliveryMethod === 'pickup') {
+    if (courier !== 'pickup' || courierType !== 'pickup')
+      throw new Error('Pilihan jemput langsung tidak valid. Muat ulang checkout.');
+    selected = {
+      company: 'pickup',
+      courierType: 'pickup',
+      serviceName: 'Ambil di toko penjual',
+      price: 0,
+      collectionMethod: 'pickup',
+    };
+  } else {
+    if (!supportedCouriers.has(courier))
+      throw new Error('Pengiriman hanya tersedia melalui GoSend atau GrabExpress.');
+    const rates = await shippingService.getRates(origin, address, normalized);
+    selected = rates.find((rate) => rate.company === courier && rate.courierType === courierType);
+    if (!selected || !Number.isSafeInteger(Number(selected.price)) || selected.price < 0)
+      throw new Error('Layanan pengiriman berubah. Muat ulang pilihan ongkir.');
+  }
   const subtotal = normalized.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  if (paymentMethod === 'cod' && !selected.supportsCod)
-    throw new Error('Kurir atau layanan ini tidak mendukung COD. Pilih layanan lain atau gunakan Midtrans.');
   const shippingCost = Number(selected.price);
   const total = subtotal + shippingCost;
-  if (paymentMethod === 'cod' && (selected.codAmount !== total || total > 15000000))
-    throw new Error('Nilai COD berubah atau melewati batas layanan. Muat ulang tarif atau pilih Midtrans.');
   const transactionSplitSettings = paymentMethod === 'midtrans' ? midtransSplit(normalized[0].store, subtotal) : undefined;
   const id = randomUUID();
   let reserved;
@@ -135,12 +170,19 @@ async function createCheckout(buyerId, { items, address, courier, courierType, c
           sellerSettlementAmount: subtotal,
           sellerSettlementStatus: transactionSplitSettings ? 'split' : 'pending_manual',
         } : {}),
-        ...(paymentMethod === 'cod' ? { codAmount: selected.codAmount, codFee: Number(selected.cashOnDeliveryFee || 0), status: 'processing' } : {}),
-        shippingAddress: { ...address, collectionMethod: selected.collectionMethod },
+        ...(paymentMethod === 'cash' ? {
+          sellerSettlementAmount: subtotal,
+          sellerSettlementStatus: 'cash_pending',
+          status: 'processing',
+        } : {}),
+        shippingAddress: deliveryMethod === 'pickup'
+          ? { collectionMethod: 'pickup' }
+          : { ...address, collectionMethod: selected.collectionMethod || 'pickup' },
         sellerShippingOrigin: origin,
         courier: selected.company,
         courierService: selected.courierType,
         courierServiceName: selected.serviceName,
+        ...(deliveryMethod === 'pickup' ? { shippingStatus: 'awaiting_pickup' } : {}),
         items: { create: normalized.map(({ wasteId, title, unitPrice, quantity, image }) => ({ wasteId, title, unitPrice, quantity, image })) },
       },
     });
@@ -152,8 +194,18 @@ async function createCheckout(buyerId, { items, address, courier, courierType, c
     }
     throw error;
   }
-  if (paymentMethod === 'cod') {
-    await createCodShipment(id);
+  if (paymentMethod === 'cash') {
+    if (normalized[0].sellerId) {
+      try {
+        await notificationService.createNotification(
+          normalized[0].sellerId,
+          'Pesanan jemput langsung',
+          'Pembeli akan mengambil pesanan dan membayar cash langsung ke penjual.',
+        );
+      } catch (notificationError) {
+        console.error('Order notification failed:', notificationError.message);
+      }
+    }
     return prisma.order.findUnique({ where: { id }, include: { items: true, waste: true } });
   }
   try {
@@ -393,7 +445,7 @@ async function createShipmentForOrder(orderId, paymentMethod) {
   });
   const eligible = paymentMethod === 'cod'
     ? order?.paymentMethod === 'cod' && order.paymentStatus === 'pending'
-    : order?.paymentMethod !== 'cod' && order?.paymentStatus === 'paid';
+    : order?.paymentMethod !== 'cod' && order?.paymentStatus === 'paid' && order?.courier !== 'pickup';
   if (!order || !eligible || !order.shippingAddress || order.biteshipOrderId) return;
   const reserved = await prisma.order.updateMany({
     where: { id: orderId, paymentMethod, paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid', biteshipOrderId: null },
@@ -480,12 +532,21 @@ async function updateSellerOrderStatus(orderId, sellerId, status) {
   const order = await prisma.order.findFirst({ where: { id: orderId, waste: { sellerId } } });
   if (!order) throw new Error('Pesanan tidak ditemukan');
   if (order.paymentMethod === 'cod') throw new Error('Status pesanan COD diperbarui otomatis dari webhook kurir.');
-  const transitions = { processing: ['shipped'], shipped: ['completed'] };
+  const isPickup = order.courier === 'pickup';
+  const transitions = isPickup
+    ? { processing: ['completed'] }
+    : { processing: ['shipped'], shipped: ['completed'] };
   if (!transitions[order.status]?.includes(status))
     throw new Error('Perubahan status ini tidak dapat dilakukan');
   const updated = await prisma.order.updateMany({
     where: { id: orderId, status: order.status },
-    data: { status },
+    data: {
+      status,
+      ...(isPickup && order.paymentMethod === 'cash'
+        ? { paymentStatus: 'paid', sellerSettlementStatus: 'cash_received' }
+        : {}),
+      ...(isPickup ? { shippingStatus: 'picked_up' } : {}),
+    },
   });
   if (!updated.count) throw new Error('Status pesanan baru saja berubah. Muat ulang halaman.');
   return prisma.order.findUnique({ where: { id: orderId } });

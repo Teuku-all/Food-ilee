@@ -80,10 +80,13 @@ function renderOrders(sales) {
     .map((order) => {
       const name = order.waste?.title || 'Produk organik';
       const buyer = order.buyer?.name || order.buyer?.email || 'Pembeli Food Ilee';
-      const nextStatus = { processing: 'shipped', shipped: 'completed' }[order.status];
+      const isPickup = order.courier === 'pickup';
+      const nextStatus = isPickup ? (order.status === 'processing' ? 'completed' : '') : { processing: 'shipped', shipped: 'completed' }[order.status];
       const action =
         order.status === 'processing'
-          ? 'Tandai dikirim'
+          ? isPickup
+            ? order.paymentMethod === 'cash' ? 'Konfirmasi cash & jemput selesai' : 'Konfirmasi pesanan dijemput'
+            : 'Tandai dikirim'
           : order.status === 'shipped'
             ? 'Tandai selesai'
             : '';
