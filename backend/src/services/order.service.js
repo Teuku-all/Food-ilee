@@ -378,15 +378,34 @@ async function cancelMyOrder(orderId, buyerId) {
 
   let transactionStatus;
   try {
-    const transaction = await snap.transaction.status(`ORDER-${order.id}`);
-    transactionStatus = transaction.transaction_status === 'capture' && transaction.fraud_status !== 'accept'
-      ? transaction.fraud_status === 'challenge' ? 'challenge' : 'deny'
-      : transaction.transaction_status;
+    const readTransactionStatus = async () => {
+      const transaction = await snap.transaction.status(`ORDER-${order.id}`);
+      if (Number(transaction.gross_amount) !== Number(order.total)) {
+        const error = new Error('Nominal transaksi Midtrans tidak sesuai dengan pesanan.');
+        error.statusCode = 409;
+        throw error;
+      }
+      if (Number(transaction.status_code) === 407) return 'expire';
+      return transaction.transaction_status === 'capture' && transaction.fraud_status !== 'accept'
+        ? transaction.fraud_status === 'challenge' ? 'challenge' : 'deny'
+        : transaction.transaction_status;
+    };
+    transactionStatus = await readTransactionStatus();
     if (transactionStatus === 'pending') {
-      const cancelled = await snap.transaction.cancel(`ORDER-${order.id}`);
-      transactionStatus = cancelled.transaction_status;
+      try {
+        const cancelled = await snap.transaction.cancel(`ORDER-${order.id}`);
+        transactionStatus = Number(cancelled.status_code) === 407
+          ? 'expire'
+          : cancelled.transaction_status;
+      } catch (cancelError) {
+        // The transaction may expire or settle between the status check and cancel request.
+        transactionStatus = await readTransactionStatus().catch(() => {
+          throw cancelError;
+        });
+      }
     }
   } catch (cause) {
+    if (cause.statusCode) throw cause;
     const error = new Error('Status pembayaran belum dapat dipastikan. Pesanan belum dibatalkan; coba lagi.');
     error.statusCode = 502;
     error.cause = cause;
