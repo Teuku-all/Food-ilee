@@ -13,12 +13,19 @@ export async function renderDashboard() {
   let userResult;
   let wasteResult;
   let orderResult = { data: [] };
+  let ordersAvailable = true;
   renderShell('', dashboardLoadingSkeleton());
   injectDashboardStyles();
   try {
     [userResult, wasteResult] = await Promise.all([getCurrentUser(), getWastes({ mine: true })]);
-    orderResult = await getMyOrders();
-    if (!orderResult.success) throw new Error(orderResult.message || 'Pesanan belum dapat dimuat.');
+    try {
+      orderResult = await getMyOrders();
+      if (!orderResult?.success) throw new Error(orderResult?.message || 'Pesanan belum dapat dimuat.');
+    } catch (error) {
+      console.warn('Dashboard: data pesanan belum dapat dimuat.', error);
+      ordersAvailable = false;
+      orderResult = { data: [] };
+    }
   } catch {
     if (!isRouteCurrent('#dashboard', navigationRevision)) return;
     renderShell(
@@ -44,7 +51,7 @@ export async function renderDashboard() {
   const welcome = user.name || user.username || user.email?.split('@')[0] || 'Pengguna';
   renderShell(
     '',
-    `<section class="db-page"><div class="db-heading"><div><p class="db-kicker">RUANG KERJA FOOD ILEE</p><h1>Selamat datang, ${escapeHtml(welcome)}</h1><p>Kelola penawaran dan pantau perjalanan sirkularitas Anda.</p></div><div class="db-heading-actions"><a class="fi-button fi-button-outline" href="#marketplace">Jelajahi Marketplace</a><a class="fi-button" href="#tambah-limbah">+ Tambah Limbah</a></div></div><div class="db-stats"><article class="db-stat db-stat-green"><span class="db-stat-icon">↻</span><p>Total produk</p><strong>${products.length}</strong></article><article class="db-stat"><span class="db-stat-icon accent">${icon('compost')}</span><p>Stok tersedia</p><strong>${stock.toLocaleString('id-ID')} <small>kg</small></strong></article><article class="db-stat"><span class="db-stat-icon mint">${icon('orders')}</span><p>Pesanan berjalan</p><strong>${openOrders}</strong></article></div>${openOrders ? `<a class="db-priority" href="#transaksi"><span class="db-priority-icon">${icon('orders')}</span><span><strong>${openOrders} pesanan sedang berjalan</strong><small>Buka transaksi untuk memantau status pesanan.</small></span><span class="db-priority-arrow">${icon('arrow')}</span></a>` : ""}<section class="db-listing"><div class="db-listing-head"><div><p class="db-kicker">ETALASE SAYA</p><h2>Produk yang Anda tawarkan</h2></div><a class="db-view-all" href="#marketplace">Lihat marketplace <span>↗</span></a></div>${products.length ? `<div class="db-product-grid">${products.slice(0, 6).map(productCard).join('')}</div>` : `<div class="db-empty fi-card"><span>＋</span><h3>Etalase Anda siap dimulai</h3><p>Tambahkan limbah organik pertama dan hubungkan dengan calon pemanfaat.</p><a class="fi-button" href="#tambah-limbah">Tambah penawaran</a></div>`}</section></section>`,
+    `<section class="db-page"><div class="db-heading"><div><p class="db-kicker">RUANG KERJA FOOD ILEE</p><h1>Selamat datang, ${escapeHtml(welcome)}</h1><p>Kelola penawaran dan pantau perjalanan sirkularitas Anda.</p></div><div class="db-heading-actions"><a class="fi-button fi-button-outline" href="#marketplace">Jelajahi Marketplace</a><a class="fi-button" href="#tambah-limbah">+ Tambah Limbah</a></div></div><div class="db-stats"><article class="db-stat db-stat-green"><span class="db-stat-icon">↻</span><p>Total produk</p><strong>${products.length}</strong></article><article class="db-stat"><span class="db-stat-icon accent">${icon('compost')}</span><p>Stok tersedia</p><strong>${stock.toLocaleString('id-ID')} <small>kg</small></strong></article><article class="db-stat"><span class="db-stat-icon mint">${icon('orders')}</span><p>Pesanan berjalan</p><strong>${ordersAvailable ? openOrders : '--'}</strong>${ordersAvailable ? '' : '<small>Data pesanan sementara tidak tersedia</small>'}</article></div>${openOrders ? `<a class="db-priority" href="#transaksi"><span class="db-priority-icon">${icon('orders')}</span><span><strong>${openOrders} pesanan sedang berjalan</strong><small>Buka transaksi untuk memantau status pesanan.</small></span><span class="db-priority-arrow">${icon('arrow')}</span></a>` : ""}<section class="db-listing"><div class="db-listing-head"><div><p class="db-kicker">ETALASE SAYA</p><h2>Produk yang Anda tawarkan</h2></div><a class="db-view-all" href="#marketplace">Lihat marketplace <span>↗</span></a></div>${products.length ? `<div class="db-product-grid">${products.slice(0, 6).map(productCard).join('')}</div>` : `<div class="db-empty fi-card"><span>＋</span><h3>Etalase Anda siap dimulai</h3><p>Tambahkan limbah organik pertama dan hubungkan dengan calon pemanfaat.</p><a class="fi-button" href="#tambah-limbah">Tambah penawaran</a></div>`}</section></section>`,
   );
   injectDashboardStyles();
   const overviewIcon = document.querySelector('.db-stat-green .db-stat-icon');

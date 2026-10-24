@@ -44,7 +44,7 @@ export async function renderCart() {
   cartItems = readCart();
   selectedIds = readSelection(cartItems);
   const app = document.getElementById('app');
-  app.innerHTML = `<div class="ca-app">${dashboardHeader('market')}<main class="ca-main"><a class="ca-back" href="#marketplace">← Kembali ke marketplace</a><header class="ca-heading"><p>KERANJANG BELANJA</p><h1>Keranjang Anda</h1><span>Tinjau produk dan jumlahnya sebelum melanjutkan ke pembayaran.</span></header><div class="ca-layout"><section class="ca-list-panel"><div class="ca-list-heading"><div><h2>Produk Anda</h2><p id="ca-list-count">Memuat isi keranjang…</p></div><label class="ca-select-all"><input type="checkbox" id="ca-select-all"><span>Pilih semua</span></label></div><div class="ca-table-head"><span>Produk</span><span>Jumlah</span><span>Subtotal</span><span>Aksi</span></div><div id="ca-items" class="ca-items"><div class="ca-loading">Memuat produk…</div></div></section><aside class="ca-summary"><div class="ca-summary-heading"><span>RINGKASAN</span><h2>Pesanan Anda</h2></div><div class="ca-summary-row"><span>Produk dipilih</span><strong id="ca-selected-count">0 produk</strong></div><div class="ca-summary-row"><span>Subtotal</span><strong id="ca-subtotal">Rp0</strong></div><div class="ca-summary-note"><span aria-hidden="true">✓</span><p>Ongkir dan total akhir dihitung pada halaman pembayaran.</p></div><button id="ca-checkout" type="button" disabled>Lanjut ke pembayaran <span aria-hidden="true">→</span></button><a class="ca-continue" href="#marketplace">Lanjut belanja</a></aside></div></main>${dashboardFooter()}</div>`;
+  app.innerHTML = `<div class="ca-app">${dashboardHeader('market')}<main class="ca-main"><header class="ca-heading"><h1>Keranjang</h1></header><div class="ca-layout"><section class="ca-list-panel"><div class="ca-list-heading"><div><h2>Produk</h2><p id="ca-list-count">Memuat isi keranjang…</p></div><label class="ca-select-all"><input type="checkbox" id="ca-select-all"><span>Pilih semua</span></label></div><div class="ca-table-head"><span>Produk</span><span>Jumlah</span><span>Subtotal</span><span>Aksi</span></div><div id="ca-items" class="ca-items"><div class="ca-loading">Memuat produk…</div></div></section><aside class="ca-summary"><div class="ca-summary-heading"><h2>Ringkasan</h2></div><div class="ca-summary-row"><span>Produk dipilih</span><strong id="ca-selected-count">0 produk</strong></div><div class="ca-summary-row"><span>Subtotal</span><strong id="ca-subtotal">Rp0</strong></div><button id="ca-checkout" type="button" disabled>Lanjut ke pembayaran <span aria-hidden="true">→</span></button></aside></div></main>${dashboardFooter()}</div>`;
   injectCartStyles();
   bindSharedHeader();
   await loadCartProducts(revision);
@@ -143,17 +143,13 @@ function injectCartStyles() {
   style.id = 'cart-page-style';
   style.textContent = `
     .ca-app{min-height:100vh;background:#DAF1DE;color:#163832;font-family:Inter,Arial,sans-serif}
-    .ca-main{max-width:1240px;margin:auto;padding:36px 28px 78px}
-    .ca-back{width:max-content;min-height:40px;padding:0 15px 0 11px;border:1px solid #bdd5c8;border-radius:999px;display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,#f8fcf9,#eaf5ef);color:#17604d;font-size:12px;font-weight:700;text-decoration:none;box-shadow:0 4px 12px #1638320c;transition:transform 180ms ease,box-shadow 180ms ease}
-    .ca-back:hover{transform:translateY(-2px);box-shadow:0 8px 18px #16383216}
-    .ca-heading{margin:22px 0 24px;padding-bottom:21px;border-bottom:1px solid #bfcec5}
-    .ca-heading>p{width:max-content;margin:0 0 11px;padding:7px 11px;border:1px solid #c7e0ce;border-radius:999px;background:#DAF1DE;color:#356d4b;font-size:9px;font-weight:700;letter-spacing:.12em}
-    .ca-heading h1{margin:0;color:#104b3e;font-size:clamp(32px,4vw,42px);line-height:1.12;letter-spacing:-1.4px}
-    .ca-heading span{display:block;margin-top:9px;color:#61746a;font-size:14px;line-height:1.6}
+    .ca-main{max-width:1240px;margin:auto;padding:30px 28px 68px}
+    .ca-heading{margin:0 0 20px;padding-bottom:16px;border-bottom:1px solid #bfcec5}
+    .ca-heading h1{margin:0;color:#104b3e;font-size:clamp(28px,3.5vw,36px);line-height:1.12;letter-spacing:-1px}
     .ca-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:start;gap:22px}
     .ca-list-panel,.ca-summary{border:1px solid #c4d5ca;border-radius:20px;background:#fff;box-shadow:0 10px 28px #1638320b}
-    .ca-list-panel{min-width:0;padding:22px 23px}
-    .ca-list-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:18px}
+    .ca-list-panel{min-width:0;padding:20px 22px}
+    .ca-list-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:13px}
     .ca-list-heading h2,.ca-summary h2{margin:0;color:#174a3b;font-size:18px}
     .ca-list-heading p{margin:5px 0 0;color:#718078;font-size:12px}
     .ca-select-all{display:flex;align-items:center;gap:8px;color:#315746;font-size:12px;font-weight:650;white-space:nowrap;cursor:pointer}
@@ -181,19 +177,13 @@ function injectCartStyles() {
     .ca-remove{grid-column:5;width:28px;height:28px;padding:5px;border:0;border-radius:8px;display:grid;place-items:center;background:transparent;color:#75837a;cursor:pointer;transition:color 160ms ease,background 160ms ease}
     .ca-remove:hover{background:#fcefed;color:#a34538}
     .ca-remove svg{width:16px;height:16px}
-    .ca-summary{position:sticky;top:94px;padding:22px}
-    .ca-summary-heading{padding-bottom:15px;border-bottom:1px solid #d8e2db}
-    .ca-summary-heading>span{display:block;margin-bottom:7px;color:#73867a;font-size:9px;font-weight:700;letter-spacing:.13em}
-    .ca-summary-row{display:flex;justify-content:space-between;gap:12px;padding:15px 0;border-bottom:1px solid #e1e9e3;color:#64736a;font-size:12px}
+    .ca-summary{position:sticky;top:94px;padding:20px}
+    .ca-summary-heading{padding-bottom:13px;border-bottom:1px solid #d8e2db}
+    .ca-summary-row{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid #e1e9e3;color:#64736a;font-size:12px}
     .ca-summary-row strong{color:#243b31;font-size:12px}
-    .ca-summary-note{display:flex;gap:9px;margin:16px 0;padding:11px;border:1px solid #d8e8dc;border-radius:11px;background:#f4faf5}
-    .ca-summary-note>span{width:18px;height:18px;flex:none;border-radius:50%;display:grid;place-items:center;background:#d9efdf;color:#317348;font-size:11px;font-weight:800}
-    .ca-summary-note p{margin:0;color:#62756a;font-size:10px;line-height:1.55}
     .ca-summary>button{width:100%;min-height:46px;padding:0 14px;border:0;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:10px;background:#07594b;color:#fff;font:650 12px Inter,Arial,sans-serif;cursor:pointer;transition:transform 160ms ease,box-shadow 160ms ease,background 160ms ease}
     .ca-summary>button:not(:disabled):hover{transform:translateY(-1px);background:#064c41;box-shadow:0 8px 18px #07594b28}
     .ca-summary>button:disabled{background:#aebdb4;cursor:not-allowed}
-    .ca-continue{display:block;margin-top:13px;color:#235347;font-size:11px;font-weight:650;text-align:center;text-decoration:none}
-    .ca-continue:hover{text-decoration:underline}
     .ca-empty{min-height:250px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
     .ca-empty>span{width:48px;height:48px;margin-bottom:12px;border-radius:15px;display:grid;place-items:center;background:#DAF1DE;font-size:23px}
     .ca-empty strong{color:#24483a;font-size:14px}
@@ -201,9 +191,9 @@ function injectCartStyles() {
     .ca-empty a{padding:10px 15px;border-radius:999px;background:#07594b;color:white;font-size:11px;text-decoration:none}
     .ca-loading{padding:30px;color:#718078;font-size:12px;text-align:center}
     @media(max-width:900px){.ca-layout{grid-template-columns:minmax(0,1fr) 260px;gap:14px}.ca-list-panel{padding:18px}.ca-table-head,.ca-item{grid-template-columns:minmax(150px,1fr) 112px 105px 24px 26px;gap:8px}.ca-product{margin-left:98px}.ca-product-image{margin-left:26px}.ca-summary{padding:18px}}
-    @media(max-width:700px){.ca-main{padding:26px 16px 54px}.ca-layout{grid-template-columns:1fr}.ca-summary{position:static;order:-1}.ca-list-panel{padding:17px 14px}.ca-table-head{display:none}.ca-item{grid-template-columns:20px 64px minmax(0,1fr) 28px;gap:10px;padding:14px 2px}.ca-check{grid-column:1;grid-row:1}.ca-product-image{grid-column:2;grid-row:1;width:64px;height:64px;margin:0}.ca-product{grid-column:3;grid-row:1;margin:0}.ca-quantity{grid-column:2/4;grid-row:2;justify-content:flex-start}.ca-item-total{grid-column:2/4;grid-row:3;justify-self:start;margin:0;font-size:12px}.ca-remove{grid-column:4;grid-row:1;align-self:start}.ca-quantity{position:relative}.ca-item-total{align-self:center}.ca-heading{margin:18px 0 20px}.ca-heading h1{font-size:32px}.ca-list-heading h2{font-size:16px}}
+    @media(max-width:700px){.ca-main{padding:26px 16px 54px}.ca-layout{grid-template-columns:1fr}.ca-summary{position:static;order:-1}.ca-list-panel{padding:17px 14px}.ca-table-head{display:none}.ca-item{grid-template-columns:20px 64px minmax(0,1fr) 28px;gap:10px;padding:14px 2px}.ca-check{grid-column:1;grid-row:1}.ca-product-image{grid-column:2;grid-row:1;width:64px;height:64px;margin:0}.ca-product{grid-column:3;grid-row:1;margin:0}.ca-quantity{grid-column:2/4;grid-row:2;justify-content:flex-start}.ca-item-total{grid-column:2/4;grid-row:3;justify-self:start;margin:0;font-size:12px}.ca-remove{grid-column:4;grid-row:1;align-self:start}.ca-quantity{position:relative}.ca-item-total{align-self:center}.ca-heading{margin:0 0 16px}.ca-heading h1{font-size:32px}.ca-list-heading h2{font-size:16px}}
     @media(max-width:390px){.ca-list-heading{align-items:flex-start;flex-direction:column;gap:10px}.ca-item{grid-template-columns:18px 54px minmax(0,1fr) 26px;gap:8px}.ca-product-image{width:54px;height:54px}.ca-quantity{grid-column:2/3;grid-row:2}.ca-item-total{grid-column:3;grid-row:2;justify-self:start;margin:0;font-size:12px}.ca-remove{grid-column:4}.ca-product strong{font-size:12px}}
-    @media(prefers-reduced-motion:reduce){.ca-back,.ca-item,.ca-remove,.ca-summary>button{transition:none}}
+    @media(prefers-reduced-motion:reduce){.ca-item,.ca-remove,.ca-summary>button{transition:none}}
   `;
   document.head.append(style);
 }

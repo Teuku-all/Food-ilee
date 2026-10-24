@@ -1,0 +1,32 @@
+/* Shared entry motion and editing affordances across all Food Ilee routes. */
+#app {
+  caret-color: transparent;
+}
+
+#app :is(input, textarea, select, [contenteditable="true"], [role="textbox"]) {
+  caret-color: var(--fi-ink);
+}
+
+#app :is(input, textarea, select) {
+  accent-color: var(--fi-green);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+#app :is(input, textarea, select):focus-visible {
+  border-color: var(--fi-green);
+  box-shadow: 0 0 0 3px rgb(35 83 71 / 13%);
+  outline: none;
+}
+
+#app :is(button, a, [role="button"]) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+#app :is(button, a, [role="button"]):focus-visible {
+  outline: 2px solid var(--fi-green);
+  outline-offset: 3px;
+}
+
