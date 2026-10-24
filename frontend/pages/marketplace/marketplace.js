@@ -367,16 +367,23 @@ function sellerDisplayName(product) {
   return storeForProduct(product)?.name || 'Toko Food Ilee';
 }
 
+function isOwnMarketplaceProduct(product) {
+  if (!currentMarketplaceUserId || product.isDemo) return false;
+  return product.seller?.id === currentMarketplaceUserId
+    || storeForProduct(product)?.ownerId === currentMarketplaceUserId;
+}
+
 function renderProducts() {
   const grid = document.getElementById('mp-grid');
   if (!grid) return;
+  const otherSellerProducts = marketplaceProducts.filter((product) => !isOwnMarketplaceProduct(product));
   const nearbyProducts = marketplaceLocation && marketplaceRadius
-    ? marketplaceProducts.filter((product) => {
+    ? otherSellerProducts.filter((product) => {
         const store = storeForProduct(product);
         return validCoordinates(store?.latitude, store?.longitude)
           && distanceInKm(marketplaceLocation, store) <= marketplaceRadius;
       })
-    : marketplaceProducts;
+    : otherSellerProducts;
   const categoryProducts =
     activeCategory === 'Semua'
       ? nearbyProducts
@@ -404,7 +411,8 @@ function renderProducts() {
   if (!products.length) {
     const hasFilters = activeCategory !== 'Semua' || activeSearch || Boolean(marketplaceLocation && marketplaceRadius);
     const noNearbyProducts = Boolean(marketplaceLocation && marketplaceRadius && !nearbyProducts.length);
-    grid.innerHTML = `<div class="mp-empty"><div class="mp-empty-mark">${icon('leaf')}</div><h2>${noNearbyProducts ? 'Belum ada produk di sekitar' : hasFilters ? 'Produk tidak ditemukan' : marketplaceProducts.length ? 'Belum ada produk di kategori ini' : 'Belum ada produk tersedia'}</h2><p>${noNearbyProducts ? 'Perluas jarak pencarian atau pilih semua lokasi untuk melihat produk lainnya.' : hasFilters ? 'Coba kata kunci lain atau ubah kategori pencarian.' : marketplaceProducts.length ? 'Pilih kategori lain untuk menjelajahi produk.' : 'Produk limbah pangan yang tersedia akan muncul di sini.'}</p>${!hasFilters && !marketplaceProducts.length ? '<a href="#tambah-limbah">Mulai tambahkan limbah <span>→</span></a>' : ''}</div>`;
+    const onlyOwnProducts = !otherSellerProducts.length && marketplaceProducts.length > 0;
+    grid.innerHTML = `<div class="mp-empty"><div class="mp-empty-mark">${icon('leaf')}</div><h2>${onlyOwnProducts ? 'Belum ada produk dari penjual lain' : noNearbyProducts ? 'Belum ada produk di sekitar' : hasFilters ? 'Produk tidak ditemukan' : otherSellerProducts.length ? 'Belum ada produk di kategori ini' : 'Belum ada produk tersedia'}</h2><p>${onlyOwnProducts ? 'Produk dari toko Anda tidak ditampilkan di marketplace. Penjual lain akan muncul di sini saat tersedia.' : noNearbyProducts ? 'Perluas jarak pencarian atau pilih semua lokasi untuk melihat produk lainnya.' : hasFilters ? 'Coba kata kunci lain atau ubah kategori pencarian.' : otherSellerProducts.length ? 'Pilih kategori lain untuk menjelajahi produk.' : 'Produk limbah pangan yang tersedia akan muncul di sini.'}</p>${!hasFilters && !marketplaceProducts.length ? '<a href="#tambah-limbah">Mulai tambahkan limbah <span>→</span></a>' : ''}</div>`;
     if (hasFilters) {
       const resetButton = document.createElement('button');
       resetButton.type = 'button';
