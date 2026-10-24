@@ -1,5 +1,6 @@
 const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 const LEAFLET_JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+const DEFAULT_MAP_CENTER = [5.5483, 95.3238];
 
 let leafletPromise;
 
@@ -45,6 +46,17 @@ export function validCoordinates(latitude, longitude) {
   );
 }
 
+export function addMapTiles(leaflet, map) {
+  return leaflet
+    .tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    })
+    .addTo(map);
+}
+
 export async function mountLocationPicker({
   element,
   latitudeInput,
@@ -69,14 +81,9 @@ export async function mountLocationPicker({
   );
   const initial = hasInitialLocation
     ? [Number(initialLocation.latitude), Number(initialLocation.longitude)]
-    : [-2.5, 118];
-  const map = leaflet.map(element).setView(initial, hasInitialLocation ? 16 : 5);
-  leaflet
-    .tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    })
-    .addTo(map);
+    : DEFAULT_MAP_CENTER;
+  const map = leaflet.map(element).setView(initial, hasInitialLocation ? 16 : 14);
+  addMapTiles(leaflet, map);
 
   let marker;
   const update = (latitude, longitude) => {

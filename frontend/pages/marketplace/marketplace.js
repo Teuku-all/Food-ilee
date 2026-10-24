@@ -9,7 +9,7 @@ import { skeleton } from '../../ui/skeleton.js';
 import { marketplacePromoBanner, injectMarketplacePromoStyle } from './promo-banner.js';
 import { icon } from '../../ui/icons.js';
 import { getStores } from '../../services/store.js';
-import { loadLeaflet, validCoordinates } from '../../utils/location-map.js';
+import { addMapTiles, loadLeaflet, validCoordinates } from '../../utils/location-map.js';
 
 let marketplaceProducts = [];
 let activeCategory = 'Semua';
@@ -23,6 +23,7 @@ let marketplaceStores = [];
 let marketplaceMap = null;
 let marketplaceStoreLayer = null;
 let marketplaceStoreLoadError = '';
+let marketplaceLocationLabel = 'Banda Aceh';
 
 const demoMarketplaceProducts = [
   {
@@ -79,6 +80,7 @@ export async function renderMarketplace() {
   marketplaceStores = [];
   marketplaceStoreLoadError = '';
   marketplaceRadius = 10;
+  marketplaceLocationLabel = 'Banda Aceh';
   marketplaceLocation = getSavedMarketplaceLocation();
   app.innerHTML = `
     <div class="mp-app">
@@ -143,15 +145,19 @@ export async function renderMarketplace() {
   function getSavedMarketplaceLocation() {
     try {
       const savedAddress = JSON.parse(localStorage.getItem('foodilee_shipping_address') || 'null');
-      if (validCoordinates(savedAddress?.latitude, savedAddress?.longitude))
+      if (validCoordinates(savedAddress?.latitude, savedAddress?.longitude)) {
+        marketplaceLocationLabel = 'alamat tersimpan';
         return { latitude: Number(savedAddress.latitude), longitude: Number(savedAddress.longitude) };
+      }
       const savedLocation = JSON.parse(localStorage.getItem('foodilee_marketplace_location') || 'null');
-      if (validCoordinates(savedLocation?.latitude, savedLocation?.longitude))
+      if (validCoordinates(savedLocation?.latitude, savedLocation?.longitude)) {
+        marketplaceLocationLabel = 'lokasi terakhir';
         return { latitude: Number(savedLocation.latitude), longitude: Number(savedLocation.longitude) };
+      }
     } catch {
-      return null;
+      marketplaceLocationLabel = 'Banda Aceh';
     }
-    return null;
+    return { latitude: 5.5483, longitude: 95.3238 };
   }
 
   function distanceInKm(first, second) {
@@ -181,6 +187,7 @@ export async function renderMarketplace() {
       navigator.geolocation.getCurrentPosition(
         ({ coords }) => {
           marketplaceLocation = { latitude: coords.latitude, longitude: coords.longitude };
+          marketplaceLocationLabel = 'lokasi Anda';
           localStorage.setItem('foodilee_marketplace_location', JSON.stringify(marketplaceLocation));
           updateMarketplaceLocationStatus();
           refreshMarketplaceMap();
@@ -197,12 +204,8 @@ export async function renderMarketplace() {
   function updateMarketplaceLocationStatus() {
     const status = document.getElementById('mp-location-status');
     if (!status) return;
-    if (!marketplaceLocation) {
-      status.textContent = 'Lokasi belum dipilih; semua produk ditampilkan. Gunakan lokasi perangkat untuk memfilter produk terdekat.';
-      return;
-    }
     status.textContent = marketplaceRadius
-      ? `Menampilkan produk dalam radius ${marketplaceRadius} km dari lokasi Anda.`
+      ? `Menampilkan produk dalam radius ${marketplaceRadius} km dari ${marketplaceLocationLabel}.`
       : 'Menampilkan produk dari semua lokasi.';
   }
 
@@ -214,10 +217,7 @@ export async function renderMarketplace() {
       const element = document.getElementById('mp-store-map');
       if (!element) return;
       marketplaceMap = leaflet.map(element);
-      leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      }).addTo(marketplaceMap);
+      addMapTiles(leaflet, marketplaceMap);
       marketplaceStoreLayer = leaflet.layerGroup().addTo(marketplaceMap);
       refreshMarketplaceMap();
       requestAnimationFrame(() => marketplaceMap?.invalidateSize());
@@ -261,11 +261,11 @@ export async function renderMarketplace() {
         weight: 2,
         fillColor: '#3879cc',
         fillOpacity: 1,
-      }).bindPopup('Lokasi Anda').addTo(marketplaceStoreLayer);
+      }).bindPopup(`Pusat pencarian: ${escapeHtml(marketplaceLocationLabel)}`).addTo(marketplaceStoreLayer);
     }
     if (points.length > 1) marketplaceMap.fitBounds(points, { padding: [24, 24], maxZoom: 15 });
     else if (points.length === 1) marketplaceMap.setView(points[0], 14);
-    else marketplaceMap.setView([-2.5, 118], 5);
+    else marketplaceMap.setView([5.5483, 95.3238], 14);
     const status = document.getElementById('mp-map-status');
     if (status) status.textContent = marketplaceStoreLoadError || `${visibleStores.length} toko ditampilkan pada peta.`;
   }
