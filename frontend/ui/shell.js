@@ -1,6 +1,7 @@
 import { getCachedCurrentUser, getCurrentUser } from '../services/user.js';
 import { removeToken } from '../utils/storage.js';
 import { escapeHtml } from '../utils/html.js';
+import { applyTranslations, getLanguage, setLanguage } from '../utils/i18n.js';
 import { brandImage, icon } from './icons.js';
 
 const links = [
@@ -60,6 +61,13 @@ export function dashboardHeader(active = '') {
             ${accountLinks}
             <a href="#admin" data-admin-menu hidden>${icon('shield')}<span>Panel Admin</span></a>
           </nav>
+          <section class="fi-language-switch" aria-label="Pilih bahasa">
+            <div class="fi-language-heading">${icon('globe')}<span>Bahasa</span></div>
+            <div class="fi-language-options" role="group" aria-label="Pilih bahasa">
+              <button type="button" data-language-choice="id" lang="id">Indonesia</button>
+              <button type="button" data-language-choice="en" lang="en">English</button>
+            </div>
+          </section>
           <div class="fi-account-menu-actions">
             <a href="#panduan" data-reopen-onboarding>${icon('guide')}<span>Panduan</span></a>
             <button class="fi-logout" type="button">${icon('logout')}<span>Keluar</span></button>
@@ -114,6 +122,9 @@ export function bindShell(version = shellRenderVersion) {
       if (!event.target.closest('a')) return;
       closeAccountMenu(menu, toggle);
     });
+    menu.querySelectorAll('[data-language-choice]').forEach((button) => {
+      button.addEventListener('click', () => setLanguage(button.dataset.languageChoice));
+    });
     if (!document.documentElement.dataset.fiMenuBound) {
       document.addEventListener('click', (event) => {
         const currentMenu = document.querySelector('.fi-account-menu');
@@ -143,6 +154,7 @@ export function bindShell(version = shellRenderVersion) {
       location.hash = '#login';
     });
   }
+  applyTranslations(document.getElementById('app'), getLanguage());
   hydrateAccount(version);
 }
 

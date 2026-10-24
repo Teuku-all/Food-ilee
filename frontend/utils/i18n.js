@@ -1,0 +1,385 @@
+const LANGUAGE_KEY = 'foodilee_language';
+
+const english = Object.freeze({
+  'Navigasi utama': 'Main navigation',
+  'Tautan akun': 'Account links',
+  'Menu akun': 'Account menu',
+  'Buka menu akun': 'Open account menu',
+  'Akun Anda': 'Your account',
+  'Pengguna': 'User',
+  'Anggota': 'Member',
+  'Profil': 'Profile',
+  'Profil Anda': 'Your profile',
+  'Transaksi': 'Orders',
+  'Riwayat Transaksi': 'Order history',
+  'Pesan': 'Messages',
+  'Notifikasi': 'Notifications',
+  'Kelola Toko': 'Manage store',
+  'Panel Admin': 'Admin panel',
+  'Panduan': 'Guide',
+  'Panduan Food Ilee': 'Food Ilee guide',
+  'Keluar': 'Sign out',
+  'Keranjang belanja': 'Shopping cart',
+  'Marketplace': 'Marketplace',
+  'Tambah Limbah': 'Add food waste',
+  'Tanya AI': 'Ask AI',
+  'Dashboard belum dapat dimuat': 'Dashboard could not be loaded',
+  'Periksa koneksi ke Food Ilee, lalu coba kembali.': 'Check your connection to Food Ilee, then try again.',
+  'Muat ulang': 'Reload',
+  'RUANG KERJA FOOD ILEE': 'FOOD ILEE WORKSPACE',
+  'Kelola penawaran dan pantau perjalanan sirkularitas Anda.': 'Manage your listings and track your circular journey.',
+  'Jelajahi Marketplace': 'Explore marketplace',
+  'Tambah Limbah': 'Add food waste',
+  'Total produk': 'Total listings',
+  'Stok tersedia': 'Available stock',
+  'Pesanan berjalan': 'Active orders',
+  'ETALASE SAYA': 'MY LISTINGS',
+  'Produk yang Anda tawarkan': 'Your listings',
+  'Lihat marketplace': 'View marketplace',
+  'Etalase Anda siap dimulai': 'Your marketplace is ready',
+  'Tambahkan limbah organik pertama dan hubungkan dengan calon pemanfaat.': 'Add your first organic material and connect with potential users.',
+  'Tambah penawaran': 'Add a listing',
+  'Buat penawaran': 'Create a listing',
+  'Semua': 'All',
+  'Menunggu Pembayaran': 'Awaiting payment',
+  'Diproses': 'Processing',
+  'Dikirim': 'Shipped',
+  'Selesai': 'Completed',
+  'Dibatalkan': 'Cancelled',
+  'Tampilkan Lebih Banyak': 'Show more',
+  'PESANAN': 'ORDERS',
+  'RINGKASAN PESANAN': 'ORDER SUMMARY',
+  'Pembayaran': 'Payment',
+  'Checkout produk dipilih': 'Checkout selected items',
+  'Ringkasan pembayaran': 'Payment summary',
+  'Subtotal produk': 'Item subtotal',
+  'Pengiriman': 'Shipping',
+  'Total': 'Total',
+  'Pilih layanan': 'Choose a service',
+  'Produk dipilih': 'Selected items',
+  'Diskon': 'Discount',
+  'Profil belum dapat dimuat': 'Profile could not be loaded',
+  'Coba lagi sebentar lagi.': 'Please try again shortly.',
+  'Memuat ulang': 'Reload',
+  'AKTIVITAS ANDA': 'YOUR ACTIVITY',
+  'Ringkasan sirkular': 'Circular summary',
+  'Data dari aktivitas akun Food Ilee': 'Based on your Food Ilee account activity',
+  'Produk ditawarkan': 'Listings created',
+  'Total stok tersedia': 'Total available stock',
+  'Pesanan dibuat': 'Orders placed',
+  'AKUN': 'ACCOUNT',
+  'Detail akun': 'Account details',
+  'ALAMAT EMAIL': 'EMAIL ADDRESS',
+  'NAMA PENGGUNA': 'USERNAME',
+  'Belum diatur': 'Not set',
+  'BERGABUNG': 'MEMBER SINCE',
+  'ETALASE': 'LISTINGS',
+  'Aktivitas penawaran': 'Listing activity',
+  'Kelola toko': 'Manage store',
+  'Anda belum menawarkan produk.': 'You have not listed any products yet.',
+  'Tambahkan limbah': 'Add food waste',
+  'Jelajahi panduan': 'Explore the guide',
+  'Keluar dari akun': 'Sign out',
+  'Edit Profil': 'Edit profile',
+  'Edit profil': 'Edit profile',
+  'Perbarui informasi dan foto yang tampil di akun Anda.': 'Update the information and photo shown on your account.',
+  'Nama lengkap': 'Full name',
+  'Nama pengguna': 'Username',
+  'Tentang Anda': 'About you',
+  'Pilih foto': 'Choose a photo',
+  'Geser foto untuk mengatur posisi. Hasil akan dipotong persegi 1:1.': 'Drag the photo to adjust its position. It will be cropped to a square.',
+  'Perbesar foto': 'Zoom photo',
+  'Batal': 'Cancel',
+  'Simpan perubahan': 'Save changes',
+  'Nama toko': 'Store name',
+  'Lokasi toko': 'Store location',
+  'Cerita toko': 'Store story',
+  'Foto toko': 'Store photo',
+  'Buat toko': 'Create store',
+  'Edit Toko': 'Edit store',
+  'Produk': 'Products',
+  'Pesanan': 'Orders',
+  'Ulasan': 'Reviews',
+  'Lokasi belum ditambahkan': 'Location not added',
+  'Belum ada rating': 'No rating yet',
+  'Produk belum bisa diunggah': 'Product could not be uploaded',
+  'Buat toko sebelum menjual produk': 'Create a store before listing products',
+  'TOKO DIPERLUKAN': 'STORE REQUIRED',
+  'Lengkapi toko terlebih dahulu untuk mulai menawarkan limbah organik.': 'Complete your store profile before listing organic materials.',
+  'Toko belum dapat dimuat': 'Store could not be loaded',
+  'Toko belum dapat diperiksa': 'Store could not be checked',
+  'MULAI BERJUAL DI FOOD ILEE': 'START SELLING ON FOOD ILEE',
+  'Ruang usaha Anda': 'YOUR BUSINESS SPACE',
+  'Kelola Toko Anda': 'Manage your store',
+  'Tambah Produk': 'Add product',
+  'TAMBAH LIMBAH': 'ADD FOOD WASTE',
+  'Tambah limbah': 'Add food waste',
+  'Nama produk': 'Product name',
+  'Kategori': 'Category',
+  'Pilih kategori': 'Choose a category',
+  'Pakan Ternak': 'Animal feed',
+  'Kompos': 'Compost',
+  'Jumlah stok': 'Stock quantity',
+  'Harga per kg': 'Price per kg',
+  'Deskripsi': 'Description',
+  'Lokasi pengambilan': 'Pickup location',
+  'Unggah foto': 'Upload photo',
+  'Simpan': 'Save',
+  'Kirim': 'Send',
+  'Kirim pesan': 'Send message',
+  'Tulis pesan...': 'Write a message...',
+  'Cari': 'Search',
+  'Cari produk': 'Search products',
+  'Filter': 'Filter',
+  'Urutkan': 'Sort by',
+  'Harga': 'Price',
+  'Terbaru': 'Newest',
+  'Tersedia': 'Available',
+  'Detail produk': 'Product details',
+  'Beli sekarang': 'Buy now',
+  'Tambah ke keranjang': 'Add to cart',
+  'Keranjang Anda kosong': 'Your cart is empty',
+  'Lanjutkan belanja': 'Continue shopping',
+  'Lanjut ke pembayaran': 'Proceed to checkout',
+  'Pembayaran aman': 'Secure checkout',
+  'Alamat penerima': 'Shipping address',
+  'Nama penerima': 'Recipient name',
+  'Nomor telepon': 'Phone number',
+  'Provinsi': 'Province',
+  'Kabupaten/Kota': 'City/Regency',
+  'Kecamatan': 'District',
+  'Desa/Kelurahan': 'Village',
+  'Kode pos': 'Postal code',
+  'Detail alamat': 'Address details',
+  'Catatan untuk kurir (opsional)': 'Courier notes (optional)',
+  'Simpan alamat ini': 'Save this address',
+  'Notifikasi': 'Notifications',
+  'Belum ada notifikasi': 'No notifications yet',
+  'Pesan Anda': 'Your messages',
+  'Pilih percakapan': 'Choose a conversation',
+  'Cari percakapan': 'Search conversations',
+  'Jawaban AI dapat perlu diperiksa kembali sesuai kondisi bahan.': 'AI suggestions should be checked against the material’s condition.',
+  'MULAI TANYA': 'START A CONVERSATION',
+  'Tanyakan apa pun seputar pengolahan limbah pangan.': 'Ask anything about reusing food waste.',
+  'Sebelumnya': 'Previous',
+  'Berikutnya': 'Next',
+  'Lihat semua': 'View all',
+  'Kembali': 'Back',
+  'Simpan profil': 'Save profile',
+  'Profil berhasil diperbarui.': 'Profile updated successfully.',
+  'Penawaran berhasil dihapus.': 'Listing deleted successfully.',
+  'Penawaran diperbarui.': 'Listing updated successfully.',
+  'Pilih foto JPG, PNG, atau WebP.': 'Choose a JPG, PNG, or WebP photo.',
+  'Ukuran foto maksimal 4 MB.': 'Maximum photo size is 4 MB.',
+  'Pilih bahasa': 'Choose language',
+  'Bahasa': 'Language',
+  'Tentang': 'About',
+  'Cara Kerja': 'How it works',
+  'Dampak': 'Impact',
+  'AI Assist': 'AI assistant',
+  'Mulai Sekarang': 'Get started',
+  'MASA DEPAN SIRKULARITAS PANGAN': 'THE FUTURE OF CIRCULAR FOOD',
+  'Ubah limbah pangan': 'Turn food waste',
+  'menjadi': 'into',
+  'lebih bernilai.': 'new value.',
+  'Food Ilee mempertemukan pemilik limbah pangan dan orang yang dapat memanfaatkannya kembali — dengan bantuan teknologi AI.': 'Food Ilee connects food waste owners with people who can put those resources to use, supported by AI.',
+  'Jelajahi Food Ilee': 'Explore Food Ilee',
+  'Kenali cara kerjanya': 'See how it works',
+  'Marketplace sirkular': 'Circular marketplace',
+  'Panduan AI': 'AI guidance',
+  'Komunitas lokal': 'Local community',
+  'Setiap sisa punya kesempatan kedua.': 'Every leftover has another chance.',
+  'Mulai dari komunitas Anda, hari ini.': 'Start with your community today.',
+  'SIRKULARITAS PANGAN': 'CIRCULAR FOOD SYSTEM',
+  'TENTANG FOOD ILEE': 'ABOUT FOOD ILEE',
+  'Masalah pangan butuh cara pandang': 'Food needs a new perspective',
+  'yang baru.': 'for a better future.',
+  'Jelajahi platform': 'Explore the platform',
+  'Perpanjang manfaat': 'Extend the value',
+  'Temukan kemungkinan': 'Find new possibilities',
+  'Bangun ekosistem lokal': 'Grow local connections',
+  'CARA KERJA': 'HOW IT WORKS',
+  'Sederhana untuk dimulai.': 'Easy to get started.',
+  'Berdampak saat dilakukan.': 'Better when we do it together.',
+  'Bagikan yang tersedia': 'Share what you have',
+  'Temukan pemanfaatnya': 'Find the right user',
+  'Manfaatkan kembali': 'Put it to use again',
+  'Mulai perjalanan Anda': 'Start your journey',
+  'DAMPAK SIRKULAR': 'CIRCULAR IMPACT',
+  'Sumber daya yang berputar.': 'Resources in motion.',
+  'Masa depan yang lebih baik.': 'A better future.',
+  'Jadi bagian perubahan': 'Be part of the change',
+  'PASAR SIRKULAR': 'CIRCULAR MARKETPLACE',
+  'Temukan nilai di setiap': 'Find value in every',
+  'kategori.': 'category.',
+  'Buka marketplace': 'Open marketplace',
+  'Bahan pakan': 'Animal feed materials',
+  'Bahan kompos': 'Compost materials',
+  'Komunitas lokal': 'Local community',
+  'AI ASSIST': 'AI ASSISTANT',
+  'Ide pengolahan,': 'New ideas,',
+  'selangkah lebih dekat.': 'one question away.',
+  'Coba AI Food Ilee': 'Try Food Ilee AI',
+  'LANGKAH SIRKULAR DIMULAI DARI SINI': 'YOUR CIRCULAR JOURNEY STARTS HERE',
+  'Jadikan sisa sebagai': 'Let what is left',
+  'awal yang baru.': 'begin something new.',
+  'Bergabung dengan Food Ilee': 'Join Food Ilee',
+  'PANGAN LEBIH BAIK, BUMI LEBIH SEHAT': 'BETTER FOOD, A HEALTHIER PLANET',
+  'Masuk ke akun Anda': 'Sign in to your account',
+  'Buat akun Anda': 'Create your account',
+  'Nama lengkap': 'Full name',
+  'Konfirmasi kata sandi': 'Confirm password',
+  'Lupa kata sandi?': 'Forgot password?',
+  'Buat Akun': 'Create account',
+  'ATAU DAFTAR DENGAN': 'OR SIGN UP WITH',
+  'ATAU MASUK DENGAN': 'OR SIGN IN WITH',
+  'Sudah punya akun?': 'Already have an account?',
+  'Belum punya akun?': 'New to Food Ilee?',
+  'Google Sign-In belum dikonfigurasi.': 'Google Sign-In is not configured.',
+  'Google Sign-In gagal dimuat. Coba muat ulang halaman.': 'Google Sign-In failed to load. Try reloading the page.',
+  'Temukan bahan terbaik': 'Find the right materials',
+  'Bahan organik untuk kebutuhan pakan ternak dan kompos.': 'Organic materials for animal feed and composting.',
+  'URUTKAN PRODUK': 'SORT PRODUCTS',
+  'Harga terendah': 'Lowest price',
+  'Harga tertinggi': 'Highest price',
+  'Produk dan toko di sekitar': 'Products and nearby stores',
+  'Pilih lokasi untuk memfilter produk berdasarkan jarak.': 'Choose a location to filter products by distance.',
+  'Jarak pencarian': 'Search radius',
+  'Semua jarak': 'Any distance',
+  'Gunakan lokasi saya': 'Use my location',
+  'Lokasi toko': 'Store location',
+  'Memuat peta…': 'Loading map…',
+  'JADI BAGIAN DARI SIKLUSNYA': 'BE PART OF THE CYCLE',
+  'Punya bahan organik yang masih bisa dimanfaatkan?': 'Have organic materials that could still be useful?',
+  'Marketplace belum dapat dimuat': 'Marketplace could not be loaded',
+  'Periksa koneksi server Anda.': 'Check your server connection.',
+  'Coba lagi': 'Try again',
+  'CONTOH': 'SAMPLE',
+  'Lanjutkan': 'Continue',
+  'Kata sandi': 'Password',
+  'Email': 'Email',
+  'Masuk': 'Sign in',
+  'Daftar': 'Sign up',
+  'Buat toko sebelum menjual produk': 'Create a store before listing products',
+  'Buat toko terlebih dahulu untuk mulai menawarkan limbah organik.': 'Create a store before listing organic materials.',
+  'Kelola produk, ulasan, dan pesanan yang masuk ke etalase.': 'Manage products, reviews, and incoming orders.',
+});
+
+const originalText = new WeakMap();
+const translatedText = new WeakMap();
+const originalAttributes = new WeakMap();
+let observer;
+let translateQueued = false;
+
+export function getLanguage() {
+  try {
+    return localStorage.getItem(LANGUAGE_KEY) === 'en' ? 'en' : 'id';
+  } catch {
+    return 'id';
+  }
+}
+
+export function setLanguage(language) {
+  const selected = language === 'en' ? 'en' : 'id';
+  try {
+    localStorage.setItem(LANGUAGE_KEY, selected);
+  } catch { /* Use the selected language for this page even if storage is unavailable. */ }
+  document.documentElement.lang = selected;
+  applyTranslations(document.getElementById('app') || document.body, selected);
+  updateLanguageButtons(selected);
+  watchTranslations();
+}
+
+export function applyTranslations(root = document.getElementById('app'), language = getLanguage()) {
+  if (!root) return;
+  document.documentElement.lang = language;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement;
+      if (!parent || parent.closest('script,style,noscript,textarea,[data-no-translate]'))
+        return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  let textNode;
+  while ((textNode = walker.nextNode())) translateTextNode(textNode, language);
+  if (root.nodeType === Node.ELEMENT_NODE) translateAttributes(root, language);
+  root.querySelectorAll?.('*').forEach((element) => translateAttributes(element, language));
+  updateLanguageButtons(language);
+  watchTranslations();
+}
+
+function translateTextNode(node, language) {
+  if (!originalText.has(node)) originalText.set(node, node.nodeValue);
+  const lastTranslation = translatedText.get(node);
+  let original = originalText.get(node);
+  if (lastTranslation !== undefined && node.nodeValue === lastTranslation) {
+    original = originalText.get(node);
+  } else if (node.nodeValue !== original) {
+    original = node.nodeValue;
+    originalText.set(node, original);
+    translatedText.delete(node);
+  }
+  if (language !== 'en') {
+    if (node.nodeValue !== original) node.nodeValue = original;
+    translatedText.delete(node);
+    return;
+  }
+  const trimmed = original.trim();
+  const translated = english[trimmed];
+  if (!translated) return;
+  const leading = original.slice(0, original.indexOf(trimmed));
+  const trailing = original.slice(original.indexOf(trimmed) + trimmed.length);
+  const next = `${leading}${translated}${trailing}`;
+  if (node.nodeValue !== next) node.nodeValue = next;
+  translatedText.set(node, next);
+}
+
+function translateAttributes(element, language) {
+  for (const name of ['placeholder', 'title', 'aria-label']) {
+    if (!element.hasAttribute(name)) continue;
+    let saved = originalAttributes.get(element);
+    if (!saved) {
+      saved = new Map();
+      originalAttributes.set(element, saved);
+    }
+    if (!saved.has(name)) saved.set(name, element.getAttribute(name));
+    const original = saved.get(name);
+    const next = language === 'en' ? english[original.trim()] || original : original;
+    if (element.getAttribute(name) !== next) element.setAttribute(name, next);
+  }
+}
+
+function updateLanguageButtons(language) {
+  document.querySelectorAll('[data-language-choice]').forEach((button) => {
+    const selected = button.dataset.languageChoice === language;
+    button.setAttribute('aria-pressed', String(selected));
+    button.classList.toggle('is-selected', selected);
+  });
+}
+
+function watchTranslations() {
+  if (observer || !document.body) return;
+  observer = new MutationObserver((records) => {
+    if (translateQueued) return;
+    translateQueued = true;
+    queueMicrotask(() => {
+      translateQueued = false;
+      const root = document.getElementById('app');
+      if (root) applyTranslations(root, getLanguage());
+    });
+  });
+  observer.observe(document.body, { childList: true, characterData: true, subtree: true });
+}
+
+function initializeLanguage() {
+  const root = document.getElementById('app');
+  if (root) applyTranslations(root, getLanguage());
+  watchTranslations();
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', initializeLanguage, { once: true });
+  else initializeLanguage();
+}
