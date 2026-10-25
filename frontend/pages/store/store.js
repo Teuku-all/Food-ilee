@@ -73,7 +73,9 @@ export async function renderStore() {
       data.querySelector('strong').textContent = translate(`${formatRupiah(product.price)} / unit`);
     });
     bindStorePage(store, products, sales, reviews);
-    document.querySelector('[data-edit-store]').addEventListener('click', () => editStore(store));
+    document.querySelectorAll('[data-edit-store]').forEach((button) =>
+      button.addEventListener('click', () => editStore(store)),
+    );
   } catch (error) {
     if (!isRouteCurrent('#kelola-toko', navigationRevision)) return;
     renderShell(

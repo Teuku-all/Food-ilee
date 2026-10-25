@@ -12,6 +12,7 @@ import { escapeHtml } from '../../utils/html.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { formatRupiah, renderShell, showToast } from '../../ui/shell.js';
 import { skeleton } from '../../ui/skeleton.js';
+import { icon } from '../../ui/icons.js';
 import { formatProductWeight, productWeightGrams } from '../../utils/product-weight.js';
 
 let adminData = { users: [], wastes: [], orders: [] };
@@ -22,7 +23,7 @@ export async function renderAdmin() {
   const revision = getNavigationRevision();
   renderShell(
     '',
-    adminLoadingSkeleton(),
+    adminDashboardSkeleton(),
   );
   injectStyles();
   try {
@@ -48,7 +49,7 @@ export async function renderAdmin() {
       orders: Array.isArray(orders) ? orders : [],
     };
     adminAnalytics = analytics;
-    renderAdminView(adminAnalytics, profile.data, revision);
+    renderAdminDashboard(adminAnalytics, profile.data, revision);
   } catch (error) {
     if (!isRouteCurrent('#admin', revision)) return;
     renderShell(
@@ -62,47 +63,108 @@ export async function renderAdmin() {
   }
 }
 
-function adminLoadingSkeleton() {
-  return `<section class="ad-page" aria-busy="true"><header class="ad-heading"><div>${skeleton('120px', '10px')}<div style="height:10px"></div>${skeleton('220px', '30px')}<div style="height:8px"></div>${skeleton('310px', '13px')}</div>${skeleton('130px', '28px', 'pill')}</header><section class="ad-stats">${Array.from({ length: 4 }, () => `<article class="fi-card">${skeleton('90px', '12px')}<div style="height:12px"></div>${skeleton('80px', '27px')}</article>`).join('')}</section><div class="ad-tabs">${skeleton('120px', '38px', 'pill')}${skeleton('100px', '38px', 'pill')}${skeleton('100px', '38px', 'pill')}</div><section class="ad-panel fi-card"><div class="ad-table-wrap"><table><thead><tr><th>${skeleton('80px', '10px')}</th><th>${skeleton('90px', '10px')}</th><th>${skeleton('80px', '10px')}</th><th>${skeleton('70px', '10px')}</th></tr></thead><tbody>${Array.from({ length: 5 }, () => `<tr><td>${skeleton('125px', '13px')}</td><td>${skeleton('180px', '13px')}</td><td>${skeleton('70px', '20px', 'pill')}</td><td>${skeleton('75px', '30px', 'pill')}</td></tr>`).join('')}</tbody></table></div></section></section>`;
+function adminDashboardSkeleton() {
+  return `<section class="ad-page" aria-busy="true"><div class="ad-layout"><aside class="ad-sidebar">${skeleton('130px', '26px')}${skeleton('100%', '220px')}</aside><main class="ad-main"><header class="ad-heading">${skeleton('230px', '32px')}</header><section class="ad-stats">${Array.from({ length: 6 }, () => `<article class="fi-card">${skeleton('95px', '12px')}<div style="height:12px"></div>${skeleton('80px', '27px')}</article>`).join('')}</section><div class="ad-overview-grid"><section class="ad-panel fi-card">${skeleton('180px', '18px')}</section><section class="ad-panel fi-card">${skeleton('160px', '18px')}</section></div>${skeleton('100%', '300px')}</main></div></section>`;
 }
 
-function renderAdminView(analytics, currentUser, revision) {
-  renderShell(
-    '',
-    '<section class="ad-page"><header class="ad-heading"><div><p class="ad-kicker">PENGELOLAAN PLATFORM</p><h1>Panel Admin</h1><p>Pantau akun, etalase, dan transaksi Food Ilee.</p></div><span class="ad-role">Administrator</span></header><section class="ad-stats"><article class="fi-card"><small>Pengguna</small><strong>' +
-      Number(analytics.totalUsers || 0).toLocaleString('id-ID') +
-      '</strong></article><article class="fi-card"><small>Produk</small><strong>' +
-      Number(analytics.totalWastes || 0).toLocaleString('id-ID') +
-      '</strong></article><article class="fi-card"><small>Pesanan</small><strong>' +
-      Number(analytics.totalOrders || 0).toLocaleString('id-ID') +
-      '</strong></article><article class="fi-card"><small>Omzet dibayar</small><strong>' +
-      formatRupiah(analytics.totalRevenue) +
-      '</strong></article></section><div class="ad-toolbar"><label class="ad-search"><span aria-hidden="true">⌕</span><input id="admin-search" type="search" placeholder="Cari di data ini…" aria-label="Cari pada tabel admin"></label><div class="ad-toolbar-right"><div class="ad-tabs" role="tablist"><button type="button" data-admin-panel="users" class="' +
-      (activePanel === 'users' ? 'active' : '') +
-      '">Pengguna (' +
-      adminData.users.length +
-      ')</button><button type="button" data-admin-panel="wastes" class="' +
-      (activePanel === 'wastes' ? 'active' : '') +
-      '">Produk (' +
-      adminData.wastes.length +
-      ')</button><button type="button" data-admin-panel="orders" class="' +
-      (activePanel === 'orders' ? 'active' : '') +
-      '">Pesanan (' +
-      adminData.orders.length +
-      ')</button></div><span id="admin-search-note" role="status">Menampilkan semua data</span></div></div><section id="admin-panel" class="ad-panel fi-card">' +
-      renderPanel(currentUser) +
-      '</section></section>',
-  );
+function isPendingOrder(order) {
+  return order.paymentStatus === 'pending' || order.status === 'pending';
+}
+
+function countByMonth(items, year, month) {
+  return items.filter((item) => {
+    const date = new Date(item.createdAt);
+    return !Number.isNaN(date.getTime()) && date.getFullYear() === year && date.getMonth() === month;
+  }).length;
+}
+
+function renderAdminActivityChart() {
+  const now = new Date();
+  const months = Array.from({ length: 12 }, (_, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth() - 11 + index, 1);
+    return {
+      label: date.toLocaleDateString('id-ID', { month: 'short' }),
+      products: countByMonth(adminData.wastes, date.getFullYear(), date.getMonth()),
+      orders: countByMonth(adminData.orders, date.getFullYear(), date.getMonth()),
+    };
+  });
+  const max = Math.max(1, ...months.flatMap((month) => [month.products, month.orders]));
+  const scale = Math.max(4, Math.ceil(max / 4) * 4);
+  const top = 14;
+  const bottom = 165;
+  const chartHeight = bottom - top;
+  const step = 54;
+  const grid = Array.from({ length: 5 }, (_, index) => {
+    const y = top + (chartHeight / 4) * index;
+    const value = Math.round(scale * (4 - index) / 4);
+    return `<g class="ad-chart-gridline"><line x1="45" y1="${y}" x2="704" y2="${y}"/><text x="4" y="${y + 4}">${value}</text></g>`;
+  }).join('');
+  const bars = months.map((month, index) => {
+    const x = 53 + index * step;
+    const productHeight = month.products ? Math.max(5, month.products / scale * chartHeight) : 0;
+    const orderHeight = month.orders ? Math.max(5, month.orders / scale * chartHeight) : 0;
+    return `<g><rect class="ad-chart-bar is-products" x="${x}" y="${bottom - productHeight}" width="13" height="${productHeight}" rx="6"><title>${month.label}: ${month.products} produk baru</title></rect><rect class="ad-chart-bar is-orders" x="${x + 17}" y="${bottom - orderHeight}" width="13" height="${orderHeight}" rx="6"><title>${month.label}: ${month.orders} pesanan</title></rect><text class="ad-chart-month" x="${x + 15}" y="191">${month.label}</text></g>`;
+  }).join('');
+  const productsLastYear = months.reduce((sum, month) => sum + month.products, 0);
+  const ordersLastYear = months.reduce((sum, month) => sum + month.orders, 0);
+  return `<div class="ad-chart-wrap" role="img" aria-label="Aktivitas 12 bulan terakhir: ${productsLastYear} produk baru dan ${ordersLastYear} pesanan"><svg class="ad-chart-svg" viewBox="0 0 720 204" preserveAspectRatio="none" aria-hidden="true">${grid}${bars}</svg></div>`;
+}
+
+function renderPendingOrders(orders) {
+  const pending = orders.filter(isPendingOrder);
+  if (!pending.length) return `<div class="ad-pending-empty">${icon('shield')}<strong>Tidak ada pesanan tertunda</strong></div>`;
+  return pending.slice(0, 4).map((order) => {
+    const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : 'Tanggal tidak tersedia';
+    const title = order.waste?.title || 'Produk organik';
+    const buyer = order.buyer?.name || order.buyer?.email || 'Pembeli Food Ilee';
+    const label = order.paymentStatus === 'pending' ? 'Menunggu bayar' : 'Pesanan baru';
+    return `<button type="button" class="ad-pending-row" data-admin-panel="orders"><span class="ad-pending-icon">${icon('orders')}</span><span class="ad-pending-copy"><strong>${escapeHtml(title)}</strong><small>${escapeHtml(buyer)} · ${escapeHtml(date)}</small></span><span class="ad-pending-status">${label}</span></button>`;
+  }).join('');
+}
+
+function renderAdminDashboard(analytics, currentUser, revision) {
+  const pendingTotal = adminData.orders.filter(isPendingOrder).length;
+  const initials = String(currentUser.name || currentUser.username || 'Admin').split(/\s+/).slice(0, 2).map((part) => part[0] || '').join('').toLocaleUpperCase('id-ID');
+  const stats = [
+    ['Pengguna terdaftar', Number(analytics.totalUsers || 0), 'profile'],
+    ['Toko aktif', Number(analytics.totalStores || 0), 'store'],
+    ['Produk tayang', Number(analytics.totalWastes || 0), 'box'],
+    ['Total pesanan', Number(analytics.totalOrders || 0), 'orders'],
+    ['Transaksi tertunda', pendingTotal, 'bell'],
+    ['Omzet dibayar', formatRupiah(analytics.totalRevenue || 0), 'cart'],
+  ];
+  const tab = (panel, label) => `<button type="button" role="tab" aria-selected="${activePanel === panel}" data-admin-panel="${panel}" class="${activePanel === panel ? 'active' : ''}">${label}</button>`;
+  renderShell('', `<section class="ad-page"><div class="ad-layout"><aside class="ad-sidebar" aria-label="Navigasi admin">
+    <a class="ad-brand" href="#admin"><span class="ad-brand-mark">${icon('leaf')}</span><span>Food Ilee</span></a>
+    <nav class="ad-side-nav"><a class="is-current" href="#admin-overview" data-admin-scroll-target="admin-overview">${icon('home')}<span>Ringkasan</span></a><button type="button" data-admin-panel="users" class="${activePanel === 'users' ? 'active' : ''}">${icon('profile')}<span>Pengguna</span></button><button type="button" data-admin-panel="wastes" class="${activePanel === 'wastes' ? 'active' : ''}">${icon('box')}<span>Produk</span></button><button type="button" data-admin-panel="orders" class="${activePanel === 'orders' ? 'active' : ''}">${icon('orders')}<span>Pesanan</span></button><a href="#admin-chart" data-admin-scroll-target="admin-chart">${icon('guide')}<span>Statistik</span></a></nav>
+    <div class="ad-sidebar-profile"><span class="ad-sidebar-avatar">${escapeHtml(initials || 'A')}</span><strong>${escapeHtml(currentUser.name || currentUser.username || 'Administrator')}</strong></div>
+  </aside><main class="ad-main">
+    <header class="ad-heading"><h1>Dashboard admin</h1></header>
+    <section class="ad-stats" aria-label="Statistik utama">${stats.map(([label, value, iconName]) => `<article class="ad-stat"><span class="ad-stat-icon">${icon(iconName)}</span><small>${label}</small><strong>${typeof value === 'number' ? value.toLocaleString('id-ID') : value}</strong></article>`).join('')}</section>
+    <section class="ad-overview-grid" id="admin-overview"><section class="ad-panel ad-chart-panel fi-card" id="admin-chart" aria-labelledby="admin-chart-title"><div class="ad-panel-heading"><h2 id="admin-chart-title">Aktivitas 12 bulan</h2><div class="ad-chart-legend"><span><i class="is-products"></i>Produk</span><span><i class="is-orders"></i>Pesanan</span></div></div>${renderAdminActivityChart()}</section><section class="ad-panel ad-pending-panel fi-card" aria-labelledby="admin-pending-title"><div class="ad-panel-heading"><h2 id="admin-pending-title">Pesanan tertunda</h2></div><div class="ad-pending-list">${renderPendingOrders(adminData.orders)}</div><button type="button" class="ad-panel-link" data-admin-panel="orders">Lihat semua pesanan ${icon('arrow')}</button></section></section>
+    <section class="ad-management" id="admin-management"><div class="ad-management-heading"><h2>Kelola data</h2></div><div class="ad-toolbar"><label class="ad-search"><span aria-hidden="true">${icon('search')}</span><input id="admin-search" type="search" placeholder="Cari data…" aria-label="Cari pada tabel admin"></label><div class="ad-toolbar-right"><div class="ad-tabs" role="tablist" aria-label="Pilih jenis data">${tab('users', 'Pengguna')}${tab('wastes', 'Produk')}${tab('orders', 'Pesanan')}</div><span id="admin-search-note" role="status" hidden></span></div></div><section id="admin-panel" class="ad-panel fi-card" role="tabpanel">${renderPanel(currentUser)}</section></section>
+  </main></div></section>`);
   injectStyles();
   document.querySelectorAll('[data-admin-panel]').forEach((button) =>
     button.addEventListener('click', () => {
       activePanel = button.dataset.adminPanel;
-      document
-        .querySelectorAll('[data-admin-panel]')
-        .forEach((tab) => tab.classList.toggle('active', tab === button));
+      document.querySelectorAll('[data-admin-panel]').forEach((item) => {
+        const active = item.dataset.adminPanel === activePanel;
+        item.classList.toggle('active', active);
+        if (item.getAttribute('role') === 'tab') item.setAttribute('aria-selected', String(active));
+      });
       document.getElementById('admin-panel').innerHTML = renderPanel(currentUser);
       applyAdminSearch();
       bindAdminActions(currentUser, revision);
+      if (!button.closest('.ad-tabs')) {
+        document.getElementById('admin-management')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+      }
+    }),
+  );
+  document.querySelectorAll('[data-admin-scroll-target]').forEach((link) =>
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      document.getElementById(link.dataset.adminScrollTarget)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
     }),
   );
   document.getElementById('admin-search')?.addEventListener('input', applyAdminSearch);
@@ -117,7 +179,8 @@ function applyAdminSearch() {
   if (!note) return;
   const query = input?.value.trim().toLocaleLowerCase('id-ID') || '';
   if (!rows.length) {
-    note.textContent = 'Belum ada data untuk ditampilkan.';
+    note.hidden = true;
+    note.textContent = '';
     return;
   }
   let visible = 0;
@@ -126,9 +189,12 @@ function applyAdminSearch() {
     row.hidden = !match;
     if (match) visible += 1;
   });
-  note.textContent = visible
-    ? `${visible} dari ${rows.length} baris ditampilkan`
-    : 'Tidak ada data yang cocok.';
+  note.hidden = !query;
+  note.textContent = !query
+    ? ''
+    : visible
+      ? `${visible} hasil ditemukan`
+      : 'Tidak ada data yang cocok.';
 }
 
 function renderPanel(currentUser) {
@@ -242,7 +308,7 @@ function bindAdminActions(currentUser, revision) {
         );
         adminAnalytics.totalWastes = adminData.wastes.length;
         activePanel = 'wastes';
-        renderAdminView(adminAnalytics, currentUser, revision);
+        renderAdminDashboard(adminAnalytics, currentUser, revision);
       } catch (error) {
         button.disabled = false;
         showToast(error.message || 'Produk belum dapat dihapus.', 'error');
