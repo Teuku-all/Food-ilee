@@ -1,9 +1,10 @@
 import { getCachedCurrentUser, getCurrentUser } from '../services/user.js';
-import { removeToken } from '../utils/storage.js';
+import { getToken, removeToken } from '../utils/storage.js';
 import { escapeHtml } from '../utils/html.js';
 import { applyTranslations, getLanguage } from '../utils/i18n.js';
 import { showToast as showToastOverlay } from '../utils/toast.js';
 import { brandImage, icon } from './icons.js';
+import { getCachedStore, getStoreAccess } from '../utils/store-access.js';
 
 const links = [
   ['Marketplace', '#marketplace', 'market'],
@@ -23,11 +24,13 @@ let mobileNavIndicator;
 let mobileNavRootObserver;
 
 export function dashboardHeader(active = '') {
-  const currentRoute = location.hash || '#dashboard';
-  const nav = links
+  const currentRoute = location.hash || '#marketplace';
+  const storeAvailable = Boolean(getCachedStore());
+  const navLinks = storeAvailable ? [...links, ['Kelola Toko', '#kelola-toko', 'store']] : links;
+  const nav = navLinks
     .map(([label, href, key]) => {
       const isActive = active ? active === key : currentRoute === href;
-      return `<a class="fi-nav-link${isActive ? ' is-active' : ''}" href="${href}" aria-label="${label}"${isActive ? ' aria-current="page"' : ''}>${icon(key)}<span>${label}</span></a>`;
+      return `<a class="fi-nav-link${isActive ? ' is-active' : ''}${href === '#kelola-toko' ? ' fi-nav-store' : ''}" href="${href}" aria-label="${label}"${isActive ? ' aria-current="page"' : ''}>${icon(key)}<span>${label}</span></a>`;
     })
     .join('');
   const accountLinks = [
@@ -45,7 +48,7 @@ export function dashboardHeader(active = '') {
 
   return `
     <header class="fi-header">
-      <a class="fi-header-brand" href="#dashboard" aria-label="Food Ilee">${brandImage()}</a>
+      <a class="fi-header-brand" href="${storeAvailable ? '#kelola-toko' : '#marketplace'}" aria-label="Food Ilee">${brandImage()}</a>
       <nav class="fi-nav" aria-label="Navigasi utama">${nav}</nav>
       <div class="fi-header-actions">
         <a class="fi-cart-link" href="#cart" aria-label="Keranjang belanja, 0 barang" title="Keranjang belanja">
@@ -125,6 +128,7 @@ export function injectShellStyles() {
 export function bindShell(version = shellRenderVersion) {
   bindHeaderScroll();
   bindMobileNav();
+  syncStoreNavigation(version);
   updateCartBadge();
   if (!document.documentElement.dataset.fiCartBound) {
     window.addEventListener('foodilee:cart-updated', updateCartBadge);
@@ -175,6 +179,29 @@ export function bindShell(version = shellRenderVersion) {
   hydrateAccount(version);
 }
 
+async function syncStoreNavigation(version) {
+  const header = document.querySelector('#app .fi-header:not(.landing-nav)');
+  if (!header || !getToken()) return;
+  const token = getToken();
+  try {
+    const store = await getStoreAccess();
+    if (version !== shellRenderVersion || !header.isConnected || getToken() !== token) return;
+    const nav = header.querySelector('.fi-nav');
+    const existing = nav?.querySelector('.fi-nav-store');
+    header.querySelector('.fi-header-brand')?.setAttribute('href', store ? '#kelola-toko' : '#marketplace');
+    if (store && !existing) {
+      nav.insertAdjacentHTML('beforeend', `<a class="fi-nav-link fi-nav-store${location.hash === '#kelola-toko' ? ' is-active' : ''}" href="#kelola-toko" aria-label="Kelola Toko"${location.hash === '#kelola-toko' ? ' aria-current="page"' : ''}>${icon('store')}<span>Kelola Toko</span></a>`);
+      applyTranslations(nav.lastElementChild, getLanguage());
+      bindMobileNav();
+    } else if (!store && existing) {
+      existing.remove();
+      bindMobileNav();
+    }
+  } catch {
+    // Keep the shared navigation usable if the store check is temporarily unavailable.
+  }
+}
+
 export function bindMobileNav() {
   mobileNavObserver?.disconnect();
   const nav = document.querySelector('#app .fi-header .fi-nav');
@@ -216,7 +243,7 @@ export function bindMobileNav() {
       ? indicator.getBoundingClientRect().left + indicator.getBoundingClientRect().width / 2
       : target;
     indicator.style.left = `${target}px`;
-    indicator.style.top = `${navRect.top - 11}px`;
+    indicator.style.top = `${navRect.top + 5}px`;
     indicator.innerHTML = link.querySelector('.fi-icon')?.outerHTML || link.querySelector('svg')?.outerHTML || '';
     indicator.classList.add('is-visible');
 
@@ -249,7 +276,7 @@ export function bindMobileNav() {
       const navBox = active.closest('.fi-nav').getBoundingClientRect();
       const linkBox = active.getBoundingClientRect();
       bubble.style.left = `${linkBox.left + linkBox.width / 2}px`;
-      bubble.style.top = `${navBox.top - 11}px`;
+      bubble.style.top = `${navBox.top + 5}px`;
     }, { passive: true });
     document.documentElement.dataset.fiNavResizeBound = 'true';
   }

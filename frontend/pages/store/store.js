@@ -4,6 +4,7 @@ import { deleteWaste, getWastes, updateWaste } from '../../services/waste.js';
 import { getMySales, updateOrderStatus } from '../../services/order.js';
 import { escapeHtml } from '../../utils/html.js';
 import { formatRupiah, renderShell, showToast } from '../../ui/shell.js';
+import { renderStoreOverview } from './store-overview.js';
 import { icon } from '../../ui/icons.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { skeleton } from '../../ui/skeleton.js';
@@ -51,7 +52,8 @@ export async function renderStore() {
       return;
     }
     const products = Array.isArray(wasteResult.data) ? wasteResult.data : store.products || [];
-    const sales = salesResult.success ? salesResult.data || [] : [];
+    const salesAvailable = Boolean(salesResult.success);
+    const sales = salesAvailable && Array.isArray(salesResult.data) ? salesResult.data : [];
     const reviews = products.flatMap((product) => product.reviews || []);
     const averageRating = reviews.length
       ? reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / reviews.length
@@ -61,7 +63,7 @@ export async function renderStore() {
       .reduce((sum, order) => sum + Number(order.total || 0), 0);
     renderShell(
       '',
-      `<section class="st-page"><div class="st-title"><div><p class="st-kicker">RUANG USAHA ANDA</p><h1>Kelola Toko Anda</h1><p>Pantau produk, ulasan, dan pesanan yang masuk ke etalase.</p></div><div class="st-title-actions"><button class="fi-button fi-button-outline" type="button" data-edit-store>Edit Toko</button><a class="fi-button" href="#tambah-limbah">+ Tambah Produk</a></div></div><section class="st-profile fi-card"><div class="st-store-avatar">${store.image ? `<img src="${escapeHtml(store.image)}" alt="">` : icon('store')}</div><div class="st-store-info"><h2>${escapeHtml(store.name)}</h2><p class="st-store-location">${escapeHtml(store.location || 'Lokasi belum ditambahkan')}</p><p class="st-store-description">${escapeHtml(store.description || 'Tambahkan cerita toko untuk membantu pembeli mengenal penawaran Anda.')}</p><div class="st-pills"><span>${icon('box')} ${products.length} Produk</span><span>${icon('edit')} ${reviews.length} Ulasan</span><span>★ ${averageRating === null ? 'Belum ada rating' : averageRating.toFixed(1)}</span></div></div></section><section class="st-metrics"><article><small>PESANAN</small><strong>${sales.length}</strong><span>Semua status</span></article><article><small>MENUNGGU TINDAKAN</small><strong>${sales.filter((order) => ['pending', 'processing'].includes(order.status)).length}</strong><span>Pesanan aktif</span></article><article><small>PENDAPATAN TERBAYAR</small><strong>${formatRupiah(revenue)}</strong><span>Pesanan terkonfirmasi</span></article></section><section class="st-tabs" role="tablist"><button class="active" data-panel="products">Produk <span>${products.length}</span></button><button data-panel="orders">Pesanan <span>${sales.length}</span></button><button data-panel="reviews">Ulasan <span>${reviews.length}</span></button></section><section id="store-panel">${renderProducts(products)}</section></section>`,
+      `<section class="st-page"><div class="st-title"><div><p class="st-kicker">RUANG USAHA ANDA</p><h1>Kelola Toko Anda</h1><p>Pantau produk, ulasan, dan pesanan yang masuk ke etalase.</p></div><div class="st-title-actions"><button class="fi-button fi-button-outline" type="button" data-edit-store>Edit Toko</button><a class="fi-button" href="#tambah-limbah">+ Tambah Produk</a></div></div><section class="st-profile fi-card"><div class="st-store-avatar">${store.image ? `<img src="${escapeHtml(store.image)}" alt="">` : icon('store')}</div><div class="st-store-info"><h2>${escapeHtml(store.name)}</h2><p class="st-store-location">${escapeHtml(store.location || 'Lokasi belum ditambahkan')}</p><p class="st-store-description">${escapeHtml(store.description || 'Tambahkan cerita toko untuk membantu pembeli mengenal penawaran Anda.')}</p><div class="st-pills"><span>${icon('box')} ${products.length} Produk</span><span>${icon('edit')} ${reviews.length} Ulasan</span><span>★ ${averageRating === null ? 'Belum ada rating' : averageRating.toFixed(1)}</span></div></div></section>${renderStoreOverview({ products, sales, revenue, salesAvailable })}<section class="st-tabs" role="tablist"><button class="active" data-panel="products">Produk <span>${products.length}</span></button><button data-panel="orders">Pesanan <span>${sales.length}</span></button><button data-panel="reviews">Ulasan <span>${reviews.length}</span></button></section><section id="store-panel">${renderProducts(products)}</section></section>`,
     );
     injectStoreStyles();
     document.querySelectorAll('.st-product').forEach((card, index) => {
@@ -86,7 +88,7 @@ export async function renderStore() {
 }
 
 function storeLoadingSkeleton() {
-  return `<section class="st-page" aria-busy="true"><div class="st-title"><div>${skeleton('130px', '10px')}<div style="height:10px"></div>${skeleton('260px', '30px')}<div style="height:8px"></div>${skeleton('320px', '13px')}</div><div class="st-title-actions">${skeleton('115px', '40px', 'pill')}${skeleton('145px', '40px', 'pill')}</div></div><section class="st-profile fi-card">${skeleton('104px', '104px', 'circle')}<div class="st-store-info">${skeleton('190px', '23px')}<div style="height:8px"></div>${skeleton('125px', '12px')}${skeleton('85%', '12px')}<div style="height:13px"></div>${skeleton('220px', '20px', 'pill')}</div></section><section class="st-metrics">${Array.from({ length: 3 }, () => `<article>${skeleton('95px', '9px')}<div style="height:10px"></div>${skeleton('75px', '26px')}<div style="height:8px"></div>${skeleton('90px', '10px')}</article>`).join('')}</section><section class="st-tabs">${skeleton('105px', '38px', 'pill')}${skeleton('105px', '38px', 'pill')}${skeleton('105px', '38px', 'pill')}</section><div class="st-products">${Array.from({ length: 2 }, () => `<article class="st-product fi-card">${skeleton('150px', '165px')}<div class="st-product-main">${skeleton('85px', '16px', 'pill')}<div style="height:10px"></div>${skeleton('65%', '18px')}<div style="height:11px"></div>${skeleton('100%', '12px')}${skeleton('80%', '12px')}</div></article>`).join('')}</div></section>`;
+  return `<section class="st-page" aria-busy="true"><div class="st-title"><div>${skeleton('130px', '10px')}<div style="height:10px"></div>${skeleton('260px', '30px')}<div style="height:8px"></div>${skeleton('320px', '13px')}</div><div class="st-title-actions">${skeleton('115px', '40px', 'pill')}${skeleton('145px', '40px', 'pill')}</div></div><section class="st-profile fi-card">${skeleton('104px', '104px', 'circle')}<div class="st-store-info">${skeleton('190px', '23px')}<div style="height:8px"></div>${skeleton('125px', '12px')}${skeleton('85%', '12px')}<div style="height:13px"></div>${skeleton('220px', '20px', 'pill')}</div></section><section class="st-dashboard" aria-busy="true"><div class="db-overview-grid">${Array.from({ length: 3 }, () => `<article class="db-panel">${skeleton("45%", "16px")}<div style="height:28px"></div>${skeleton("65%", "58px")}<div style="height:22px"></div>${skeleton("85%", "12px")}</article>`).join("")}</div></section><section class="st-tabs">${skeleton('105px', '38px', 'pill')}${skeleton('105px', '38px', 'pill')}${skeleton('105px', '38px', 'pill')}</section><div class="st-products">${Array.from({ length: 2 }, () => `<article class="st-product fi-card">${skeleton('150px', '165px')}<div class="st-product-main">${skeleton('85px', '16px', 'pill')}<div style="height:10px"></div>${skeleton('65%', '18px')}<div style="height:11px"></div>${skeleton('100%', '12px')}${skeleton('80%', '12px')}</div></article>`).join('')}</div></section>`;
 }
 
 function renderProducts(products) {
@@ -136,6 +138,18 @@ function bindStorePage(store, products, sales, reviews) {
         .forEach((item) => item.classList.toggle('active', item === button));
       document.getElementById('store-panel').innerHTML = panels[button.dataset.panel];
       bindPanelActions(products, sales);
+    }),
+  );
+  document.querySelectorAll('[data-store-tab-target]').forEach((link) =>
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const tab = document.querySelector(`.st-tabs button[data-panel="${link.dataset.storeTabTarget}"]`);
+      if (!tab) return;
+      tab.click();
+      document.querySelector('.st-tabs')?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+        block: 'start',
+      });
     }),
   );
   bindPanelActions(products, sales);

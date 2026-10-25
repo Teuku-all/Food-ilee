@@ -162,6 +162,9 @@ html[data-language-transition]::view-transition-group(root) { animation: none; }
     border-radius: 20px 20px 0 0;
     isolation: isolate;
   }
+  #app .fi-header .fi-nav:has(.fi-nav-store) {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
   #app .fi-header .fi-nav .fi-nav-link {
     min-height: 50px;
     padding: 0;
@@ -183,7 +186,7 @@ html[data-language-transition]::view-transition-group(root) { animation: none; }
   body > .fi-nav-indicator {
     position: fixed;
     z-index: 1002;
-    top: calc(100dvh - var(--fi-bottom-space) - 11px);
+    top: calc(100dvh - var(--fi-bottom-space) + 5px);
     left: 50%;
     display: grid;
     place-items: center;

@@ -303,6 +303,7 @@ export function translate(text, language = getLanguage()) {
 }
 
 const dynamicTranslations = [
+  [/^DASHBOARD TOKO · (.+)$/, 'STORE DASHBOARD · $1'],
   [/^(\d+) produk$/, '$1 products'],
   [/^Pesanan #(.+)$/, 'Order #$1'],
   [/^(\d+) produk tersedia$/, '$1 products available'],

@@ -31,7 +31,7 @@ export async function renderAdmin() {
     if (profile.data?.role !== 'admin') {
       renderShell(
         '',
-        '<section class="ad-page"><div class="ad-state fi-card"><h1>Akses admin diperlukan</h1><p>Halaman ini hanya tersedia untuk administrator.</p><a class="fi-button" href="#dashboard">Kembali ke dashboard</a></div></section>',
+        '<section class="ad-page"><div class="ad-state fi-card"><h1>Akses admin diperlukan</h1><p>Halaman ini hanya tersedia untuk administrator.</p><a class="fi-button" href="#marketplace">Kembali ke marketplace</a></div></section>',
       );
       return;
     }

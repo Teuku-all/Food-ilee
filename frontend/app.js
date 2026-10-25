@@ -1,6 +1,5 @@
 import { renderLogin } from './pages/login/login.js';
 import { renderLanding } from './pages/landing/landing.js';
-import { renderDashboard } from './pages/dashboard/dashboard.js';
 import { renderMarketplace } from './pages/marketplace/marketplace.js';
 import { renderTransactions } from './pages/transactions/transactions.js';
 import { renderTambahLimbah } from './pages/tambah-limbah/tambah-limbah.js';
@@ -17,6 +16,7 @@ import { renderOnboarding, shouldShowOnboarding } from './ui/onboarding.js';
 import { getToken, removeToken } from './utils/storage.js';
 import { beginNavigation, isCurrentNavigation } from './utils/navigation.js';
 import { getCachedCurrentUser } from './services/user.js';
+import { getStoreAccess } from './utils/store-access.js';
 
 document.addEventListener(
   'close',
@@ -100,6 +100,9 @@ async function router(route = location.hash || '#beranda') {
   }
   if (route === '#marketplace') {
     await renderMarketplace();
+    if (!isCurrentNavigation(navigationRevision)) return;
+    const userId = getCachedCurrentUser()?.data?.id;
+    if (shouldShowOnboarding(userId)) renderOnboarding({ userId });
     return;
   }
   if (route === '#transaksi') {
@@ -120,6 +123,9 @@ async function router(route = location.hash || '#beranda') {
   }
   if (route === '#kelola-toko') {
     await renderStore();
+    if (!isCurrentNavigation(navigationRevision) || !document.querySelector('.st-dashboard')) return;
+    const userId = getCachedCurrentUser()?.data?.id;
+    if (shouldShowOnboarding(userId)) renderOnboarding({ userId });
     return;
   }
   if (route === '#buat-toko') {
@@ -151,10 +157,10 @@ async function router(route = location.hash || '#beranda') {
     return;
   }
   if (route === '#dashboard') {
-    await renderDashboard();
+    let store = null;
+    try { store = await getStoreAccess(); } catch { /* Keep the legacy link usable during a store lookup failure. */ }
     if (!isCurrentNavigation(navigationRevision)) return;
-    const userId = getCachedCurrentUser()?.data?.id;
-    if (shouldShowOnboarding(userId)) renderOnboarding({ userId });
+    location.replace(store ? '#kelola-toko' : '#marketplace');
     return;
   }
   renderLanding();

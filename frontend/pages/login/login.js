@@ -1,6 +1,7 @@
 import { languagePicker } from '../../utils/i18n.js';
 import { loginUser, loginWithGoogle, registerUser } from '../../services/auth.js';
 import { saveToken } from '../../utils/storage.js';
+import { getStoreAccess } from '../../utils/store-access.js';
 import { escapeHtml } from '../../utils/html.js';
 import { brandLogo, icon } from '../../ui/icons.js';
 
@@ -119,7 +120,7 @@ async function handleGoogleCredential(response) {
   try {
     const result = await loginWithGoogle(response.credential);
     saveToken(result.data.token);
-    location.hash = '#dashboard';
+    location.hash = await postLoginDestination();
   } catch (error) {
     renderAuthForm(error.message || 'Login dengan Google belum berhasil. Silakan coba lagi.');
   }
@@ -159,9 +160,17 @@ async function submitAuth(event) {
       return;
     }
     saveToken(result.data.token);
-    location.hash = '#dashboard';
+    location.hash = await postLoginDestination();
   } catch (error) {
     renderAuthForm(error.message || 'Terjadi kendala. Silakan coba lagi.');
+  }
+}
+
+async function postLoginDestination() {
+  try {
+    return (await getStoreAccess()) ? '#kelola-toko' : '#marketplace';
+  } catch {
+    return '#marketplace';
   }
 }
 
