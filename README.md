@@ -74,7 +74,7 @@ uncached. Images uploaded to an external image host follow that host's own cache
 
 ## Environment variables
 
-See [`backend/.env.example`](backend/.env.example) for the configuration template. Never commit `.env` files or real API credentials. `DATABASE_URL` and `JWT_SECRET` are needed for normal backend operation. Integration credentials are needed by the corresponding features.
+See [`backend/.env.example`](backend/.env.example) for the configuration template. Never commit `.env` files or real API credentials. `DATABASE_URL` and `JWT_SECRET` are needed for normal backend operation. Password reset emails require `RESEND_API_KEY` and `RESEND_FROM_EMAIL`; use a sender address verified in Resend. Integration credentials are needed by the corresponding features.
 
 ## Notes
 
@@ -89,6 +89,7 @@ Deploy this monorepo as **two Vercel projects** connected to the same Git reposi
 1. Create the backend project first and set its **Root Directory** to `backend`. Keep the detected `backend/vercel.json` settings. The API is exported from `src/app.js`; `src/server.js` is only for local development and Socket.IO.
 2. Add the backend environment variables in Vercel Project Settings → Environment Variables:
    - Required: `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`, `CORS_ORIGINS`.
+   - Password reset email: `RESEND_API_KEY`, `RESEND_FROM_EMAIL` (verified sender address).
    - Integrations as used: `GOOGLE_CLIENT_ID`, `GROQ_API_KEY`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_IS_PRODUCTION`, `MIDTRANS_SPLIT_ENABLED`, `MIDTRANS_PARTNER_MERCHANT_ID`, `BITESHIP_API_KEY`, `BITESHIP_COURIERS`, `BITESHIP_WEBHOOK_SECRET`, `BITESHIP_COD_SETTLEMENT_DAYS`.
    - Use a hosted PostgreSQL database for `DATABASE_URL`. Set `MIDTRANS_IS_PRODUCTION=false` while using Midtrans Sandbox.
 3. Deploy the backend and copy its production URL, such as `https://foodilee-api.vercel.app`.

@@ -1,4 +1,4 @@
-import { renderLogin } from './pages/login/login.js';
+import { renderLogin, renderPasswordReset } from './pages/login/login.js';
 import { renderLanding } from './pages/landing/landing.js';
 import { renderMarketplace } from './pages/marketplace/marketplace.js';
 import { renderTransactions } from './pages/transactions/transactions.js';
@@ -59,6 +59,11 @@ window.addEventListener('foodilee:session-expired', (event) => {
 });
 
 async function router(route = location.hash || '#beranda') {
+  if (route.startsWith('#reset-password')) {
+    const query = route.split('?')[1] || '';
+    renderPasswordReset(new URLSearchParams(query).get('token'));
+    return;
+  }
   if (landingSectionRoutes.has(route) && document.querySelector('.landing-page')) {
     document
       .getElementById(route.slice(1))

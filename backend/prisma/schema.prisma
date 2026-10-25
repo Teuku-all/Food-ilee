@@ -29,6 +29,12 @@ model User {
 
   updatedAt DateTime @updatedAt
 
+  passwordResetTokenHash String? @unique
+
+  passwordResetExpires DateTime?
+
+  authTokenVersion Int @default(0)
+
   store      Store?
 
   products   WasteProduct[]

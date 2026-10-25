@@ -42,3 +42,29 @@ export async function loginWithGoogle(credential) {
     { throwOnError: true },
   );
 }
+
+export async function requestPasswordReset(email) {
+  return apiRequest(
+    '/auth/forgot-password',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    },
+    'Permintaan reset password belum dapat diproses.',
+    { throwOnError: true },
+  );
+}
+
+export async function resetPassword(token, password) {
+  return apiRequest(
+    '/auth/reset-password',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password }),
+    },
+    'Password belum dapat diperbarui.',
+    { throwOnError: true },
+  );
+}

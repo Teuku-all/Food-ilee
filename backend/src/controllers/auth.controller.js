@@ -59,6 +59,36 @@ async function googleLogin(req, res) {
   }
 }
 
+async function forgotPassword(req, res) {
+  try {
+    await authService.requestPasswordReset(req.body.email);
+    res.status(200).json({
+      success: true,
+      message: 'Jika email terdaftar, tautan untuk mengatur ulang password akan dikirim.',
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({
+      success: false,
+      message: error.status ? error.message : 'Permintaan reset password belum dapat diproses.',
+    });
+  }
+}
+
+async function resetPassword(req, res) {
+  try {
+    await authService.resetPassword(req.body.token, req.body.password);
+    res.status(200).json({
+      success: true,
+      message: 'Password berhasil diperbarui. Silakan masuk dengan password baru.',
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({
+      success: false,
+      message: error.status ? error.message : 'Password belum dapat diperbarui. Coba lagi.',
+    });
+  }
+}
+
 async function currentUser(req, res) {
   try {
     res.status(200).json({
@@ -77,5 +107,7 @@ module.exports = {
   register,
   login,
   googleLogin,
+  forgotPassword,
+  resetPassword,
   currentUser,
 };

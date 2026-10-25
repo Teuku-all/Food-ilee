@@ -23,7 +23,7 @@ async function authMiddleware(req, res, next) {
   try {
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, role: true, isBanned: true },
+      select: { id: true, role: true, isBanned: true, authTokenVersion: true },
     });
     if (!user) {
       return res.status(401).json({
@@ -35,6 +35,12 @@ async function authMiddleware(req, res, next) {
       return res.status(403).json({
         success: false,
         message: 'Akun ini dinonaktifkan. Hubungi administrator.',
+      });
+    }
+    if ((decoded.tokenVersion ?? 0) !== user.authTokenVersion) {
+      return res.status(401).json({
+        success: false,
+        message: 'Sesi berakhir. Silakan masuk kembali.',
       });
     }
 

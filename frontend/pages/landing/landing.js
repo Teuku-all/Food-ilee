@@ -92,8 +92,9 @@ function bindLandingReveal() {
   const targets = document.querySelectorAll(
     '.landing-about > .landing-section-label, .landing-about-grid, .landing-values article, ' +
       '.landing-how > .landing-section-label, .landing-how-heading, .landing-steps article, .landing-how > .landing-join, ' +
-      '.landing-impact-copy, .landing-market > .landing-section-label, .landing-market-head, .landing-category, ' +
-      '.landing-ai-visual, .landing-ai-copy, .landing-final > *',
+      '.landing-impact-copy, .landing-impact-art, .landing-market > .landing-section-label, .landing-market-head, .landing-category, ' +
+      '.landing-ai-visual, .landing-ai-copy, .landing-final > *, ' +
+      '.landing-page .fi-footer-grid > div, .landing-page .fi-footer-bottom',
   );
   if (!targets.length) return;
 

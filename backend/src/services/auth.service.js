@@ -2,9 +2,50 @@ const prisma = require('../config/prisma');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
-const { randomBytes } = require('crypto');
+const { createHash, randomBytes } = require('crypto');
 
 const googleClient = new OAuth2Client();
+
+function passwordResetError(message, status) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
+
+function hashResetToken(token) {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+async function sendPasswordResetEmail({ email, name, resetUrl }) {
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    signal: AbortSignal.timeout(10000),
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: process.env.RESEND_FROM_EMAIL,
+      to: [email],
+      subject: 'Atur ulang password Food Ilee',
+      html: `<div style="font-family:Arial,sans-serif;color:#173d30;line-height:1.6"><h1 style="font-size:22px">Atur ulang password</h1><p>Halo ${escapeEmailHtml(name || 'Pengguna Food Ilee')},</p><p>Kami menerima permintaan untuk mengatur ulang password akun Food Ilee Anda.</p><p><a href="${resetUrl}" style="display:inline-block;padding:12px 20px;border-radius:10px;background:#235347;color:#fff;text-decoration:none">Buat password baru</a></p><p>Tautan ini hanya berlaku selama 1 jam dan hanya dapat digunakan sekali. Jika Anda tidak meminta reset password, abaikan email ini.</p><p style="color:#738078;font-size:12px">Jika tombol tidak berfungsi, salin tautan berikut ke browser:<br>${resetUrl}</p></div>`,
+    }),
+  });
+
+  if (!response.ok) {
+    throw passwordResetError('Layanan email reset password sedang tidak tersedia. Coba lagi nanti.', 503);
+  }
+}
+
+function escapeEmailHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[character]);
+}
 
 async function registerUser(data) {
   const existingUser = await prisma.user.findUnique({
@@ -63,6 +104,7 @@ async function loginUser(data) {
     {
       id: user.id,
       role: user.role,
+      tokenVersion: user.authTokenVersion,
     },
 
     process.env.JWT_SECRET,
@@ -80,6 +122,64 @@ async function loginUser(data) {
       email: user.email,
     },
   };
+}
+
+async function requestPasswordReset(email) {
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL || !process.env.FRONTEND_URL) {
+    throw passwordResetError('Layanan reset password belum dikonfigurasi. Hubungi administrator.', 503);
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, email: true, name: true },
+  });
+  if (!user) return;
+
+  const token = randomBytes(32).toString('hex');
+  const tokenHash = hashResetToken(token);
+  const expires = new Date(Date.now() + 60 * 60 * 1000);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordResetTokenHash: tokenHash, passwordResetExpires: expires },
+  });
+
+  try {
+    const resetUrl = new URL(process.env.FRONTEND_URL);
+    resetUrl.hash = `reset-password?token=${token}`;
+    await sendPasswordResetEmail({ email: user.email, name: user.name, resetUrl: resetUrl.toString() });
+  } catch (error) {
+    await prisma.user.updateMany({
+      where: { id: user.id, passwordResetTokenHash: tokenHash },
+      data: { passwordResetTokenHash: null, passwordResetExpires: null },
+    });
+    console.error('Password reset email could not be sent:', error.message);
+  }
+}
+
+async function resetPassword(token, newPassword) {
+  const tokenHash = hashResetToken(token);
+  const now = new Date();
+  const user = await prisma.user.findFirst({
+    where: { passwordResetTokenHash: tokenHash, passwordResetExpires: { gt: now } },
+    select: { id: true },
+  });
+  if (!user) {
+    throw passwordResetError('Tautan reset tidak valid atau sudah kedaluwarsa. Minta tautan baru.', 400);
+  }
+
+  const password = await bcrypt.hash(newPassword, 10);
+  const result = await prisma.user.updateMany({
+    where: { id: user.id, passwordResetTokenHash: tokenHash, passwordResetExpires: { gt: now } },
+    data: {
+      password,
+      passwordResetTokenHash: null,
+      passwordResetExpires: null,
+      authTokenVersion: { increment: 1 },
+    },
+  });
+  if (result.count !== 1) {
+    throw passwordResetError('Tautan reset tidak valid atau sudah kedaluwarsa. Minta tautan baru.', 400);
+  }
 }
 
 async function loginWithGoogle(credential) {
@@ -154,6 +254,7 @@ async function loginWithGoogle(credential) {
     {
       id: user.id,
       role: user.role,
+      tokenVersion: user.authTokenVersion,
     },
     process.env.JWT_SECRET,
     {
@@ -174,5 +275,7 @@ async function loginWithGoogle(credential) {
 module.exports = {
   registerUser,
   loginUser,
+  requestPasswordReset,
+  resetPassword,
   loginWithGoogle,
 };

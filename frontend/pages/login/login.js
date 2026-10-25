@@ -1,5 +1,11 @@
 import { languagePicker } from '../../utils/i18n.js';
-import { loginUser, loginWithGoogle, registerUser } from '../../services/auth.js';
+import {
+  loginUser,
+  loginWithGoogle,
+  registerUser,
+  requestPasswordReset,
+  resetPassword,
+} from '../../services/auth.js';
 import { saveToken } from '../../utils/storage.js';
 import { getStoreAccess } from '../../utils/store-access.js';
 import { escapeHtml } from '../../utils/html.js';
@@ -27,6 +33,10 @@ export function renderLogin(initialMode = 'login') {
 function renderAuthForm(message = '') {
   const wrap = document.getElementById('auth-form-wrap');
   if (!wrap) return;
+  if (mode === 'forgot') {
+    renderForgotPasswordForm(wrap, message);
+    return;
+  }
   const registering = mode === 'register';
   wrap.innerHTML = `
     <a class="auth-wordmark" href="#" aria-label="Food Ilee">${brandLogo()}</a>
@@ -43,9 +53,7 @@ function renderAuthForm(message = '') {
       <button class="auth-submit" type="submit">${registering ? 'Buat Akun' : 'Masuk'} <span>→</span></button>
     </form>
     <div class="auth-divider"><span>${registering ? 'ATAU DAFTAR DENGAN' : 'ATAU MASUK DENGAN'}</span></div>
-    <div class="auth-google" id="auth-google">
-      <button type="button" disabled><b>G</b> ${registering ? 'Daftar dengan Google' : 'Masuk dengan Google'}</button>
-    </div>
+    <div class="auth-google is-loading" id="auth-google" aria-live="polite">Memuat Google Sign-In…</div>
     <p class="auth-switch">${registering ? 'Sudah punya akun?' : 'Belum punya akun?'} <button type="button" id="auth-switch">${registering ? 'Masuk' : 'Daftar Sekarang'}</button></p>`;
 
   document.getElementById('auth-form').addEventListener('submit', submitAuth);
@@ -62,9 +70,90 @@ function renderAuthForm(message = '') {
     );
   });
   document.getElementById('auth-forgot')?.addEventListener('click', () => {
-    renderAuthForm('Untuk mengatur ulang kata sandi, hubungi tim Food Ilee melalui pusat bantuan.');
+    mode = 'forgot';
+    renderAuthForm();
   });
   configureGoogleButton(registering);
+}
+
+function renderForgotPasswordForm(wrap, message = '') {
+  wrap.innerHTML = `
+    <p class="auth-overline">PEMULIHAN AKUN</p>
+    <h2>Lupa password?</h2>
+    <p class="auth-intro">Masukkan email akun Anda. Kami akan mengirim tautan untuk membuat password baru.</p>
+    ${message ? `<div class="auth-message" role="status">${escapeHtml(message)}</div>` : ''}
+    <form class="auth-form" id="auth-forgot-form">
+      <label for="auth-reset-email">Email</label>
+      <input id="auth-reset-email" name="email" type="email" placeholder="nama@email.com" autocomplete="email" required>
+      <button class="auth-submit" type="submit">Kirim tautan reset</button>
+    </form>
+    <p class="auth-switch"><button type="button" id="auth-back-login">Kembali ke login</button></p>`;
+
+  wrap.querySelector('#auth-back-login').addEventListener('click', () => {
+    mode = 'login';
+    renderAuthForm();
+  });
+  wrap.querySelector('#auth-forgot-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const submit = event.currentTarget.querySelector('.auth-submit');
+    submit.disabled = true;
+    submit.textContent = 'Mengirim tautan…';
+    try {
+      const email = new FormData(event.currentTarget).get('email');
+      const result = await requestPasswordReset(email);
+      renderAuthForm(result.message || 'Jika email terdaftar, tautan reset password akan dikirim.');
+    } catch (error) {
+      renderAuthForm(error.message || 'Permintaan belum berhasil. Coba lagi.');
+    }
+  });
+}
+
+export function renderPasswordReset(token) {
+  renderLogin('login');
+  const wrap = document.getElementById('auth-form-wrap');
+  if (!wrap) return;
+  const normalizedToken = String(token || '');
+  if (!/^[a-f0-9]{64}$/i.test(normalizedToken)) {
+    wrap.innerHTML = `<p class="auth-overline">PEMULIHAN AKUN</p><h2>Tautan tidak valid</h2><p class="auth-intro">Minta tautan reset password yang baru dari halaman login.</p><p class="auth-switch"><button type="button" id="auth-back-login">Kembali ke login</button></p>`;
+    wrap.querySelector('#auth-back-login').addEventListener('click', () => {
+      mode = 'login';
+      renderAuthForm();
+    });
+    return;
+  }
+
+  wrap.innerHTML = `
+    <p class="auth-overline">PEMULIHAN AKUN</p>
+    <h2>Buat password baru</h2>
+    <p class="auth-intro">Gunakan password baru minimal 8 karakter.</p>
+    <form class="auth-form" id="auth-reset-form">
+      <label for="auth-new-password">Password baru</label>
+      <input id="auth-new-password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+      <label for="auth-confirm-password">Konfirmasi password</label>
+      <input id="auth-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+      <button class="auth-submit" type="submit">Simpan password baru</button>
+    </form>`;
+  wrap.querySelector('#auth-reset-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = Object.fromEntries(new FormData(form));
+    if (data.password !== data.confirmPassword) {
+      form.parentElement.querySelector('.auth-message')?.remove();
+      form.insertAdjacentHTML('beforebegin', '<div class="auth-message" role="alert">Konfirmasi password belum cocok.</div>');
+      return;
+    }
+    const submit = form.querySelector('.auth-submit');
+    submit.disabled = true;
+    submit.textContent = 'Menyimpan…';
+    try {
+      const result = await resetPassword(normalizedToken, data.password);
+      history.replaceState(null, '', `${location.pathname}${location.search}#login`);
+      mode = 'login';
+      renderAuthForm(result.message || 'Password berhasil diperbarui. Silakan masuk.');
+    } catch (error) {
+      renderAuthForm(error.message || 'Tautan reset tidak valid atau sudah kedaluwarsa.');
+    }
+  });
 }
 
 async function configureGoogleButton(registering) {
@@ -72,8 +161,9 @@ async function configureGoogleButton(registering) {
   const clientId = globalThis.FOODILEE_CONFIG?.googleClientId;
   if (!container) return;
   if (!clientId) {
-    container.innerHTML =
-      '<button type="button" disabled>Google Sign-In belum dikonfigurasi.</button>';
+    container.classList.remove('is-loading', 'is-ready');
+    container.classList.add('is-unavailable');
+    container.textContent = 'Google Sign-In belum dikonfigurasi.';
     container.title = 'Google Sign-In belum dikonfigurasi.';
     return;
   }
@@ -86,6 +176,9 @@ async function configureGoogleButton(registering) {
       client_id: clientId,
       callback: handleGoogleCredential,
     });
+    container.classList.remove('is-loading', 'is-unavailable');
+    container.classList.add('is-ready');
+    container.removeAttribute('aria-live');
     globalThis.google.accounts.id.renderButton(container, {
       type: 'standard',
       theme: 'outline',
@@ -96,7 +189,9 @@ async function configureGoogleButton(registering) {
     });
   } catch {
     if (!container.isConnected) return;
-    container.innerHTML = `<button type="button" disabled>Google Sign-In gagal dimuat. Coba muat ulang halaman.</button>`;
+    container.classList.remove('is-loading', 'is-ready');
+    container.classList.add('is-unavailable');
+    container.textContent = 'Google Sign-In gagal dimuat. Coba muat ulang halaman.';
     container.title = 'Google Identity Services tidak dapat dimuat.';
   }
 }
@@ -208,6 +303,8 @@ function injectStyle() {
     .auth-switch button{font-size:12px}
     .auth-copyright{margin:0;color:#839087;line-height:1.5}
     .auth-google{border-radius:13px}
+    .auth-google.is-loading,.auth-google.is-unavailable{height:auto;min-height:38px;padding:10px 14px;box-sizing:border-box;border-style:dashed;background:#f7faf7;color:#748078;font-size:11px;line-height:1.45;text-align:center}
+    .auth-google.is-ready{padding:0;border:0;background:transparent}
     .register-page .auth-panel{background:#fff}
     .register-page .auth-panel{padding:32px 34px 22px;background:linear-gradient(145deg,#f8fbf8,#edf5ef)}
     .register-page .auth-form-wrap{width:100%;max-width:500px;padding:30px 32px;box-sizing:border-box;border:1px solid #dce9df;border-radius:24px;background:rgba(255,255,255,.96);box-shadow:0 18px 52px rgba(7,26,18,.1)}
