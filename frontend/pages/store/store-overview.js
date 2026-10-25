@@ -14,7 +14,7 @@ function recentSaleCard(order) {
   return `<a class="db-activity-card" href="#store-panel" data-store-tab-target="orders"><span class="db-activity-icon">${icon('orders')}</span><strong>Pesanan #${escapeHtml(id)}</strong><small>${escapeHtml(statusLabels[order.status] || order.status || 'Dalam proses')}</small><span class="db-activity-arrow">${icon('arrow')}</span></a>`;
 }
 
-export function renderStoreOverview({ products, sales, revenue, salesAvailable }) {
+export function renderStoreOverview({ store, products, sales, revenue, salesAvailable, reviewCount = 0 }) {
   const stock = products.reduce((sum, product) => sum + Math.max(0, Number(product.stock) || 0), 0);
   const feedCount = products.filter((product) => product.category !== 'Kompos').length;
   const compostCount = products.length - feedCount;
@@ -29,13 +29,14 @@ export function renderStoreOverview({ products, sales, revenue, salesAvailable }
     <div class="st-dashboard-heading"><div><p class="st-kicker">KILAS TOKO</p><h2 id="st-dashboard-title">Ringkasan toko</h2></div><span>Data dari pengelolaan toko Anda</span></div>
     <div class="db-overview-grid">
       <section class="db-panel db-overall" aria-labelledby="st-overall-title">
-        <div class="db-panel-head"><h3 id="st-overall-title">Penawaran Anda</h3>${icon('recycle')}</div>
-        <div class="db-overall-lead"><strong>${products.length}</strong><span>produk yang<br>Anda tawarkan</span></div>
+        <div class="db-panel-head"><h3 id="st-overall-title">Informasi toko</h3>${icon('recycle')}</div>
+        <div class="db-store-identity"><span class="db-store-avatar">${store?.image ? `<img src="${escapeHtml(store.image)}" alt="">` : icon('store')}</span><span><strong>${escapeHtml(store?.name || 'Toko Anda')}</strong><small>${escapeHtml(store?.location || 'Lokasi belum ditambahkan')}</small></span></div>
+        <div class="db-overall-lead"><strong>${products.length}</strong><span>produk tersedia<br>di etalase Anda</span></div>
         <div class="db-overall-rule"></div>
         <div class="db-summary-metrics">
-          <div><span>${icon('market')}</span><strong>${products.length}</strong><small>Total produk</small></div>
-          <div><span>${icon('box')}</span><strong>${stock.toLocaleString('id-ID')}</strong><small>Stok · unit</small></div>
-          <div><span>${icon('orders')}</span><strong>${salesAvailable ? activeOrders.length : '—'}</strong><small>Pesanan masuk</small></div>
+          <div><span>${icon('box')}</span><strong>${stock.toLocaleString('id-ID')}</strong><small>Unit tersedia</small></div>
+          <div><span>${icon('orders')}</span><strong>${salesAvailable ? activeOrders.length : '—'}</strong><small>Pesanan aktif</small></div>
+          <div><span>${icon('edit')}</span><strong>${reviewCount}</strong><small>Ulasan</small></div>
         </div>
       </section>
       <section class="db-panel db-category-panel" aria-labelledby="st-category-title">
@@ -53,7 +54,7 @@ export function renderStoreOverview({ products, sales, revenue, salesAvailable }
     </div>
     <div class="db-action-grid">
       <section class="db-panel db-quick-panel" aria-labelledby="st-quick-title">
-        <div class="db-panel-head"><h3 id="st-quick-title">Aksi cepat</h3>${icon('guide')}</div>
+        <div class="db-panel-head"><div><p class="st-kicker">LANGKAH BERIKUTNYA</p><h3 id="st-quick-title">Fokus toko</h3></div>${icon('guide')}</div>
         <div class="db-quick-list">
           <a href="#store-panel" data-store-tab-target="products"><span>${icon('store')}</span><span>Kelola produk<small>Perbarui penawaran di etalase.</small></span>${icon('arrow')}</a>
           <a href="#store-panel" data-store-tab-target="orders"><span>${icon('orders')}</span><span>Pesanan toko<small>Pantau dan proses pesanan masuk.</small></span>${icon('arrow')}</a>

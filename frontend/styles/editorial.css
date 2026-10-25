@@ -153,7 +153,7 @@ html, body { background: var(--fi-paper); }
 #app .mp-promo h2 { font-size:clamp(30px,3.2vw,44px); font-weight:500; letter-spacing:-.045em; }
 #app .mp-promo h2 > span { color:#cfdbb7; font-family:Georgia,serif; font-style:italic; }
 #app .mp-promo-cta { border-radius:11px; background:#e4ebd2; border-color:#e4ebd2; color:#284937; }
-#app .mp-promo-visual::after { background:linear-gradient(90deg,#234b3c,transparent 30%),linear-gradient(0deg,#183d3266,transparent); }
+#app .mp-promo-visual::after { background:linear-gradient(90deg,#234b3c 0%,#234b3c 10%,rgba(35,75,60,.92) 22%,rgba(35,75,60,.68) 36%,rgba(35,75,60,.34) 52%,rgba(35,75,60,.1) 66%,transparent 78%),linear-gradient(0deg,#183d3266,transparent 58%); }
 #app .mp-results-head { background:none; box-shadow:none; border:0; border-radius:0; padding:16px 0 24px; border-bottom:1px solid var(--fi-border); }
 #app .mp-results-head::before, #app .mp-results-head::after { display:none; }
 #app .mp-results-copy h2 { font-size:27px; font-weight:500; }
@@ -338,7 +338,7 @@ body > dialog :is(input,textarea,select) { border-radius:11px; border-color:#dce
  #app .db-stat > strong { font-size:32px; }
  #app :is(.db-heading,.st-title,.nt-heading,.ad-heading) { padding-bottom:24px; margin-bottom:24px; }
  #app .mp-promo-copy { padding:28px 24px; }
- #app .mp-promo-visual::after { background:linear-gradient(180deg,#234b3c,transparent 45%); }
+ #app .mp-promo-visual::after { background:linear-gradient(180deg,#234b3c 0%,#234b3c 12%,rgba(35,75,60,.9) 26%,rgba(35,75,60,.62) 42%,rgba(35,75,60,.28) 58%,rgba(35,75,60,.08) 72%,transparent 84%); }
  #app .mp-results-copy h2 { font-size:25px; }
  #app .mp-card-body { padding:16px; }
  #app .mp-card-image { height:180px; }

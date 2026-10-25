@@ -239,11 +239,12 @@ export function bindMobileNav() {
     const navRect = nav.getBoundingClientRect();
     const linkRect = link.getBoundingClientRect();
     const target = linkRect.left + linkRect.width / 2;
+    const indicatorTop = navRect.top + (navRect.height - indicator.offsetHeight) / 2;
     const previous = indicator.classList.contains('is-visible')
       ? indicator.getBoundingClientRect().left + indicator.getBoundingClientRect().width / 2
       : target;
     indicator.style.left = `${target}px`;
-    indicator.style.top = `${navRect.top + 5}px`;
+    indicator.style.top = `${indicatorTop}px`;
     indicator.innerHTML = link.querySelector('.fi-icon')?.outerHTML || link.querySelector('svg')?.outerHTML || '';
     indicator.classList.add('is-visible');
 
@@ -254,11 +255,11 @@ export function bindMobileNav() {
       indicator.getAnimations().forEach((animation) => animation.cancel());
       indicator.animate(
         [
-          { transform: `translateX(calc(-50% + ${offset}px)) scale(.92)`, opacity: .9 },
-          { transform: 'translateX(-50%) scale(1.05)', opacity: 1, offset: .78 },
+          { transform: `translateX(calc(-50% + ${offset}px)) scale(.9)`, opacity: .82 },
+          { transform: 'translateX(-50%) scale(1.04)', opacity: 1, offset: .82 },
           { transform: 'translateX(-50%) scale(1)', opacity: 1 },
         ],
-        { duration: 460, easing: 'cubic-bezier(.32, .72, .25, 1)' },
+        { duration: 520, easing: 'cubic-bezier(.22, 1, .36, 1)' },
       );
     }
     currentIndex = index;
@@ -276,7 +277,7 @@ export function bindMobileNav() {
       const navBox = active.closest('.fi-nav').getBoundingClientRect();
       const linkBox = active.getBoundingClientRect();
       bubble.style.left = `${linkBox.left + linkBox.width / 2}px`;
-      bubble.style.top = `${navBox.top + 5}px`;
+      bubble.style.top = `${navBox.top + (navBox.height - bubble.offsetHeight) / 2}px`;
     }, { passive: true });
     document.documentElement.dataset.fiNavResizeBound = 'true';
   }
