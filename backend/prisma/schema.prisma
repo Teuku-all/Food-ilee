@@ -60,6 +60,8 @@ model WasteProduct {
 
   stock       Int @default(1)
 
+  weightPerUnitGrams Int @default(1000)
+
   image       String?
 
   category    String?
@@ -205,6 +207,7 @@ model OrderItem {
   title String
   unitPrice Int
   quantity Int
+  weightPerUnitGrams Int @default(1000)
   image String?
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   waste WasteProduct @relation(fields: [wasteId], references: [id], onDelete: Restrict)

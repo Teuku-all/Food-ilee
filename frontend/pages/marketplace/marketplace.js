@@ -10,6 +10,8 @@ import { marketplacePromoBanner, injectMarketplacePromoStyle } from './promo-ban
 import { icon } from '../../ui/icons.js';
 import { getStores } from '../../services/store.js';
 import { addMapTiles, loadLeaflet, validCoordinates } from '../../utils/location-map.js';
+import { formatProductWeight, productWeightGrams } from '../../utils/product-weight.js';
+import { translate } from '../../utils/i18n.js';
 
 let marketplaceProducts = [];
 let activeCategory = 'Semua';
@@ -453,6 +455,14 @@ function renderProducts() {
       return `<article class="mp-card"><div class="mp-card-image-wrap"><img class="mp-card-image" src="${escapeHtml(product.image || './assets/landing-food-demo.jpg')}" alt="${escapeHtml(product.title)}" loading="lazy" onerror="this.onerror=null;this.src='./assets/landing-food-demo.jpg'"><span class="mp-category-tag ${category === 'Kompos' ? 'compost' : ''}">${category}</span>${product.isDemo ? '<span class="mp-demo-tag">CONTOH</span>' : ''}</div><div class="mp-card-body"><div class="mp-title-row"><h2>${escapeHtml(product.title || 'Limbah Organik')}</h2><strong>${formatPrice(product.price)}</strong></div><div class="mp-meta"><span>${icon('box')} ${Number(product.stock || 0).toLocaleString('id-ID')} kg</span><i>&#8226;</i><span>${icon('pin')} ${distance ? `${escapeHtml(distance)} · ` : ''}${escapeHtml(product.location || seller)}</span></div><p class="mp-updated">${relativeAge}</p><button class="mp-card-action" type="button" data-product-id="${escapeHtml(product.id)}">Lihat Detail <span>&rarr;</span></button></div></article>`;
     })
     .join('');
+  grid.querySelectorAll('.mp-card').forEach((card, index) => {
+    const product = products[index];
+    const stock = card.querySelector('.mp-meta span');
+    const price = card.querySelector('.mp-title-row strong');
+    if (stock && product)
+      stock.innerHTML = `${icon('box')} ${translate(`${Number(product.stock || 0).toLocaleString('id-ID')} unit · ${formatProductWeight(productWeightGrams(product))}/unit`)}`;
+    if (price && product) price.textContent = translate(`${formatPrice(product.price)} / unit`);
+  });
   grid.querySelectorAll('[data-product-id]').forEach((button) =>
     button.addEventListener('click', () => {
       const product = products.find((item) => item.id === button.dataset.productId);
@@ -470,6 +480,9 @@ function showProductDetail(product) {
     ? `<img src="${escapeHtml(store.image)}" alt="Foto profil ${escapeHtml(seller)}">`
     : `<span class="mp-store-photo-placeholder" role="img" aria-label="Foto profil toko belum tersedia">${icon('store')}</span>`;
   dialog.innerHTML = `<form class="mp-detail-card"><button type="button" class="mp-detail-close" aria-label="Tutup">×</button><img src="${escapeHtml(product.image || '')}" alt="${escapeHtml(product.title)}"><div class="mp-detail-copy"><span class="mp-category-tag ${categoryFor(product) === 'Kompos' ? 'compost' : ''}">${escapeHtml(categoryFor(product))}</span><h2>${escapeHtml(product.title)}</h2><p>${escapeHtml(product.description || 'Bahan organik yang tersedia untuk dimanfaatkan kembali.')}</p>${product.isDemo ? '<p class="mp-demo-detail-note">Produk contoh ini belum dapat di-chat atau dipesan.</p>' : ''}<div class="mp-detail-facts"><span><small>PENJUAL</small><span class="mp-detail-seller"><span class="mp-detail-seller-photo">${storePhoto}</span><strong>${escapeHtml(seller)}</strong></span></span><span><small>LOKASI</small><strong>${escapeHtml(product.location || 'Hubungi penjual untuk detail lokasi')}</strong></span></div><button class="mp-card-action mp-chat" type="button" ${product.isDemo || !product.seller?.id || product.seller.id === currentMarketplaceUserId ? 'disabled' : ''}>Chat penjual</button><div class="mp-detail-order"><label for="mp-quantity">Jumlah (kg)</label><div class="mp-quantity-row"><div class="mp-quantity-stepper"><button class="mp-quantity-step" type="button" data-step="-1" aria-label="Kurangi jumlah">−</button><input id="mp-quantity" type="number" min="1" max="${Math.max(1, Number(product.stock) || 1)}" step="1" value="1" inputmode="numeric"><button class="mp-quantity-step" type="button" data-step="1" aria-label="Tambah jumlah">+</button></div><span>tersedia ${Number(product.stock || 0)} kg</span></div></div><div class="mp-detail-total"><span>Subtotal produk</span><strong id="mp-order-total">${formatPrice(product.price)}</strong></div><div class="mp-detail-actions"><button class="mp-card-action mp-add-cart" type="button" ${product.isDemo || Number(product.stock) < 1 ? 'disabled' : ''}>Tambah ke keranjang</button><button class="mp-card-action mp-buy" type="submit" ${product.isDemo || Number(product.stock) < 1 ? 'disabled' : ''}>Lihat keranjang <span>&rarr;</span></button></div><small class="mp-payment-note">Periksa produk pilihan Anda di keranjang sebelum membayar.</small></div></form>`;
+  dialog.querySelector('.mp-detail-order label').textContent = translate('Jumlah unit');
+  dialog.querySelector('.mp-quantity-row>span').textContent =
+    translate(`tersedia ${Number(product.stock || 0).toLocaleString('id-ID')} unit · ${formatProductWeight(productWeightGrams(product))}/unit`);
   injectMarketplaceDetailStyles();
   document.body.append(dialog);
   dialog.showModal();

@@ -3,6 +3,8 @@ import { escapeHtml } from '../../utils/html.js';
 import { bindSharedHeader, dashboardFooter, dashboardHeader } from '../../ui/shell.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { icon } from '../../ui/icons.js';
+import { formatProductWeight, productWeightGrams } from '../../utils/product-weight.js';
+import { translate } from '../../utils/i18n.js';
 
 const CART_KEY = 'foodilee_checkout_cart';
 const SELECTED_KEY = 'foodilee_checkout_selected';
@@ -88,6 +90,14 @@ function renderCartItems() {
     const selected = selectedIds.has(item.wasteId) && !item.unavailable;
     return `<article class="ca-item${selected ? ' is-selected' : ''}${item.unavailable ? ' is-unavailable' : ''}"><label class="ca-check"><input type="checkbox" data-select="${index}" ${selected ? 'checked' : ''} ${item.unavailable ? 'disabled' : ''} aria-label="Pilih ${escapeHtml(item.title || 'produk')} untuk checkout"><span></span></label><img class="ca-product-image" src="${escapeHtml(item.image || '/assets/foodilee-login-hero.png')}" alt="${escapeHtml(item.title || 'Produk')}"><div class="ca-product"><strong>${escapeHtml(item.title || 'Produk tidak tersedia')}</strong><span>${item.unavailable ? 'Informasi produk tidak dapat dimuat' : `${formatPrice(item.price)} / kg`}</span>${item.unavailable ? '<small>Hapus produk ini dari keranjang untuk melanjutkan.</small>' : ''}</div><div class="ca-quantity"><button type="button" data-delta="-1" data-index="${index}" aria-label="Kurangi jumlah" ${item.unavailable || item.quantity <= 1 ? 'disabled' : ''}>−</button><span>${Number(item.quantity || 0)} kg</span><button type="button" data-delta="1" data-index="${index}" aria-label="Tambah jumlah" ${item.unavailable || item.quantity >= Number(item.stock) ? 'disabled' : ''}>+</button></div><strong class="ca-item-total">${item.unavailable ? '—' : formatPrice(Number(item.price) * Number(item.quantity))}</strong><button class="ca-remove" type="button" data-remove="${index}" aria-label="Hapus ${escapeHtml(item.title || 'produk')} dari keranjang">${trashIcon()}</button></article>`;
   }).join('');
+  root.querySelectorAll('.ca-item').forEach((row, index) => {
+    const item = cartItems[index];
+    if (!item || item.unavailable) return;
+    const price = row.querySelector('.ca-product>span');
+    const quantity = row.querySelector('.ca-quantity>span');
+    if (price) price.textContent = translate(`${formatPrice(item.price)} / unit · ${formatProductWeight(productWeightGrams(item))}/unit`);
+    if (quantity) quantity.textContent = translate(`${Number(item.quantity || 0)} unit`);
+  });
   const selectAll = document.getElementById('ca-select-all');
   const availableItems = cartItems.filter((item) => !item.unavailable && Number(item.quantity) > 0);
   selectAll.checked = availableItems.length > 0 && availableItems.every((item) => selectedIds.has(item.wasteId));

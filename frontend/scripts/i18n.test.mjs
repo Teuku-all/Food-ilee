@@ -22,6 +22,9 @@ test('dynamic counters and dates are fully localized', () => {
     ['25 Oktober 2026', '25 October 2026'],
     ['Diperbarui 25 Okt', 'Updated 25 Oct'],
     ['Menunggu pembayaran · Pengiriman: Dikirim', 'Awaiting payment · Shipping: Shipped'],
+    ['tersedia 4 unit · 500 g/unit', 'Available: 4 units · 500 g per unit'],
+    ['4 unit · 500 g/unit · Rp2.500/unit', '4 units · 500 g per unit · Rp2.500 per unit'],
+    ['Rp2.500 / unit · 500 g/unit', 'Rp2.500 / unit · 500 g per unit'],
   ];
   for (const [source, expected] of cases) assert.equal(translate(source, 'en'), expected);
 });

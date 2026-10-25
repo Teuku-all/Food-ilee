@@ -8,6 +8,12 @@ import { formatRupiah, renderShell, showToast } from '../../ui/shell.js';
 import { icon } from '../../ui/icons.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { skeleton } from '../../ui/skeleton.js';
+import { translate } from '../../utils/i18n.js';
+import {
+  addProductWeightField,
+  formatProductWeight,
+  totalProductWeightGrams,
+} from '../../utils/product-weight.js';
 
 const draftKey = 'foodilee_waste_draft_v1';
 let insightRequestRevision = 0;
@@ -61,12 +67,18 @@ export async function renderTambahLimbah() {
     /* optional impact card */
   }
   if (!isRouteCurrent('#tambah-limbah', navigationRevision)) return;
-  const stock = products.reduce((sum, product) => sum + Number(product.stock || 0), 0);
+  const totalWeight = totalProductWeightGrams(products);
+  const stock = totalWeight / 1000;
   renderShell(
     'add',
     `<section class="wa-page"><div class="wa-layout"><form class="wa-form fi-card" id="waste-form"><label class="fi-label">Foto limbah <span class="wa-optional">Foto wajib</span></label><label class="wa-drop" for="waste-image"><input id="waste-image" name="image" type="file" accept="image/*" required><span class="wa-drop-icon">${icon('upload')}</span><strong>Klik atau tarik foto ke sini</strong><small>JPG, PNG, WebP · maks. 4 MB</small><img class="wa-preview" alt="Pratinjau foto produk"></label><label class="fi-label" for="waste-title">Nama limbah<input class="fi-input" id="waste-title" name="title" value="${escapeHtml(draft.title || '')}" placeholder="Contoh: Kulit sayuran campuran" minlength="3" required></label><fieldset class="wa-category"><legend class="fi-label">Kategori pemanfaatan</legend><label><input type="radio" name="category" value="Pakan Ternak" ${draft.category !== 'Kompos' ? 'checked' : ''}><span class="wa-category-icon">${icon('leaf')}</span><strong>Pakan Ternak</strong><small>Bahan yang cocok dimanfaatkan sebagai pakan</small></label><label><input type="radio" name="category" value="Kompos" ${draft.category === 'Kompos' ? 'checked' : ''}><span class="wa-category-icon compost">${icon('compost')}</span><strong>Kompos</strong><small>Sisa organik untuk pengolahan kompos</small></label></fieldset><div class="wa-two-fields"><label class="fi-label">Jumlah / berat (kg)<input class="fi-input" name="stock" type="number" min="1" step="1" value="${escapeHtml(draft.stock || '')}" placeholder="Contoh: 10" required></label><label class="fi-label">Harga penawaran / kg<input class="fi-input" name="price" type="number" min="0" step="1" value="${escapeHtml(draft.price || '')}" placeholder="Rp 0" required></label></div><p class="wa-price-tip">${icon('guide')} Harga yang masuk akal membantu pembeli membandingkan penawaran.</p><label class="fi-label">Lokasi penjemputan<input class="fi-input" name="location" maxlength="180" value="${escapeHtml(draft.location || '')}" placeholder="Kecamatan, kota, provinsi" required></label><label class="fi-label">Catatan tambahan<textarea class="fi-input" name="description" rows="4" minlength="5" placeholder="Jelaskan kondisi, waktu ketersediaan, atau cara penjemputan…" required>${escapeHtml(draft.description || '')}</textarea></label><div class="wa-form-actions"><button class="fi-button fi-button-outline" type="button" id="waste-save-draft">Simpan Draft</button><button class="fi-button" type="submit">Unggah Penawaran <span>→</span></button></div></form><aside class="wa-aside"><section class="wa-ai-card"><div class="wa-aside-heading"><span>${icon('sparkles')}</span><div><strong>Insight AI Food Ilee</strong><small>Masukan untuk deskripsi Anda</small></div></div><div class="wa-ai-image"><img src="/assets/foodilee-login-hero.png" alt="" width="512" height="512" loading="lazy"><span>Gambar ilustrasi · pemanfaatan bahan organik</span></div><div class="wa-ai-result" id="waste-ai-insight"><p>Isi nama dan catatan limbah, lalu pilih kategori. Insight yang relevan akan muncul di sini.</p></div></section><section class="wa-impact-card" aria-labelledby="wa-impact-title"><div class="wa-impact-header"><div class="wa-impact-heading-copy"><p>ETALASE ANDA</p><h2 id="wa-impact-title">Ringkasan penawaran</h2></div><span class="wa-impact-icon" aria-hidden="true">${icon('leaf')}</span></div><div class="wa-impact-metrics"><div class="wa-impact-stat"><strong>${products.length}</strong><span>produk aktif</span></div><div class="wa-impact-stat"><strong>${stock.toLocaleString('id-ID')} kg</strong><span>stok ditawarkan</span></div></div><a class="wa-impact-link" href="#kelola-toko">Kelola penawaran <span aria-hidden="true">→</span></a></section></aside></div></section>`,
   );
   injectWasteStyles();
+  addProductWeightField(document.getElementById('waste-form'), draft);
+  const stockSummary = document.querySelector('.wa-impact-stat:nth-child(2) strong');
+  if (stockSummary) stockSummary.textContent = formatProductWeight(totalWeight);
+  const stockSummaryLabel = document.querySelector('.wa-impact-stat:nth-child(2) span');
+  if (stockSummaryLabel) stockSummaryLabel.textContent = translate('Total berat tersedia');
   bindWasteForm(scopedDraftKey);
 }
 
@@ -79,7 +91,7 @@ function bindWasteForm(scopedDraftKey) {
   const fileInput = document.getElementById('waste-image');
   const drop = document.querySelector('.wa-drop');
   const preview = document.querySelector('.wa-preview');
-  const inputNames = ['title', 'description', 'stock', 'price', 'location'];
+  const inputNames = ['title', 'description', 'stock', 'weightPerUnitGrams', 'price', 'location'];
   const saveDraft = () => {
     const values = Object.fromEntries(new FormData(form));
     delete values.image;
@@ -174,6 +186,7 @@ function bindWasteForm(scopedDraftKey) {
     try {
       const formData = new FormData(form);
       formData.set('stock', String(Number(formData.get('stock'))));
+      formData.set('weightPerUnitGrams', String(Number(formData.get('weightPerUnitGrams'))));
       formData.set('price', String(Number(formData.get('price'))));
       const result = await createWaste(formData);
       if (!result.success) throw new Error(result.message || 'Penawaran belum dapat disimpan.');

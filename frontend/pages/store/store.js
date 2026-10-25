@@ -10,6 +10,11 @@ import { skeleton } from '../../ui/skeleton.js';
 import { bindRegionAddress } from '../../utils/region-address.js';
 import { mountLocationPicker } from '../../utils/location-map.js';
 import { cropSquareImage } from '../../utils/image-crop.js';
+import {
+  addProductWeightField,
+  formatProductWeight,
+  productWeightGrams,
+} from '../../utils/product-weight.js';
 
 const statusNames = {
   pending: 'Menunggu Pembayaran',
@@ -59,6 +64,15 @@ export async function renderStore() {
       `<section class="st-page"><div class="st-title"><div><p class="st-kicker">RUANG USAHA ANDA</p><h1>Kelola Toko Anda</h1><p>Pantau produk, ulasan, dan pesanan yang masuk ke etalase.</p></div><div class="st-title-actions"><button class="fi-button fi-button-outline" type="button" data-edit-store>Edit Toko</button><a class="fi-button" href="#tambah-limbah">+ Tambah Produk</a></div></div><section class="st-profile fi-card"><div class="st-store-avatar">${store.image ? `<img src="${escapeHtml(store.image)}" alt="">` : icon('store')}</div><div class="st-store-info"><h2>${escapeHtml(store.name)}</h2><p class="st-store-location">${escapeHtml(store.location || 'Lokasi belum ditambahkan')}</p><p class="st-store-description">${escapeHtml(store.description || 'Tambahkan cerita toko untuk membantu pembeli mengenal penawaran Anda.')}</p><div class="st-pills"><span>${icon('box')} ${products.length} Produk</span><span>${icon('edit')} ${reviews.length} Ulasan</span><span>★ ${averageRating === null ? 'Belum ada rating' : averageRating.toFixed(1)}</span></div></div></section><section class="st-metrics"><article><small>PESANAN</small><strong>${sales.length}</strong><span>Semua status</span></article><article><small>MENUNGGU TINDAKAN</small><strong>${sales.filter((order) => ['pending', 'processing'].includes(order.status)).length}</strong><span>Pesanan aktif</span></article><article><small>PENDAPATAN TERBAYAR</small><strong>${formatRupiah(revenue)}</strong><span>Pesanan terkonfirmasi</span></article></section><section class="st-tabs" role="tablist"><button class="active" data-panel="products">Produk <span>${products.length}</span></button><button data-panel="orders">Pesanan <span>${sales.length}</span></button><button data-panel="reviews">Ulasan <span>${reviews.length}</span></button></section><section id="store-panel">${renderProducts(products)}</section></section>`,
     );
     injectStoreStyles();
+    document.querySelectorAll('.st-product').forEach((card, index) => {
+      const product = products[index];
+      if (!product) return;
+      const data = card.querySelector('.st-product-data');
+      if (!data) return;
+      data.querySelector('span').textContent =
+        translate(`${Number(product.stock || 0).toLocaleString('id-ID')} unit · ${formatProductWeight(productWeightGrams(product))}/unit`);
+      data.querySelector('strong').textContent = translate(`${formatRupiah(product.price)} / unit`);
+    });
     bindStorePage(store, products, sales, reviews);
     document.querySelector('[data-edit-store]').addEventListener('click', () => editStore(store));
   } catch (error) {
@@ -174,6 +188,7 @@ function editProduct(product) {
   dialog.className = 'st-dialog';
   dialog.innerHTML = `<form class="st-dialog-form"><button class="st-dialog-close" type="button">×</button><p class="st-kicker">ETALASE TOKO</p><h2>Edit penawaran</h2><label class="fi-label">Nama<input class="fi-input" name="title" value="${escapeHtml(product.title)}" required minlength="3"></label><label class="fi-label">Jumlah (kg)<input class="fi-input" type="number" min="1" name="stock" value="${Number(product.stock)}" required></label><label class="fi-label">Harga per kg<input class="fi-input" type="number" min="0" name="price" value="${Number(product.price)}" required></label><label class="fi-label">Deskripsi<textarea class="fi-input" rows="4" name="description" required>${escapeHtml(product.description || '')}</textarea></label><div><button class="fi-button fi-button-outline" type="button" data-cancel>Batal</button><button class="fi-button" type="submit">Simpan</button></div></form>`;
   document.body.append(dialog);
+  addProductWeightField(dialog.querySelector('form'), product);
   dialog.showModal();
   const form = dialog.querySelector('form');
   dialog

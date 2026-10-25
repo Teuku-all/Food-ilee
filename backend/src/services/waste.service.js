@@ -49,6 +49,8 @@ async function createWaste(data) {
 
       stock: data.stock,
 
+      weightPerUnitGrams: data.weightPerUnitGrams,
+
       sellerId: data.sellerId,
 
       storeId: store.id,
@@ -215,6 +217,8 @@ async function updateWaste(id, sellerId, data) {
       price: data.price,
 
       stock: data.stock,
+
+      weightPerUnitGrams: data.weightPerUnitGrams,
 
       category: data.category,
 

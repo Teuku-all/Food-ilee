@@ -8,6 +8,12 @@ import { formatRupiah, renderShell, showToast } from '../../ui/shell.js';
 import { icon } from '../../ui/icons.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { skeleton } from '../../ui/skeleton.js';
+import {
+  addProductWeightField,
+  formatProductWeight,
+  productWeightGrams,
+  totalProductWeightGrams,
+} from '../../utils/product-weight.js';
 
 export async function renderDashboard() {
   const navigationRevision = getNavigationRevision();
@@ -45,7 +51,7 @@ export async function renderDashboard() {
   const user = userResult.data;
   const products = Array.isArray(wasteResult?.data) ? wasteResult.data : [];
   const orders = Array.isArray(orderResult?.data) ? orderResult.data : [];
-  const stock = products.reduce((sum, product) => sum + Number(product.stock || 0), 0);
+  const stock = formatProductWeight(totalProductWeightGrams(products));
   const openOrders = orders.filter(
     (order) => !['completed', 'cancelled'].includes(order.status),
   ).length;
@@ -95,7 +101,7 @@ function dashboardWorkspace({ welcome, products, orders, stock, openOrders, orde
           <div class="db-overall-rule"></div>
           <div class="db-summary-metrics">
             <div><span>${icon('market')}</span><strong>${products.length}</strong><small>Total produk</small></div>
-            <div><span>${icon('compost')}</span><strong>${stock.toLocaleString('id-ID')}</strong><small>Stok tersedia · kg</small></div>
+            <div><span>${icon('compost')}</span><strong>${stock.toLocaleString('id-ID')}</strong><small>${translate('Berat stok tersedia')}</small></div>
             <div><span>${icon('orders')}</span><strong>${ordersAvailable ? openOrders : '—'}</strong><small>Pesanan berjalan</small></div>
           </div>
         </section>
@@ -145,7 +151,7 @@ function productCard(product) {
   const image = product.image || (category === 'Kompos'
     ? './assets/landing-compost-demo.jpg'
     : './assets/landing-food-demo.jpg');
-  return `<article class="db-product fi-card"><img src="${escapeHtml(image)}" alt="${escapeHtml(product.title || 'Limbah organik')}" loading="lazy"><div class="db-product-body"><span class="db-product-category ${category === 'Kompos' ? 'compost' : ''}">${category}</span><h3>${escapeHtml(product.title || 'Limbah organik')}</h3><div class="db-product-meta"><span>${Number(product.stock || 0).toLocaleString('id-ID')} kg tersedia</span><strong>${formatRupiah(product.price)}</strong></div><div class="db-product-actions"><button type="button" data-edit="${escapeHtml(product.id)}">Edit</button><button type="button" data-delete="${escapeHtml(product.id)}">Hapus</button></div></div></article>`;
+  return `<article class="db-product fi-card"><img src="${escapeHtml(image)}" alt="${escapeHtml(product.title || 'Limbah organik')}" loading="lazy"><div class="db-product-body"><span class="db-product-category ${category === 'Kompos' ? 'compost' : ''}">${category}</span><h3>${escapeHtml(product.title || 'Limbah organik')}</h3><div class="db-product-meta"><span>${translate(`${Number(product.stock || 0).toLocaleString('id-ID')} unit · ${formatProductWeight(productWeightGrams(product))}/unit`)}</span><strong>${translate(`${formatRupiah(product.price)} / unit`)}</strong></div><div class="db-product-actions"><button type="button" data-edit="${escapeHtml(product.id)}">Edit</button><button type="button" data-delete="${escapeHtml(product.id)}">Hapus</button></div></div></article>`;
 }
 
 function bindProductActions(products) {
@@ -179,15 +185,17 @@ function showEditDialog(product) {
   dialog.className = 'db-edit-dialog';
   dialog.innerHTML = `<form method="dialog" class="db-edit-card"><button class="db-close" aria-label="Tutup">×</button><p class="db-kicker">PERBARUI PENAWARAN</p><h2>Edit ${escapeHtml(product.title)}</h2><label>Nama produk<input class="fi-input" name="title" value="${escapeHtml(product.title)}" required minlength="3"></label><label>Jumlah stok (kg)<input class="fi-input" name="stock" type="number" min="1" value="${Number(product.stock)}" required></label><label>Harga per kg<input class="fi-input" name="price" type="number" min="0" value="${Number(product.price)}" required></label><label>Deskripsi<textarea class="fi-input" name="description" rows="4" required>${escapeHtml(product.description || '')}</textarea></label><div class="db-dialog-actions"><button class="fi-button fi-button-outline" value="cancel">Batal</button><button class="fi-button" type="submit" value="save">Simpan perubahan</button></div></form>`;
   document.body.append(dialog);
+  const form = dialog.querySelector('form');
+  const weightInput = addProductWeightField(form, product);
   dialog.showModal();
   dialog.addEventListener('close', async () => {
     if (dialog.returnValue !== 'save') {
       dialog.remove();
       return;
     }
-    const form = dialog.querySelector('form');
     const data = new FormData(form);
     data.set('stock', String(Number(data.get('stock'))));
+    data.set('weightPerUnitGrams', String(Number(weightInput.value)));
     data.set('price', String(Number(data.get('price'))));
     try {
       const result = await updateWaste(product.id, data);

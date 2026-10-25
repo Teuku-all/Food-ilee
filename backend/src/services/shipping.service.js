@@ -97,7 +97,7 @@ function makeItems(items) {
     category: 'groceries',
     value: item.unitPrice,
     quantity: item.quantity,
-    weight: item.quantity * 1000,
+    weight: item.quantity * item.weightPerUnitGrams,
   }));
 }
 

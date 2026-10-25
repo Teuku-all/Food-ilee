@@ -12,6 +12,7 @@ import { escapeHtml } from '../../utils/html.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { formatRupiah, renderShell, showToast } from '../../ui/shell.js';
 import { skeleton } from '../../ui/skeleton.js';
+import { formatProductWeight, productWeightGrams } from '../../utils/product-weight.js';
 
 let adminData = { users: [], wastes: [], orders: [] };
 let activePanel = 'users';
@@ -173,12 +174,14 @@ function renderPanel(currentUser) {
             escapeHtml(waste.category || 'Organik') +
             ' · ' +
             Number(waste.stock || 0) +
-            ' kg</small></td><td>' +
+            ' ' +
+            translate(`unit · ${formatProductWeight(productWeightGrams(waste))}/unit`) +
+            '</small></td><td>' +
             escapeHtml(
               waste.store?.name || waste.seller?.name || waste.seller?.email || 'Penjual',
             ) +
             '</td><td>' +
-            formatRupiah(waste.price) +
+            translate(`${formatRupiah(waste.price)} / unit`) +
             '</td><td><button type="button" class="ad-action danger" data-admin-delete="' +
             escapeHtml(waste.id) +
             '">Hapus</button></td></tr>',
@@ -197,7 +200,7 @@ function renderPanel(currentUser) {
           escapeHtml(order.waste?.title || 'Produk organik') +
           '</strong><small>' +
           Number(order.quantity || 0) +
-          ' kg</small></td><td>' +
+          ' unit</small></td><td>' +
           escapeHtml(order.buyer?.name || order.buyer?.email || 'Pembeli') +
           '</td><td><span class="ad-status">' +
           escapeHtml(order.status || 'pending') +

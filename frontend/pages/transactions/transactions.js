@@ -6,6 +6,7 @@ import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js
 import { bindSharedHeader, dashboardFooter, dashboardHeader, pageHeading } from '../../ui/shell.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { icon } from '../../ui/icons.js';
+import { formatProductWeight, productWeightGrams } from '../../utils/product-weight.js';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1518843875459-f738682238a6?w=200&q=60';
 const PAGE_SIZE = 5;
@@ -195,6 +196,20 @@ function renderOrders() {
     .join('');
 
   visible.forEach((order, index) => {
+    const orderItems = Array.isArray(order.items) ? order.items : [];
+    const weightGrams = orderItems.length
+      ? orderItems.reduce(
+          (sum, item) => sum + Number(item.quantity || 0) * productWeightGrams(item),
+          0,
+        )
+      : Number(order.quantity || 0) * productWeightGrams(order.waste);
+    const card = list.querySelectorAll('.tx-order-card')[index];
+    const quantityText = card?.querySelector('.tx-item-info p');
+    if (quantityText)
+      quantityText.textContent = translate(`${Number(order.quantity || 0).toLocaleString('id-ID')} unit × ${formatRupiah(orderItems[0]?.unitPrice ?? (Number(order.quantity) ? Number(order.total) / Number(order.quantity) : order.total))}`);
+    const impact = card?.querySelectorAll('.tx-item-info .tx-impact')[1];
+    if (impact)
+      impact.textContent = translate(`♻ Membantu mengurangi ${Math.round((weightGrams / 1000) * 0.3)} kg emisi CO₂`);
     if (!['cash', 'cod'].includes(order.paymentMethod) && order.courier !== 'pickup') return;
     const paymentLine = list.querySelectorAll('.tx-order-card .tx-item-info .tx-impact')[index * 2];
     const paymentText = order.paymentMethod === 'cash'
@@ -275,7 +290,7 @@ function showDetail(id) {
   const status = STATUS[order.status]?.label || order.status || 'Status belum tersedia';
   const seller =
     waste.store?.name || waste.seller?.name || waste.seller?.email || 'Penjual Food Ilee';
-  const items = Array.isArray(order.items) && order.items.length ? order.items : [{ title: waste.title, image: waste.image, quantity: order.quantity, unitPrice: Number(order.quantity) ? Number(order.total) / Number(order.quantity) : order.total }];
+  const items = Array.isArray(order.items) && order.items.length ? order.items : [{ title: waste.title, image: waste.image, quantity: order.quantity, unitPrice: Number(order.quantity) ? Number(order.total) / Number(order.quantity) : order.total, weightPerUnitGrams: productWeightGrams(waste) }];
   const shippingAddress = order.shippingAddress || {};
   const pickupAddress = order.sellerShippingOrigin || {};
   const pickupRegion = pickupAddress.region || {};
@@ -283,6 +298,13 @@ function showDetail(id) {
   const dialog = document.createElement('dialog');
   dialog.className = 'tx-detail-dialog';
   dialog.innerHTML = `<section class="tx-detail-card"><button type="button" class="tx-dialog-close" aria-label="Tutup">×</button><p class="tx-dialog-kicker">RINGKASAN PESANAN</p><h2>Pesanan ${escapeHtml(String(order.id).slice(-8).toUpperCase())}</h2><span class="tx-status tx-status-${STATUS[order.status]?.tone || 'unknown'}">${escapeHtml(status)}</span><div class="tx-detail-items">${items.map((item) => `<div><img src="${escapeHtml(item.image || FALLBACK_IMAGE)}" alt=""><span><strong>${escapeHtml(item.title || 'Produk pangan')}</strong><small>${Number(item.quantity || 0).toLocaleString('id-ID')} kg × ${formatRupiah(item.unitPrice)}</small></span><b>${formatRupiah(Number(item.quantity || 0) * Number(item.unitPrice || 0))}</b></div>`).join('')}</div><dl><div><dt>Penjual</dt><dd>${escapeHtml(seller)}</dd></div><div><dt>Tanggal pesanan</dt><dd>${escapeHtml(formatDate(order.createdAt))}</dd></div><div><dt>Penerima</dt><dd>${escapeHtml(shippingAddress.recipientName || 'Belum tersedia')}</dd></div><div><dt>Telepon</dt><dd>${escapeHtml(shippingAddress.phone || 'Belum tersedia')}</dd></div><div><dt>Alamat tujuan</dt><dd>${escapeHtml([shippingAddress.details, shippingAddress.village, shippingAddress.district, shippingAddress.city, shippingAddress.province, shippingAddress.postalCode].filter(Boolean).join(', ') || 'Belum tersedia')}</dd></div><div><dt>Subtotal</dt><dd>${formatRupiah(order.subtotal ?? order.total)}</dd></div><div><dt>Diskon</dt><dd>${formatRupiah(order.discount || 0)}</dd></div><div><dt>Ongkir</dt><dd>${order.shippingCost == null ? 'Belum tersedia' : formatRupiah(order.shippingCost)}</dd></div><div><dt>Total pembayaran</dt><dd>${formatRupiah(order.total)}</dd></div><div><dt>Status pembayaran</dt><dd>${escapeHtml(PAYMENT_STATUS[order.paymentStatus] || 'Belum tersedia')}</dd></div><div><dt>Status pesanan</dt><dd>${escapeHtml(status)}</dd></div><div><dt>Status pengiriman</dt><dd>${escapeHtml(SHIPPING_STATUS[order.shippingStatus] || order.shippingStatus || 'Belum tersedia')}</dd></div><div><dt>Kurir</dt><dd>${escapeHtml([order.courier, order.courierServiceName || order.courierService].filter(Boolean).join(' · ') || 'Belum tersedia')}</dd></div><div><dt>Nomor resi</dt><dd>${escapeHtml(order.trackingNumber || 'Belum tersedia')}</dd></div></dl>${order.paymentUrl ? `<a class="tx-button tx-button-primary" href="${escapeHtml(order.paymentUrl)}">Lanjutkan Pembayaran</a>` : ''}${order.trackingUrl ? `<a class="tx-button tx-button-outline" target="_blank" rel="noopener" href="${escapeHtml(order.trackingUrl)}">Lacak paket</a>` : ''}<p class="tx-detail-refresh" aria-live="polite"></p></section>`;
+  dialog.querySelectorAll('.tx-detail-items>div').forEach((row, index) => {
+    const item = items[index];
+    const detail = row.querySelector('small');
+    if (detail)
+      detail.textContent =
+        translate(`${Number(item.quantity || 0).toLocaleString('id-ID')} unit · ${formatProductWeight(productWeightGrams(item))}/unit × ${formatRupiah(item.unitPrice)}/unit`);
+  });
   if (isPickup) {
     const rows = [...dialog.querySelectorAll('dl div')];
     const setRow = (label, value) => {

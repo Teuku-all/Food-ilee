@@ -622,7 +622,13 @@ export const additionalEnglish = {
   'Gunakan lokasi perangkat': 'Use device location',
   'Halaman ini hanya tersedia untuk administrator.':
     'This page is available to administrators only.',
-  'Harga penawaran / kg': 'Listing price / kg',
+  'Berat stok tersedia': 'Available stock weight',
+  'Contoh: 500': 'Example: 500',
+  'Harga per unit': 'Price per unit',
+  'Jumlah stok (unit)': 'Stock quantity (units)',
+  'Jumlah unit': 'Quantity (units)',
+  'Berat per unit (gram)': 'Weight per unit (grams)',
+  'Total berat tersedia': 'Total available weight',
   'Informasi pesanan dan aktivitas penting akun Anda.':
     'Order updates and important account activity.',
   'Insight AI Food Ilee': 'Food Ilee AI insights',

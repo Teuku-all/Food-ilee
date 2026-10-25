@@ -28,6 +28,7 @@ async function getCheckoutItems(requestItems, buyerId) {
     unitPrice: product.price,
     quantity: quantities.get(product.id),
     stock: product.stock,
+    weightPerUnitGrams: product.weightPerUnitGrams,
     image: product.image,
     sellerId: product.sellerId,
     store: product.store || product.seller?.store || null,
@@ -188,7 +189,7 @@ async function createCheckout(buyerId, {
         courierService: selected.courierType,
         courierServiceName: selected.serviceName,
         ...(deliveryMethod === 'pickup' ? { shippingStatus: 'awaiting_pickup' } : {}),
-        items: { create: normalized.map(({ wasteId, title, unitPrice, quantity, image }) => ({ wasteId, title, unitPrice, quantity, image })) },
+        items: { create: normalized.map(({ wasteId, title, unitPrice, quantity, image, weightPerUnitGrams }) => ({ wasteId, title, unitPrice, quantity, image, weightPerUnitGrams })) },
       },
     });
     });
@@ -298,7 +299,7 @@ async function createOrder(buyerId, wasteId, quantity) {
       data: {
         id, quantity, total, subtotal: total, buyerId, wasteId, paymentToken: payment.token,
         ...(waste.sellerId ? { sellerSettlementAmount: total, sellerSettlementStatus: transactionSplitSettings ? 'split' : 'pending_manual' } : {}),
-        items: { create: [{ wasteId, title: waste.title, unitPrice: waste.price, quantity, image: waste.image }] },
+        items: { create: [{ wasteId, title: waste.title, unitPrice: waste.price, quantity, image: waste.image, weightPerUnitGrams: waste.weightPerUnitGrams }] },
       },
     });
     if (waste.sellerId) {

@@ -5,6 +5,8 @@ import { showToast, injectToastStyle } from '../../utils/toast.js';
 import { bindSharedHeader, dashboardFooter, dashboardHeader } from '../../ui/shell.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { mountLocationPicker, validCoordinates } from '../../utils/location-map.js';
+import { formatProductWeight, productWeightGrams } from '../../utils/product-weight.js';
+import { translate } from '../../utils/i18n.js';
 
 const REGION_API = 'https://www.emsifa.com/api-wilayah-indonesia/v2';
 const CART_KEY = 'foodilee_checkout_cart';
@@ -143,6 +145,13 @@ function renderItems() {
     return;
   }
   root.innerHTML = checkoutItems.map((item) => `<article class="co-item"><img src="${escapeHtml(item.image || '')}" alt="${escapeHtml(item.title)}"><div class="co-item-copy"><strong>${escapeHtml(item.title)}</strong><span>${formatPrice(item.price)} / kg · ${item.quantity} kg</span></div><strong class="co-item-total">${formatPrice(Number(item.price) * item.quantity)}</strong></article>`).join('');
+  root.querySelectorAll('.co-item').forEach((row, index) => {
+    const item = checkoutItems[index];
+    const description = row.querySelector('.co-item-copy>span');
+    if (description)
+      description.textContent =
+        translate(`${formatPrice(item.price)} / unit · ${item.quantity} unit · ${formatProductWeight(productWeightGrams(item))}/unit`);
+  });
 }
 
 function readAddress() {

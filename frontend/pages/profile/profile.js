@@ -11,8 +11,14 @@ import { formatRupiah, icon, renderShell, showToast } from '../../ui/shell.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { cropSquareImage } from '../../utils/image-crop.js';
+import {
+  formatProductWeight,
+  productWeightGrams,
+  totalProductWeightGrams,
+} from '../../utils/product-weight.js';
 import { bindRegionAddress } from '../../utils/region-address.js';
 import { mountLocationPicker, validCoordinates } from '../../utils/location-map.js';
+import { translate } from '../../utils/i18n.js';
 
 const SHIPPING_ADDRESS_KEY = 'foodilee_shipping_address';
 
@@ -53,7 +59,7 @@ export async function renderProfile() {
     const user = profileResult.data;
     const products = Array.isArray(wastesResult.data) ? wastesResult.data : [];
     const orders = Array.isArray(ordersResult.data) ? ordersResult.data : [];
-    const stock = products.reduce((total, item) => total + Number(item.stock || 0), 0);
+    const totalWeight = totalProductWeightGrams(products);
     renderShell(
       '',
       `<section class="pr-page"><div class="pr-hero fi-card"><div class="pr-avatar-wrap"><div class="pr-avatar">${user.avatar ? `<img src="${escapeHtml(user.avatar)}" alt="Foto profil ${escapeHtml(user.name || user.email)}">` : `<svg class="pr-avatar-placeholder" role="img" aria-label="Foto profil bawaan" viewBox="0 0 100 100"><circle cx="50" cy="50" r="49" fill="#d4f0dd"/><circle cx="50" cy="37" r="17" fill="#5c9275"/><path d="M18 88c2-20 15-31 32-31s30 11 32 31" fill="#5c9275"/></svg>`}</div><button type="button" class="pr-avatar-edit" data-edit-profile aria-label="Edit profil">${icon('edit')}</button></div><div class="pr-identity"><h1>${escapeHtml(user.name || user.username || 'Pengguna Food Ilee')}</h1><p>${escapeHtml(user.bio || 'Bersama membangun ekosistem pangan yang lebih sirkular.')}</p><div class="pr-badges"><span>Anggota sejak ${new Date(user.createdAt).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</span>${user.role === 'admin' ? '<span class="verified">Tim Food Ilee</span>' : ''}</div></div><button class="fi-button pr-edit" data-edit-profile>Edit Profil</button></div><section class="pr-impact"><div class="pr-section-title"><div><p class="pr-kicker">AKTIVITAS ANDA</p><h2>Ringkasan sirkular</h2></div><span>Data dari aktivitas akun Food Ilee</span></div><div class="pr-impact-grid"><article class="pr-impact-card"><span class="pr-impact-icon">${icon('recycle')}</span><strong>${products.length}</strong><small>Produk ditawarkan</small></article><article class="pr-impact-card"><span class="pr-impact-icon mint">${icon('leaf')}</span><strong>${stock.toLocaleString('id-ID')}<i> kg</i></strong><small>Total stok tersedia</small></article><article class="pr-impact-card deep"><span class="pr-impact-icon light">${icon('box')}</span><strong>${orders.length}</strong><small>Pesanan dibuat</small></article></div></section><div class="pr-detail-grid"><section><div class="pr-section-title"><div><p class="pr-kicker">AKUN</p><h2>Detail akun</h2></div></div><div class="pr-details fi-card"><div><span class="pr-detail-icon">${icon('mail')}</span><p><small>ALAMAT EMAIL</small><strong>${escapeHtml(user.email)}</strong></p></div><div><span class="pr-detail-icon">${icon('profile')}</span><p><small>NAMA PENGGUNA</small><strong>${escapeHtml(user.username || 'Belum diatur')}</strong></p></div><div><span class="pr-detail-icon">${icon('guide')}</span><p><small>BERGABUNG</small><strong>${new Date(user.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</strong></p></div></div></section><section><div class="pr-section-title"><div><p class="pr-kicker">ETALASE</p><h2>Aktivitas penawaran</h2></div><a href="#kelola-toko">Kelola toko <span>→</span></a></div><div class="pr-products fi-card">${
@@ -69,6 +75,17 @@ export async function renderProfile() {
       }</div></section></div><section class="pr-bottom-actions"><a class="fi-button fi-button-outline" href="#panduan">Jelajahi panduan</a><button class="fi-button pr-logout" type="button">Keluar dari akun</button></section></section>`,
     );
     injectProfileStyles();
+    document.querySelector('.pr-impact-card:nth-child(2)>strong').textContent =
+      formatProductWeight(totalWeight);
+    document.querySelector('.pr-impact-card:nth-child(2)>small').textContent =
+      translate('Total berat tersedia');
+    document.querySelectorAll('.pr-product').forEach((card, index) => {
+      const product = products[index];
+      const details = card.querySelector('small');
+      if (!product || !details) return;
+      details.textContent =
+        translate(`${Number(product.stock || 0).toLocaleString('id-ID')} unit · ${formatProductWeight(productWeightGrams(product))}/unit · ${formatRupiah(product.price)}/unit`);
+    });
     document.querySelector('.pr-bottom-actions').insertAdjacentHTML('beforebegin', renderShippingAddress(savedShippingAddress()));
     document.querySelector('[data-edit-address]').addEventListener('click', () => openEditAddress(savedShippingAddress()));
     document

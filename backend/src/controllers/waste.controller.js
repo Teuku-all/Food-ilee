@@ -21,6 +21,7 @@ async function createWaste(req, res) {
       image: req.file.path,
       price: Number(req.body.price),
       stock: Number(req.body.stock),
+      weightPerUnitGrams: Number(req.body.weightPerUnitGrams),
 
       sellerId: req.user.id,
     });
@@ -94,6 +95,8 @@ async function updateWaste(req, res) {
         price: Number(req.body.price),
 
         stock: Number(req.body.stock),
+
+        weightPerUnitGrams: Number(req.body.weightPerUnitGrams),
 
         image: req.file ? req.file.path : undefined,
       },
