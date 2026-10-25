@@ -1,108 +1,213 @@
 # Food Ilee
 
-Food Ilee is a marketplace application for managing food waste and connecting stores with buyers. The repository contains a Node.js/Express API and a browser based frontend.
+Marketplace pengelolaan limbah makanan. Food Ilee menghubungkan toko (penjual) dengan pembeli agar limbah makanan yang masih bernilai guna dapat dimanfaatkan kembali, lengkap dengan pembayaran online, pengiriman kurir, chat real-time, dan asisten AI.
 
-## Requirements
+Repositori: https://github.com/Teuku-all/Food-ilee
 
-- Node.js 18 or later and npm
-- PostgreSQL
-- API credentials for any integrations you plan to use (Google OAuth, Groq, Cloudinary, and Midtrans)
+## Fitur
 
-## Project structure
+- **Akun:** registrasi, login email/password, login Google, dan reset kata sandi lewat email.
+- **Toko dan produk:** buat toko (alamat pickup dan titik lokasi di peta), kelola produk limbah beserta harga, stok, dan berat per unit.
+- **Marketplace:** pencarian, kategori, filter radius jarak, dan peta lokasi toko.
+- **Keranjang dan checkout:** alamat divalidasi dengan data wilayah Indonesia, tarif kurir GoSend/GrabExpress dari Biteship, pembayaran online Midtrans, atau jemput langsung di toko dengan pembayaran cash.
+- **Pesanan:** pelacakan status, pembatalan oleh pembeli sebelum dibayar, dan konfirmasi dari penjual.
+- **Chat real-time** antara pembeli dan penjual (Socket.IO), dengan status terkirim dan terbaca.
+- **Asisten AI** seputar limbah makanan dan rekomendasi klasifikasi limbah (Groq).
+- **Ulasan produk dan notifikasi.**
+- **Panel admin:** pantau pengguna, produk, pesanan, dan analitik; blokir pengguna.
+- **Antarmuka dua bahasa:** Indonesia dan Inggris.
+
+## Tech Stack
+
+| Lapisan | Teknologi |
+| --- | --- |
+| Frontend | HTML, CSS, JavaScript (ES Module) tanpa framework, Leaflet, socket.io-client |
+| Backend | Node.js 18+, Express 4, Socket.IO, JWT, bcryptjs, Joi, Helmet, Multer |
+| Database | PostgreSQL dengan Prisma ORM |
+| Layanan eksternal | Google OAuth, Groq, Cloudinary, Midtrans Snap, Biteship, Resend, API Wilayah Indonesia (Emsifa) |
+| Deployment | Vercel (dua proyek: `backend` dan `frontend`) |
+
+## Tim
+
+| Nama | Peran |
+| --- | --- |
+| Abdullah Asy-Syifawi | Backend |
+| Teuku Al Jumanatul Ali | Frontend |
+| Abdi Dzil Ikram | Desain UI/UX |
+| M. Rayyanta Adha Barus | Project manager, pengelola API key |
+
+## Struktur Proyek
 
 ```text
 .
 ├── backend/
-│   ├── prisma/              # Prisma schema and database migrations
+│   ├── prisma/              # Skema Prisma dan migrasi database
 │   └── src/
-│       ├── config/          # Database and third party integrations
-│       ├── controllers/     # HTTP request handlers
-│       ├── middlewares/     # Authentication, uploads, and error handling
-│       ├── routes/          # API route definitions
-│       ├── services/        # Business logic and data access
-│       └── validations/     # Request validation schemas
+│       ├── config/          # Prisma, Cloudinary, Midtrans, Multer
+│       ├── controllers/     # Penanganan request HTTP
+│       ├── middlewares/     # Auth, admin, upload, validasi, error
+│       ├── routes/          # Endpoint /api/*
+│       ├── services/        # Logika bisnis dan akses data
+│       ├── validations/     # Skema Joi
+│       ├── app.js           # Aplikasi Express (diekspor ke Vercel)
+│       └── server.js        # HTTP server + Socket.IO (lokal)
 ├── frontend/
-│   ├── pages/               # Page renderers
-│   ├── services/            # API clients
-│   ├── styles/              # Application stylesheets
-│   └── utils/               # Shared browser utilities
-└── ui-refference/           # UI reference material
+│   ├── pages/               # Renderer halaman
+│   ├── services/            # Klien API
+│   ├── ui/ utils/ styles/   # Komponen, utilitas (i18n, peta), stylesheet
+│   ├── assets/              # Gambar aplikasi
+│   ├── scripts/             # Build dan uji i18n
+│   ├── app.js               # Router hash dan guard autentikasi
+│   └── server.js            # Static file server lokal
+├── docs/                    # Catatan checkout, referensi desain, review UI
+└── ui-refference/           # Materi referensi desain UI
 ```
 
-## Setup
+## Prasyarat
 
-Install backend dependencies and prepare the database client:
+- Node.js 18 atau lebih baru dan npm
+- PostgreSQL
+- Git
+- Koneksi internet (peta, data wilayah, dan layanan eksternal)
+- Opsional, sesuai fitur yang dipakai: kredensial Google OAuth, Groq, Cloudinary, Midtrans (Sandbox), Biteship, dan Resend
+
+## Instalasi Lokal
+
+1. Ambil kode:
+
+   ```bash
+   git clone https://github.com/Teuku-all/Food-ilee.git
+   cd Food-ilee
+   ```
+
+2. Buat database PostgreSQL:
+
+   ```bash
+   psql -U postgres -c "CREATE DATABASE foodilee;"
+   ```
+
+3. Pasang dependensi backend dan salin konfigurasi:
+
+   ```bash
+   npm --prefix backend install
+
+   # Linux / macOS
+   cp backend/.env.example backend/.env
+   # Windows PowerShell
+   Copy-Item backend/.env.example backend/.env
+   ```
+
+4. Isi `backend/.env`. Dua variabel berikut wajib:
+
+   ```env
+   DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/foodilee?schema=public"
+   JWT_SECRET=isi-dengan-string-acak-yang-panjang
+   ```
+
+5. Terapkan migrasi dan buat Prisma Client:
+
+   ```bash
+   npm --prefix backend run db:deploy
+   npm --prefix backend run db:generate
+   ```
+
+6. Jalankan backend dan frontend di dua terminal dari direktori akar:
+
+   ```bash
+   npm run dev:backend    # http://localhost:5000
+   npm run dev:frontend   # http://localhost:5501
+   ```
+
+Frontend berupa berkas statis sehingga tidak memerlukan `npm install`. Saat dibuka dari `localhost`, frontend otomatis memakai API di `http://localhost:5000/api`.
+
+### Verifikasi
+
+1. Buka `http://localhost:5000/`; backend menampilkan respons JSON berstatus sukses.
+2. Buka `http://localhost:5501/`; halaman landing tampil.
+3. Daftar akun (kata sandi minimal 8 karakter), login, buat toko, lalu tambahkan produk.
+
+### Akun admin
+
+Akun baru berperan `user`. Untuk mencoba panel admin, ubah perannya di database:
 
 ```bash
-npm --prefix backend install
-Copy-Item backend/.env.example backend/.env
+psql -U postgres -d foodilee -c "UPDATE \"User\" SET role='admin' WHERE email='email-anda@contoh.com';"
 ```
 
-Edit `backend/.env` with your PostgreSQL connection string and a private JWT secret. Add integration credentials for the services you use. Then apply migrations and generate the Prisma client:
+## Variabel Lingkungan
 
-```bash
-npm --prefix backend run db:deploy
-npm --prefix backend run db:generate
-```
+Template lengkap ada di [`backend/.env.example`](backend/.env.example). Jangan pernah meng-commit file `.env` atau kredensial asli.
 
-For local development, open two terminals from the repository root:
+| Variabel | Fungsi |
+| --- | --- |
+| `DATABASE_URL`, `JWT_SECRET` | Wajib untuk backend |
+| `PORT`, `FRONTEND_URL`, `CORS_ORIGINS` | Port dan origin yang diizinkan |
+| `GOOGLE_CLIENT_ID` | Login Google. Isi juga `googleClientId` di `frontend/config.js` dan daftarkan `http://localhost:5501` sebagai Authorized JavaScript origin |
+| `GROQ_API_KEY` | Asisten AI dan rekomendasi limbah |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Unggah gambar |
+| `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_IS_PRODUCTION` | Pembayaran online (pakai kunci Sandbox dengan `MIDTRANS_IS_PRODUCTION=false`) |
+| `MIDTRANS_SPLIT_ENABLED`, `MIDTRANS_PARTNER_MERCHANT_ID` | Pembagian dana ke merchant penjual (biarkan `false` bila belum diaktifkan Midtrans) |
+| `BITESHIP_API_KEY`, `BITESHIP_COURIERS` (`gojek,grab`), `BITESHIP_WEBHOOK_SECRET` | Tarif dan pengiriman kurir |
+| `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Email reset kata sandi (pengirim harus terverifikasi di Resend) |
 
-```bash
-npm run dev:backend
-```
+Fitur tanpa kredensial yang sesuai tidak aktif, tetapi bagian aplikasi lainnya tetap berjalan.
 
-```bash
-npm run dev:frontend
-```
+## Perintah Berguna
 
-The API listens on `http://localhost:5000` and the frontend on `http://localhost:5501`. The frontend is served as static files; it does not require a separate build step.
+| Perintah | Fungsi |
+| --- | --- |
+| `npm run dev:backend` | Backend dengan auto-reload (nodemon) |
+| `npm run start:backend` | Backend tanpa file watcher |
+| `npm run dev:frontend` | Static server frontend (port 5501) |
+| `npm --prefix frontend run build` | Build produksi ke `frontend/dist` (nama aset gambar di-hash) |
+| `npm --prefix frontend run preview` | Pratinjau hasil build |
+| `npm --prefix frontend run test:i18n` | Uji katalog terjemahan |
+| `npm --prefix backend run db:migrate` | Buat migrasi baru saat pengembangan |
+| `npm --prefix backend run db:deploy` | Terapkan migrasi yang ada |
+| `npm run format` / `npm run format:check` | Format dan cek format kode (Prettier) |
 
-To enable Google sign-in, create a Google OAuth web client ID in Google Cloud Console. Set the same `GOOGLE_CLIENT_ID` in `backend/.env` and `frontend/config.js` (`googleClientId`). Add your frontend origins (for example `http://localhost:5501` and your deployed domain) to the OAuth client's authorized JavaScript origins. The backend verifies the Google ID token against that client ID; no client secret is needed.
+## Ringkasan API
 
-To run the API without the development file watcher, use `npm run start:backend`.
+Semua endpoint berada di bawah `/api`. Endpoint terproteksi memerlukan header `Authorization: Bearer <JWT>`.
 
-### Frontend production assets
+| Prefiks | Endpoint utama |
+| --- | --- |
+| `/auth` | `POST /register`, `/login`, `/google`, `/forgot-password`, `/reset-password`; `GET /me` |
+| `/users` | `GET /me`, `/username-availability`, `/:username`; `PUT /me` |
+| `/stores` | `POST /`; `GET /`; `GET` dan `PUT /me` |
+| `/wastes` | `GET /`, `/:id`; `POST /`; `PUT` dan `DELETE /:id` |
+| `/orders` | `POST /rates`, `/checkout`, `/:id/cancel`; `GET /my`, `/sales`, `/:id`; `PATCH /:id/status` |
+| `/payments` | `GET /:id/status`; `POST /midtrans/webhook`, `/biteship/webhook` |
+| `/chat` | `GET /`; `POST /`; `GET` dan `POST /:chatId/messages` |
+| `/reviews` | `POST /`; `GET /:wasteId` |
+| `/notifications` | `GET /`; `PATCH /:id/read` |
+| `/ai` | `POST /chat`, `/recommend` |
+| `/admin` | `GET /users`, `/wastes`, `/orders`, `/analytics`; `PATCH /users/:id/ban`; `DELETE /wastes/:id` |
 
-Create the deployable frontend directory with `npm --prefix frontend run build`. The build writes
-`frontend/dist`, gives bundled local images and SVGs content-based filenames, and updates their
-references in the copied HTML, CSS, and JavaScript. Preview that output locally with
-`npm --prefix frontend run preview`.
+Detail alur checkout, pengiriman, dan pembayaran ada di [`docs/checkout.md`](docs/checkout.md). Skema basis data ada di [`backend/prisma/schema.prisma`](backend/prisma/schema.prisma).
 
-The Vercel frontend project serves the versioned files in `dist/assets` with long-lived browser
-caching. The local development server revalidates images with ETags, while HTML and code stay
-uncached. Images uploaded to an external image host follow that host's own cache policy.
+## Deployment ke Vercel
 
-## Environment variables
+Deploy sebagai **dua proyek Vercel** dari repositori yang sama.
 
-See [`backend/.env.example`](backend/.env.example) for the configuration template. Never commit `.env` files or real API credentials. `DATABASE_URL` and `JWT_SECRET` are needed for normal backend operation. Password reset emails require `RESEND_API_KEY` and `RESEND_FROM_EMAIL`; use a sender address verified in Resend. Integration credentials are needed by the corresponding features.
+1. **Backend:** Root Directory `backend`. Isi `DATABASE_URL` (PostgreSQL terkelola), `JWT_SECRET`, `FRONTEND_URL`, `CORS_ORIGINS`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, dan variabel integrasi yang dipakai. Salin URL produksinya.
+2. Jalankan migrasi terhadap database produksi: `npm --prefix backend run db:deploy`.
+3. **Frontend:** Root Directory `frontend`. Isi `FOODILEE_API_BASE_URL` (misalnya `https://foodilee-api.vercel.app/api`), `GOOGLE_CLIENT_ID`, dan `FOODILEE_REALTIME=false`. Build gagal bila `FOODILEE_API_BASE_URL` kosong.
+4. Isi `FRONTEND_URL` dan `CORS_ORIGINS` di backend dengan domain frontend, lalu deploy ulang backend.
+5. Atur webhook di dasbor penyedia:
+   - `https://<domain-backend>/api/payments/midtrans/webhook`
+   - `https://<domain-backend>/api/payments/biteship/webhook`
 
-## Notes
+Vercel Functions tidak mendukung koneksi Socket.IO, sehingga di produksi chat memakai HTTP polling (`FOODILEE_REALTIME=false`). Gambar yang dikirim ke API serverless dibatasi 4 MB. Simpan semua kredensial di pengaturan environment Vercel, dan deploy ulang proyek terkait setelah mengubah variabel.
 
-- Prisma schema: [`backend/prisma/schema.prisma`](backend/prisma/schema.prisma)
-- API routes are mounted under `/api`.
-- User uploaded or generated files are ignored by Git; production deployments should use persistent or object storage.
+## Pemecahan Masalah
 
-## Deploy to Vercel
-
-Deploy this monorepo as **two Vercel projects** connected to the same Git repository:
-
-1. Create the backend project first and set its **Root Directory** to `backend`. Keep the detected `backend/vercel.json` settings. The API is exported from `src/app.js`; `src/server.js` is only for local development and Socket.IO.
-2. Add the backend environment variables in Vercel Project Settings → Environment Variables:
-   - Required: `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`, `CORS_ORIGINS`.
-   - Password reset email: `RESEND_API_KEY`, `RESEND_FROM_EMAIL` (verified sender address).
-   - Integrations as used: `GOOGLE_CLIENT_ID`, `GROQ_API_KEY`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_IS_PRODUCTION`, `MIDTRANS_SPLIT_ENABLED`, `MIDTRANS_PARTNER_MERCHANT_ID`, `BITESHIP_API_KEY`, `BITESHIP_COURIERS`, `BITESHIP_WEBHOOK_SECRET`, `BITESHIP_COD_SETTLEMENT_DAYS`.
-   - Use a hosted PostgreSQL database for `DATABASE_URL`. Set `MIDTRANS_IS_PRODUCTION=false` while using Midtrans Sandbox.
-3. Deploy the backend and copy its production URL, such as `https://foodilee-api.vercel.app`.
-4. Create the frontend project from the same repository with **Root Directory** `frontend`. Add `FOODILEE_API_BASE_URL=https://foodilee-api.vercel.app/api`, `GOOGLE_CLIENT_ID` (the same Google OAuth web client ID), and `FOODILEE_REALTIME=false`, then deploy.
-5. Set the frontend's production origin in backend `FRONTEND_URL` and `CORS_ORIGINS` (for example `https://foodilee.vercel.app`), then redeploy the backend. Add custom domains to these variables too if you use them.
-6. Set payment and shipping provider webhook URLs to `https://<backend-domain>/api/payments/midtrans/webhook` and `https://<backend-domain>/api/payments/biteship/webhook`.
-
-The frontend build fails if `FOODILEE_API_BASE_URL` is missing, to avoid publishing a site that silently sends requests to the wrong host. Google sign-in requires the same `GOOGLE_CLIENT_ID` in both Vercel projects; add the frontend's production origin to that OAuth client in Google Cloud Console. `FOODILEE_REALTIME=false` enables the chat's HTTP polling fallback because Vercel Functions cannot host the existing Socket.IO connection. Images are capped at 4 MB for requests to the serverless API.
-
-Run database migrations against the hosted database before opening the site to users:
-
-```bash
-npm --prefix backend run db:deploy
-```
-
-Keep all credentials in Vercel environment settings; do not put secret values in `frontend` variables or commit them to the repository. If a Vercel environment variable changes, redeploy the corresponding project so its build/runtime receives the updated value.
+| Gejala | Solusi |
+| --- | --- |
+| Port 5000 sudah dipakai | Hentikan proses lama atau ubah `PORT` di `backend/.env` |
+| Galat koneksi database saat `db:deploy` | Periksa `DATABASE_URL` dan pastikan database `foodilee` sudah dibuat |
+| Galat CORS di browser | Buka frontend lewat `http://localhost:5501` atau tambahkan origin ke `CORS_ORIGINS` |
+| Respons 429 "Terlalu banyak request" | Batas 100 request per 15 menit per IP; tunggu atau restart backend |
+| Reset kata sandi mengembalikan 503 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, atau `FRONTEND_URL` belum diisi |
+| Unggah gambar gagal | Kredensial `CLOUDINARY_*` belum diisi |
+| Peta atau data wilayah tidak tampil | Periksa koneksi internet |
