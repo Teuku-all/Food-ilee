@@ -180,7 +180,7 @@ const english = Object.freeze({
   'Penawaran berhasil dihapus.': 'Listing deleted successfully.',
   'Penawaran diperbarui.': 'Listing updated successfully.',
   'Pilih foto JPG, PNG, atau WebP.': 'Choose a JPG, PNG, or WebP photo.',
-  'Ukuran foto maksimal 4 MB.': 'Maximum photo size is 4 MB.',
+  'Opsional · foto dikompres otomatis': 'Optional · photo compressed automatically',
   'Pilih bahasa': 'Choose language',
   Bahasa: 'Language',
   Tentang: 'About',

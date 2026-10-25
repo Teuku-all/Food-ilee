@@ -6,6 +6,7 @@ import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js
 import { skeleton } from '../../ui/skeleton.js';
 import { bindRegionAddress } from '../../utils/region-address.js';
 import { mountLocationPicker } from '../../utils/location-map.js';
+import { compressImage } from '../../utils/image-compress.js';
 
 export async function renderCreateStore() {
   const navigationRevision = getNavigationRevision();
@@ -27,6 +28,7 @@ export async function renderCreateStore() {
     '',
     `<section class="cs-page"><a class="cs-back" href="#marketplace">← Kembali ke marketplace</a><div class="cs-layout"><div class="cs-story"><p class="cs-kicker">BANGUN TOKO SIRKULAR ANDA</p><h1>Ruang untuk<br><em>nilai yang baru.</em></h1><p>Buat etalase agar calon pembeli mengenal sumber bahan organik yang Anda tawarkan.</p><div class="cs-story-art"><span>F</span><i></i><b></b></div><small>Nama dan cerita toko Anda akan tampil di marketplace.</small></div><form id="store-form" class="cs-form fi-card"><p class="cs-kicker">MULAI BERJUAL</p><h2>Buka toko Anda</h2><p>Alamat pickup dipakai menghitung ongkir. Rekening disimpan untuk pencatatan pembayaran penjual.</p><label class="fi-label">Nama toko<input class="fi-input" type="text" name="name" placeholder="Contoh: Kebun Berkah Organik" required minlength="3" maxlength="80"></label><label class="fi-label">Lokasi toko<input class="fi-input" type="text" name="location" placeholder="Kecamatan, kota, provinsi" maxlength="180"></label><section class="cs-form-section cs-pickup-section"><div class="cs-section-heading"><span>01</span><div><h3>Alamat pickup</h3><p>Lokasi ini digunakan untuk mengecek ongkir dan menjemput pesanan.</p></div></div><div class="cs-form-grid"><label class="fi-label">Nama kontak<input class="fi-input" name="shippingOriginContactName" required maxlength="100" placeholder="Nama yang bisa dihubungi"></label><label class="fi-label">Nomor telepon<input class="fi-input" name="shippingOriginContactPhone" required maxlength="20" inputmode="tel" placeholder="08xxxxxxxxxx"></label></div><div class="cs-region-grid"><label class="fi-label">Provinsi<select class="fi-input" id="store-province" required><option value="">Pilih provinsi</option></select></label><label class="fi-label">Kabupaten/Kota<select class="fi-input" id="store-city" required disabled><option value="">Pilih kabupaten/kota</option></select></label><label class="fi-label">Kecamatan<select class="fi-input" id="store-district" required disabled><option value="">Pilih kecamatan</option></select></label><label class="fi-label">Desa/Kelurahan<select class="fi-input" id="store-village" required disabled><option value="">Pilih desa/kelurahan</option></select></label></div><p id="store-region-error" class="cs-region-error" role="alert"></p><div class="cs-form-grid cs-address-detail-grid"><label class="fi-label">Nama jalan, nomor, RT/RW<input class="fi-input" id="store-details" required maxlength="240" placeholder="Contoh: Jl. Melati No. 10, RT 02/RW 01"></label><label class="fi-label">Kode pos<input class="fi-input" id="store-postal" name="shippingOriginPostalCode" required inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="12345"></label></div><input type="hidden" name="shippingOriginAddress"><input type="hidden" name="shippingOriginRegion"></section><h3>Rekening penerimaan penjual</h3><p>Pembayaran Midtrans saat ini masuk ke Food Ilee. Rekening ini dipakai untuk pencatatan dan penyelesaian dana ke penjual.</p><label class="fi-label">Nama bank<input class="fi-input" name="bankName" required maxlength="60" placeholder="Contoh: BCA"></label><label class="fi-label">Nomor rekening<input class="fi-input" name="bankAccountNumber" required inputmode="numeric" pattern="[0-9 -]{6,36}" maxlength="36"></label><label class="fi-label">Nama pemilik rekening<input class="fi-input" name="bankAccountHolder" required maxlength="100"></label><label class="fi-label">Cerita toko<textarea class="fi-input" name="description" rows="4" placeholder="Ceritakan sumber dan jenis bahan yang Anda tawarkan…" maxlength="500"></textarea></label><label class="fi-label">Foto toko <span class="cs-muted">Opsional · JPG/PNG maksimal 4 MB</span><input class="fi-input" type="file" name="image" accept="image/*"></label><img class="cs-preview" alt="Pratinjau foto toko"><button class="fi-button cs-submit" type="submit">Buat toko <span>→</span></button><small class="cs-privacy">Nama dan profil toko tampil di marketplace; data rekening disimpan untuk internal.</small></form></div></section>`,
   );
+  document.querySelector('.cs-muted').textContent = 'Opsional · foto dikompres otomatis';
   injectCreateStoreStyles();
   const form = document.getElementById('store-form');
   const regionAddress = await bindRegionAddress(form, 'store');
@@ -68,8 +70,8 @@ export async function renderCreateStore() {
   form.elements.image.addEventListener('change', () => {
     const image = form.elements.image.files[0];
     if (!image) return;
-    if (!image.type.startsWith('image/') || image.size > 4 * 1024 * 1024) {
-      showToast('Pilih foto berformat gambar, maksimal 4 MB.', 'error');
+    if (!image.type.startsWith('image/')) {
+      showToast('Pilih foto berformat gambar.', 'error');
       form.elements.image.value = '';
       return;
     }
@@ -87,6 +89,8 @@ export async function renderCreateStore() {
       if (!form.elements.latitude.value || !form.elements.longitude.value)
         throw new Error('Pilih titik lokasi pickup toko pada peta.');
       const data = new FormData(form);
+      const image = form.elements.image.files[0];
+      if (image) data.set('image', await compressImage(image));
       data.set('shippingOriginAddress', pickup.address);
       data.set('shippingOriginRegion', JSON.stringify(pickup.region));
       const result = await createStore(data);

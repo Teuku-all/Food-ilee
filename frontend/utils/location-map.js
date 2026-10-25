@@ -110,6 +110,11 @@ async function geocodeRegion(region) {
   throw new Error('Lokasi alamat belum ditemukan. Periksa pilihan desa/kelurahan dan coba lagi.');
 }
 
+export function googleMapsDirectionsUrl(latitude, longitude) {
+  if (!validCoordinates(latitude, longitude)) return '';
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${Number(latitude)},${Number(longitude)}`)}`;
+}
+
 export async function mountLocationPicker({
   element,
   latitudeInput,
@@ -155,6 +160,13 @@ export async function mountLocationPicker({
   const map = leaflet.map(element).setView(initial, area || hasInitialLocation ? 16 : areaRequired ? 2 : 14);
   if (area) map.setMaxBounds(leaflet.latLngBounds(area.bounds).pad(0.02));
   addMapTiles(leaflet, map);
+  const directionsLink = document.createElement('a');
+  directionsLink.className = 'fi-button fi-button-outline';
+  directionsLink.target = '_blank';
+  directionsLink.rel = 'noopener';
+  directionsLink.textContent = 'Buka di Google Maps';
+  directionsLink.hidden = true;
+  element.parentElement?.querySelector('.fi-map-controls')?.append(directionsLink);
 
   let marker;
   let areaRevision = 0;
@@ -166,6 +178,8 @@ export async function mountLocationPicker({
     marker = null;
     latitudeInput.value = '';
     longitudeInput.value = '';
+    directionsLink.removeAttribute('href');
+    directionsLink.hidden = true;
     onChange(null, null);
   };
   const update = (latitude, longitude) => {
@@ -191,6 +205,8 @@ export async function mountLocationPicker({
       update(position.lat, position.lng);
     });
     status.textContent = `Titik dipilih: ${point[0].toFixed(6)}, ${point[1].toFixed(6)}`;
+    directionsLink.href = googleMapsDirectionsUrl(...point);
+    directionsLink.hidden = false;
     onChange(point[0], point[1]);
   };
 
@@ -238,6 +254,8 @@ export async function mountLocationPicker({
         marker = null;
         latitudeInput.value = '';
         longitudeInput.value = '';
+        directionsLink.removeAttribute('href');
+        directionsLink.hidden = true;
         onChange(null, null);
       }
       status.textContent = `Peta dipusatkan di ${area.locality}. Klik titik lokasi yang sesuai alamat.`;
@@ -257,6 +275,8 @@ export async function mountLocationPicker({
       marker = null;
       latitudeInput.value = '';
       longitudeInput.value = '';
+      directionsLink.removeAttribute('href');
+      directionsLink.hidden = true;
       status.textContent = 'Klik peta untuk memilih titik alamat.';
       onChange(null, null);
     },

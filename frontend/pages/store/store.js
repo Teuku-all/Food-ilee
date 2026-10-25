@@ -239,6 +239,8 @@ function editStore(store) {
   const photoSection = document.createElement('section');
   photoSection.className = 'st-edit-photo-section';
   photoSection.innerHTML = `<h3>Foto profil toko</h3><p>Foto ini akan tampil pada detail produk dan profil toko.</p><div class="st-edit-photo"><div class="st-crop-frame"><img class="st-current-photo" src="${escapeHtml(store.image || '')}" alt="Foto toko saat ini" ${store.image ? '' : 'hidden'}><img class="st-crop-preview" alt="Pratinjau foto toko" hidden><span class="st-crop-placeholder" ${store.image ? 'hidden' : ''}>${icon('store')}</span><span class="st-crop-loading" hidden>Memuat foto…</span></div><div class="st-edit-photo-controls"><label class="st-upload-button">Pilih foto toko<input name="image" type="file" accept="image/jpeg,image/png,image/webp"></label><small>JPG, PNG, atau WebP · maksimal 4 MB. Geser foto untuk mengatur posisi.</small><label class="st-zoom-label">Perbesar foto<input data-store-crop-zoom type="range" min="1" max="3" step="0.01" value="1" disabled></label></div></div>`;
+  photoSection.querySelector('.st-edit-photo-controls small').textContent =
+    'Foto otomatis dikompres. Geser foto untuk mengatur posisi.';
   const oldPhotoLabel = form.querySelector('input[name="image"]').closest('label');
   oldPhotoLabel.replaceWith(photoSection);
   const photoInput = photoSection.querySelector('input[name="image"]');
@@ -283,12 +285,6 @@ function editStore(store) {
       photoInput.value = '';
       cropLoading.hidden = true;
       showToast('Pilih foto JPG, PNG, atau WebP.', 'error');
-      return;
-    }
-    if (file.size > 4 * 1024 * 1024) {
-      photoInput.value = '';
-      cropLoading.hidden = true;
-      showToast('Ukuran foto maksimal 4 MB.', 'error');
       return;
     }
     cropObjectUrl = URL.createObjectURL(file);

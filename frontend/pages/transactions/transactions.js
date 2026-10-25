@@ -7,6 +7,7 @@ import { bindSharedHeader, dashboardFooter, dashboardHeader, pageHeading } from 
 import { skeleton } from '../../ui/skeleton.js';
 import { icon } from '../../ui/icons.js';
 import { formatProductWeight, productWeightGrams } from '../../utils/product-weight.js';
+import { googleMapsDirectionsUrl } from '../../utils/location-map.js';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1518843875459-f738682238a6?w=200&q=60';
 const PAGE_SIZE = 5;
@@ -321,6 +322,16 @@ function showDetail(id) {
     setRow('Ongkir', 'Jemput langsung · Rp0');
     setRow('Status pengiriman', order.status === 'completed' ? 'Sudah dijemput' : 'Menunggu dijemput di toko');
     setRow('Kurir', 'Jemput langsung');
+    const directionsUrl = googleMapsDirectionsUrl(pickupAddress.latitude, pickupAddress.longitude);
+    if (directionsUrl) {
+      const directionsLink = document.createElement('a');
+      directionsLink.className = 'tx-button tx-button-outline';
+      directionsLink.href = directionsUrl;
+      directionsLink.target = '_blank';
+      directionsLink.rel = 'noopener';
+      directionsLink.textContent = translate('Buka petunjuk arah di Google Maps');
+      dialog.querySelector('.tx-detail-refresh').before(directionsLink);
+    }
     if (order.paymentMethod === 'cash') {
       setRow('Status pembayaran', order.paymentStatus === 'paid'
         ? 'Cash diterima langsung oleh penjual'

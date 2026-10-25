@@ -4,7 +4,11 @@ import { escapeHtml } from '../../utils/html.js';
 import { showToast, injectToastStyle } from '../../utils/toast.js';
 import { bindSharedHeader, dashboardFooter, dashboardHeader } from '../../ui/shell.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
-import { mountLocationPicker, validCoordinates } from '../../utils/location-map.js';
+import {
+  googleMapsDirectionsUrl,
+  mountLocationPicker,
+  validCoordinates,
+} from '../../utils/location-map.js';
 import { formatProductWeight, productWeightGrams } from '../../utils/product-weight.js';
 import { translate } from '../../utils/i18n.js';
 
@@ -428,7 +432,10 @@ async function loadRatesNow(revision, navigationRevision = getNavigationRevision
       const description = deliveryMethod === 'pickup'
         ? `${pickupText} · Kontak: ${pickup?.contactName || ''} ${pickup?.contactPhone || ''}`
         : `${escapeHtml(rate.duration || 'Estimasi belum tersedia')}`;
-      return `<label class="co-rate"><input type="radio" name="co-rate" value="${index}"><span><strong>${escapeHtml(rate.courierName)} · ${escapeHtml(rate.serviceName)}</strong><small>${escapeHtml(description)}</small></span><b>${formatPrice(rate.price)}</b></label>`;
+      const directionsUrl = deliveryMethod === 'pickup'
+        ? googleMapsDirectionsUrl(pickup?.latitude, pickup?.longitude)
+        : '';
+      return `<div class="co-rate-option"><label class="co-rate"><input type="radio" name="co-rate" value="${index}"><span><strong>${escapeHtml(rate.courierName)} · ${escapeHtml(rate.serviceName)}</strong><small>${escapeHtml(description)}</small></span><b>${formatPrice(rate.price)}</b></label>${directionsUrl ? `<a class="co-pickup-map-link" href="${directionsUrl}" target="_blank" rel="noopener">${translate('Buka petunjuk arah di Google Maps')}</a>` : ''}</div>`;
     }).join('');
     root.querySelectorAll('input').forEach((radio) => radio.addEventListener('change', () => {
       selectedRate = rates[Number(radio.value)]; updateSummary();
@@ -557,6 +564,8 @@ function injectCheckoutStyles() {
     .co-summary h2{padding-bottom:16px;border-bottom:1px solid #dce7df;line-height:1.35}
     .co-summary-row,.co-summary-total{border-color:#dce5de}
     .co-rate{border-color:#cbdad0;transition:border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}
+    .co-pickup-map-link{display:inline-block;margin:7px 0 4px 12px;color:#167362;font-size:12px;font-weight:600;text-decoration:none}
+    .co-pickup-map-link:hover{text-decoration:underline}
     .co-rate:hover{border-color:#7eaf91;box-shadow:0 4px 12px #1638320c}
     .co-rate:has(input:checked){border-color:#167362;box-shadow:inset 0 0 0 1px #16736230}
     #co-pay{transition:transform 160ms ease,box-shadow 160ms ease,background 160ms ease}

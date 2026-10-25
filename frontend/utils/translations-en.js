@@ -452,8 +452,12 @@ export const additionalEnglish = {
   'Penawaran berhasil ditambahkan ke marketplace.':
     'Listing added to the marketplace successfully.',
   'Pilih berkas gambar.': 'Choose an image file.',
-  'Pilih foto berformat gambar, maksimal 4 MB.': 'Choose an image file up to 4 MB.',
-  'Ukuran foto maksimum 4 MB.': 'Maximum photo size is 4 MB.',
+  'Pilih foto berformat gambar.': 'Choose an image file.',
+  'Foto dikompres otomatis sebelum diunggah': 'Photos are compressed automatically before upload',
+  'Foto otomatis dikompres. Geser foto untuk mengatur posisi.':
+    'Photos are compressed automatically. Drag to adjust the position.',
+  'Buka petunjuk arah di Google Maps': 'Get directions in Google Maps',
+  'Foto gagal dikompres.': 'Photo could not be compressed.',
   'Foto gagal diproses.': 'Photo could not be processed.',
   'Foto tidak dapat dibuka. Coba gambar lain.': 'Photo could not be opened. Try another image.',
   'Foto belum tersimpan di server. Periksa koneksi penyimpanan foto lalu coba lagi.':
@@ -597,7 +601,6 @@ export const additionalEnglish = {
     'Search by product, description, or location\u2026',
   'Ceritakan sumber dan jenis bahan yang Anda tawarkan\u2026':
     'Tell buyers about the source and type of materials you offer\u2026',
-  'JPG, PNG, WebP \u00b7 maks. 4 MB': 'JPG, PNG, WebP \u00b7 max. 4 MB',
   'Jemput langsung \u00b7 Rp0': 'Store pickup \u00b7 Rp0',
   'Ketik pertanyaan Anda\u2026': 'Type your question\u2026',
   'Membatalkan\u2026': 'Cancelling\u2026',
@@ -615,7 +618,6 @@ export const additionalEnglish = {
   'Menyiapkan pembayaran\u2026': 'Preparing payment\u2026',
   'Menyimpan\u2026': 'Saving\u2026',
   'Midtrans \u00b7 pembayaran di halaman ini': 'Midtrans \u00b7 Pay on this page',
-  'Opsional \u00b7 JPG/PNG maksimal 4 MB': 'Optional \u00b7 JPG/PNG up to 4 MB',
   'Pembayaran menunggu penyelesaian\u2026': 'Waiting for payment completion\u2026',
   'Pembayaran terverifikasi \u00b7 Pesanan ditinjau': 'Payment verified \u00b7 Order under review',
   'Tulis pesan\u2026': 'Write a message\u2026',
