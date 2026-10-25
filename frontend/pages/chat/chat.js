@@ -25,10 +25,7 @@ window.addEventListener('hashchange', () => {
 
 export async function renderChat() {
   const revision = getNavigationRevision();
-  renderShell(
-    'chat',
-    chatLoadingSkeleton(),
-  );
+  renderShell('chat', chatLoadingSkeleton());
   injectStyles();
   try {
     const [profile, result] = await Promise.all([getCurrentUser(), getChats()]);
@@ -57,7 +54,7 @@ function renderChatView(revision) {
   const selected = chats.find((chat) => chat.id === selectedChatId);
   renderShell(
     'chat',
-    `<section class="ch-page"><div class="ch-layout fi-card"><aside class="ch-inbox" aria-label="Daftar percakapan"><header class="ch-inbox-head"><div><strong>Percakapan</strong><small>Ruang koordinasi Anda</small></div><span>${chats.length}</span></header><label class="ch-search"><span aria-hidden="true">${icon('search')}</span><input type="search" data-chat-search placeholder="Cari percakapan" aria-label="Cari percakapan"></label><div class="ch-chat-list">${chats.length ? chats.map(chatItem).join('') : `<div class="ch-inbox-empty"><span aria-hidden="true">${icon('chat')}</span><strong>Mulai percakapan</strong><p>Hubungi penjual langsung dari detail produk yang menarik bagi Anda.</p></div>`}</div></aside><section class="ch-conversation" aria-label="Isi percakapan">${selected ? `<header class="ch-person"><span class="ch-avatar">${escapeHtml(initials(otherUser(selected)))}</span><div><strong>${escapeHtml(displayName(otherUser(selected)))}</strong><small>Diskusi transaksi Food Ilee</small></div></header><div class="ch-messages" data-chat-messages><div class="ch-empty">Memuat pesan…</div></div><form class="ch-compose"><input name="text" maxlength="4000" autocomplete="off" placeholder="Tulis pesan…" aria-label="Tulis pesan"><button class="fi-button" type="submit">Kirim</button></form>` : `<div class="ch-welcome"><span>${icon('sparkles')}</span><h2>Percakapan Anda</h2><p>Pilih percakapan untuk melihat pesan, atau mulai chat melalui detail produk.</p><a class="fi-button" href="#marketplace">Buka marketplace</a></div>`}</section></div></section>`,
+    `<section class="ch-page"><div class="ch-layout fi-card${selected ? ' ch-has-selection' : ''}"><aside class="ch-inbox" aria-label="Daftar percakapan"><header class="ch-inbox-head"><div><strong>Percakapan</strong><small>Ruang koordinasi Anda</small></div><span>${chats.length}</span></header><label class="ch-search"><span aria-hidden="true">${icon('search')}</span><input type="search" data-chat-search placeholder="Cari percakapan" aria-label="Cari percakapan"></label><div class="ch-chat-list">${chats.length ? chats.map(chatItem).join('') : `<div class="ch-inbox-empty"><span aria-hidden="true">${icon('chat')}</span><strong>Mulai percakapan</strong><p>Hubungi penjual langsung dari detail produk yang menarik bagi Anda.</p></div>`}</div></aside><section class="ch-conversation" aria-label="Isi percakapan">${selected ? `<header class="ch-person"><button class="ch-mobile-back" type="button" data-chat-back aria-label="Kembali ke daftar percakapan">${icon('arrow')}</button><span class="ch-avatar">${escapeHtml(initials(otherUser(selected)))}</span><div><strong>${escapeHtml(displayName(otherUser(selected)))}</strong><small>Diskusi transaksi Food Ilee</small></div></header><div class="ch-messages" data-chat-messages><div class="ch-empty">Memuat pesan…</div></div><form class="ch-compose"><input name="text" maxlength="4000" autocomplete="off" placeholder="Tulis pesan…" aria-label="Tulis pesan"><button class="fi-button" type="submit">Kirim</button></form>` : `<div class="ch-welcome"><span>${icon('sparkles')}</span><h2>Percakapan Anda</h2><p>Pilih percakapan untuk melihat pesan, atau mulai chat melalui detail produk.</p><a class="fi-button" href="#marketplace">Buka marketplace</a></div>`}</section></div></section>`,
   );
   injectStyles();
   document.querySelectorAll('[data-chat-select]').forEach((button) =>
@@ -75,9 +72,14 @@ function renderChatView(revision) {
 }
 
 function selectChat(chatId, revision) {
-  if (chatId === selectedChatId) return;
+  if (chatId === selectedChatId) {
+    document.querySelector('.ch-layout')?.classList.remove('ch-show-inbox');
+    return;
+  }
   selectedChatId = chatId;
   sessionStorage.setItem('foodilee_chat_id', chatId);
+  document.querySelector('.ch-layout')?.classList.remove('ch-show-inbox');
+  document.querySelector('.ch-layout')?.classList.add('ch-has-selection');
   document.querySelectorAll('[data-chat-select]').forEach((button) => {
     button.classList.toggle('active', button.dataset.chatSelect === chatId);
   });
@@ -88,10 +90,16 @@ function renderConversation(chatId, revision) {
   const selected = chats.find((chat) => chat.id === chatId);
   const pane = document.querySelector('.ch-conversation');
   if (!pane || !selected) return;
-  pane.innerHTML = `<header class="ch-person"><span class="ch-avatar">${escapeHtml(initials(otherUser(selected)))}</span><div><strong>${escapeHtml(displayName(otherUser(selected)))}</strong><small>Diskusi transaksi Food Ilee</small></div></header><div class="ch-messages" data-chat-messages><div class="ch-empty">Memuat pesan…</div></div><form class="ch-compose"><input name="text" maxlength="4000" autocomplete="off" placeholder="Tulis pesan…" aria-label="Tulis pesan"><button class="fi-button" type="submit">Kirim</button></form>`;
+  pane.innerHTML = `<header class="ch-person"><button class="ch-mobile-back" type="button" data-chat-back aria-label="Kembali ke daftar percakapan">${icon('arrow')}</button><span class="ch-avatar">${escapeHtml(initials(otherUser(selected)))}</span><div><strong>${escapeHtml(displayName(otherUser(selected)))}</strong><small>Diskusi transaksi Food Ilee</small></div></header><div class="ch-messages" data-chat-messages><div class="ch-empty">Memuat pesan…</div></div><form class="ch-compose"><input name="text" maxlength="4000" autocomplete="off" placeholder="Tulis pesan…" aria-label="Tulis pesan"><button class="fi-button" type="submit">Kirim</button></form>`;
+  pane.querySelector('[data-chat-back]')?.addEventListener('click', () => {
+    document.querySelector('.ch-layout')?.classList.add('ch-show-inbox');
+    document.querySelector(`[data-chat-select="${CSS.escape(chatId)}"]`)?.focus();
+  });
   loadConversation(chatId, revision);
   bindLiveChat(chatId, revision);
-  pane.querySelector('.ch-compose')?.addEventListener('submit', (event) => submitMessage(event, chatId, revision));
+  pane
+    .querySelector('.ch-compose')
+    ?.addEventListener('submit', (event) => submitMessage(event, chatId, revision));
 }
 
 async function bindLiveChat(chatId, revision) {
@@ -187,7 +195,9 @@ function startChatPolling(chatId, revision) {
       const box = document.querySelector('[data-chat-messages]');
       if (!box) return;
       for (const message of messages) {
-        const existed = Boolean(box.querySelector(`[data-message-id="${CSS.escape(String(message.id))}"]`));
+        const existed = Boolean(
+          box.querySelector(`[data-message-id="${CSS.escape(String(message.id))}"]`),
+        );
         saveCachedMessage(chatId, message);
         if (existed) {
           if (message.senderId === currentUserId) updateMessageStatus(message);
@@ -245,11 +255,15 @@ async function loadConversation(chatId, revision) {
 
 function renderMessages(box, messages) {
   box.innerHTML = messages.length
-    ? messages.map((message) => {
-        const date = new Date(message.createdAt);
-        const time = Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-        return messageMarkup(message, time);
-      }).join('')
+    ? messages
+        .map((message) => {
+          const date = new Date(message.createdAt);
+          const time = Number.isNaN(date.getTime())
+            ? ''
+            : date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+          return messageMarkup(message, time);
+        })
+        .join('')
     : '<div class="ch-empty">Belum ada pesan. Kirim pesan pertama Anda.</div>';
   box.scrollTop = box.scrollHeight;
 }
@@ -303,7 +317,12 @@ async function submitMessage(event, chatId, revision) {
   const button = form.querySelector('button');
   button.disabled = true;
   const pendingId = `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const pendingMessage = { id: pendingId, text, senderId: currentUserId, createdAt: new Date().toISOString() };
+  const pendingMessage = {
+    id: pendingId,
+    text,
+    senderId: currentUserId,
+    createdAt: new Date().toISOString(),
+  };
   const box = document.querySelector('[data-chat-messages]');
   if (box) {
     box.querySelector('.ch-empty')?.remove();
@@ -320,7 +339,8 @@ async function submitMessage(event, chatId, revision) {
       pendingBubble.dataset.messageId = message.id;
       const time = pendingBubble.querySelector('time');
       const date = new Date(message.createdAt);
-      if (time && !Number.isNaN(date.getTime())) time.textContent = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      if (time && !Number.isNaN(date.getTime()))
+        time.textContent = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
       updateMessageStatus(message);
     } else {
       appendMessage(box, message);
@@ -330,7 +350,9 @@ async function submitMessage(event, chatId, revision) {
     const bubble = document.querySelector(`[data-message-id="${pendingId}"]`);
     if (bubble) {
       bubble.classList.add('failed');
-      bubble.querySelector('[data-message-status]')?.setAttribute('aria-label', 'Pesan gagal terkirim');
+      bubble
+        .querySelector('[data-message-status]')
+        ?.setAttribute('aria-label', 'Pesan gagal terkirim');
     }
     input.value = text;
     showToast(error.message || 'Pesan belum terkirim.', 'error');
@@ -347,14 +369,21 @@ function messageMarkup(message, time, statusOverride = '') {
 function appendMessage(box, message, statusOverride) {
   if (!box || box.querySelector(`[data-message-id="${CSS.escape(String(message.id))}"]`)) return;
   const date = new Date(message.createdAt);
-  const time = Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  const time = Number.isNaN(date.getTime())
+    ? ''
+    : date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
   box.insertAdjacentHTML('beforeend', messageMarkup(message, time, statusOverride));
 }
 
 function statusMarkup(message, override = '') {
   const state = override || (message.readAt ? 'read' : message.deliveredAt ? 'delivered' : 'sent');
   const icon = state === 'pending' ? '◷' : state === 'read' || state === 'delivered' ? '✓✓' : '✓';
-  const label = { pending: 'Menunggu terkirim', sent: 'Terkirim ke server', delivered: 'Terkirim ke penerima', read: 'Sudah dibaca' }[state];
+  const label = {
+    pending: 'Menunggu terkirim',
+    sent: 'Terkirim ke server',
+    delivered: 'Terkirim ke penerima',
+    read: 'Sudah dibaca',
+  }[state];
   return `<span class="ch-message-status ${state}" data-message-status aria-label="${label}" title="${label}">${icon}</span>`;
 }
 
@@ -364,11 +393,17 @@ function updateMessageStatus(message) {
   if (!bubble) return;
   bubble.querySelector('[data-message-status]')?.remove();
   bubble.insertAdjacentHTML('beforeend', statusMarkup(message));
-  saveCachedMessage(selectedChatId, { id: message.id, deliveredAt: message.deliveredAt, readAt: message.readAt });
+  saveCachedMessage(selectedChatId, {
+    id: message.id,
+    deliveredAt: message.deliveredAt,
+    readAt: message.readAt,
+  });
 }
 
 function updateChatPreview(chatId, text) {
-  const item = document.querySelector(`[data-chat-select="${CSS.escape(chatId)}"] .ch-chat-copy small`);
+  const item = document.querySelector(
+    `[data-chat-select="${CSS.escape(chatId)}"] .ch-chat-copy small`,
+  );
   if (item) item.textContent = text;
 }
 
@@ -382,5 +417,43 @@ function injectStyles() {
 `;
   style.textContent += `.ch-heading{position:relative;isolation:isolate;min-height:150px;box-sizing:border-box;display:flex;align-items:center;overflow:hidden;margin-bottom:24px;padding:26px 31px;border:1px solid #cfe1d2;border-radius:24px;background:radial-gradient(ellipse at 88% 20%,#d9eee0 0,transparent 32%),linear-gradient(115deg,#f8fbf7,#edf5ef 65%,#e4f1e8);box-shadow:0 12px 30px #174e320c}.ch-heading:after{position:absolute;z-index:-1;right:-45px;top:-155px;width:340px;height:340px;border:1px solid #a8cdb544;border-radius:50%;content:''}.ch-heading>div{position:relative;z-index:1}.ch-kicker{display:inline-flex;margin:0 0 10px;padding:6px 10px;border:1px solid #cfe1d2;border-radius:999px;background:#ffffffa8;color:#557b61;font-size:9px}.ch-heading h1{color:#104b3e}.ch-heading p:not(.ch-kicker){color:#607369;line-height:1.6}@media(max-width:700px){.ch-heading{min-height:0;padding:22px 20px;border-radius:20px}.ch-heading:after{right:-210px;top:-185px}}`;
   style.textContent += `.ch-page{max-width:1260px;margin-inline:auto}`;
+  style.textContent += `
+    .ch-mobile-back{display:none}
+    @media(max-width:700px){
+      #app .ch-heading{min-height:0;margin-bottom:14px;padding:17px 18px;border-radius:18px}
+      #app .ch-heading h1{font-size:27px}
+      #app .ch-heading p:not(.ch-kicker){margin-top:5px;font-size:12px}
+      #app .ch-layout{height:calc(100dvh - 300px);min-height:420px;max-height:680px;display:flex;flex-direction:column;border-radius:20px}
+      #app .ch-inbox{width:100%;max-height:none;min-height:0;flex:1;border:0}
+      #app .ch-inbox-head{padding:16px 16px 12px}
+      #app .ch-search{height:44px;margin:0 14px 10px;border-radius:13px}
+      #app .ch-search input{font-size:16px}
+      #app .ch-chat-list{flex:1;padding:0 10px 12px}
+      #app .ch-chat-item{min-height:70px;margin:3px 0;padding:11px 12px;border-radius:14px}
+      #app .ch-chat-copy strong{font-size:13px}
+      #app .ch-chat-copy small{font-size:11px}
+      #app .ch-conversation{display:none;min-height:0;flex:1}
+      #app .ch-layout.ch-has-selection:not(.ch-show-inbox) .ch-inbox{display:none}
+      #app .ch-layout.ch-has-selection:not(.ch-show-inbox) .ch-conversation{display:flex}
+      #app .ch-layout:not(.ch-has-selection) .ch-conversation{display:none}
+      #app .ch-person{min-height:64px;padding:10px 13px;gap:10px}
+      #app .ch-mobile-back{width:38px;height:38px;flex:none;padding:0;border:0;border-radius:12px;display:grid;place-items:center;background:#f0f5eb;color:#234b3c}
+      #app .ch-mobile-back svg{width:19px;height:19px;transform:rotate(180deg)}
+      #app .ch-person .ch-avatar{width:40px;height:40px}
+      #app .ch-person strong{font-size:13px}
+      #app .ch-person small{font-size:10px}
+      #app .ch-messages{max-height:none;min-height:0;flex:1;padding:16px 13px;gap:12px}
+      #app .ch-bubble{max-width:88%;padding:11px 13px}
+      #app .ch-bubble p{font-size:13px}
+      #app .ch-compose{padding:10px 12px max(10px,env(safe-area-inset-bottom));gap:8px}
+      #app .ch-compose input{height:46px;padding-inline:15px;border-radius:999px;font-size:16px}
+      #app .ch-compose .fi-button{min-width:70px;min-height:46px;padding:0 15px;border-radius:999px}
+    }
+    @media(max-width:380px){
+      #app .ch-layout{height:calc(100dvh - 280px);min-height:390px}
+      #app .ch-person{padding-inline:10px;gap:8px}
+      #app .ch-person small{font-size:9px}
+    }
+  `;
   document.head.append(style);
 }
