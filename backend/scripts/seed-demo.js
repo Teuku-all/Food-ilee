@@ -17,7 +17,7 @@ async function resetDemoData() {
     await tx.wasteProduct.deleteMany();
     await tx.store.deleteMany();
     await tx.user.deleteMany();
-  });
+  }, { timeout: 30000 });
 }
 
 async function main() {
