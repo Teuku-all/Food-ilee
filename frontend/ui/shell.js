@@ -2,6 +2,7 @@ import { getCachedCurrentUser, getCurrentUser } from '../services/user.js';
 import { removeToken } from '../utils/storage.js';
 import { escapeHtml } from '../utils/html.js';
 import { applyTranslations, getLanguage } from '../utils/i18n.js';
+import { showToast as showToastOverlay } from '../utils/toast.js';
 import { brandImage, icon } from './icons.js';
 
 const links = [
@@ -225,12 +226,7 @@ function applyAccountUser(user) {
 }
 
 export function showToast(message, type = 'success') {
-  const toast = document.createElement('div');
-  toast.className = `fi-toast${type === 'error' ? ' error' : ''}`;
-  toast.setAttribute('role', 'status');
-  toast.textContent = message;
-  document.body.append(toast);
-  window.setTimeout(() => toast.remove(), 3600);
+  showToastOverlay(message, type);
 }
 
 export function formatRupiah(value) {

@@ -147,7 +147,6 @@ export const additionalEnglish = {
   'Lokasi toko belum dapat dimuat.': 'Store location could not be loaded.',
   'lokasi Anda': 'your location',
   'lokasi terakhir': 'last location',
-  'Contoh banner promosi': 'Sample promotional banner',
   'Sisa pangan punya nilai baru': 'Food scraps have new value',
   'Dari alam, kembali bermanfaat.': 'From nature, useful again.',
   'Jadikan bahan organik lebih bermanfaat. Temukan pilihan untuk pakan ternak dan kompos di marketplace.':

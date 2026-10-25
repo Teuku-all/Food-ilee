@@ -3,7 +3,6 @@ export function marketplacePromoBanner() {
   return `
     <section class="mp-promo" aria-labelledby="mp-promo-title">
       <div class="mp-promo-copy">
-        <span class="mp-promo-label"><span aria-hidden="true"></span>Contoh banner promosi</span>
         <h2 id="mp-promo-title">Beri sisa pangan<br><span>kesempatan kedua.</span></h2>
         <p>Jadikan bahan organik lebih bermanfaat. Temukan pilihan untuk pakan ternak dan kompos di marketplace.</p>
         <button type="button" class="mp-promo-cta" id="mp-promo-explore">Jelajahi produk <span aria-hidden="true">↗</span></button>
@@ -29,8 +28,6 @@ export function injectMarketplacePromoStyle() {
       transition:transform 300ms cubic-bezier(.2,.7,.2,1),box-shadow 300ms ease;
     }
     .mp-promo-copy{position:relative;z-index:1;padding:34px 40px 36px}
-    .mp-promo-label{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid #a8d4b54d;border-radius:999px;background:#ffffff0b;color:#d8ecca;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
-    .mp-promo-label>span{width:6px;height:6px;flex:none;border-radius:50%;background:#c6ec9d}
     .mp-promo h2{margin:18px 0 12px;color:#fff;font-size:clamp(28px,3vw,40px);font-weight:650;letter-spacing:-1.2px;line-height:1.14}
     .mp-promo h2>span{color:#c6ec9d}
     .mp-promo-copy>p{max-width:390px;margin:0;color:#d2e4dc;font-size:14px;line-height:1.7}

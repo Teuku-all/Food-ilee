@@ -152,7 +152,6 @@ html, body { background: var(--fi-paper); }
 #app .mp-promo-copy { padding:38px 40px; }
 #app .mp-promo h2 { font-size:clamp(30px,3.2vw,44px); font-weight:500; letter-spacing:-.045em; }
 #app .mp-promo h2 > span { color:#cfdbb7; font-family:Georgia,serif; font-style:italic; }
-#app .mp-promo-label { background:transparent; border:0; padding:0; font-size:9px; color:#b6c8a9; }
 #app .mp-promo-cta { border-radius:11px; background:#e4ebd2; border-color:#e4ebd2; color:#284937; }
 #app .mp-promo-visual::after { background:linear-gradient(90deg,#234b3c,transparent 30%),linear-gradient(0deg,#183d3266,transparent); }
 #app .mp-results-head { background:none; box-shadow:none; border:0; border-radius:0; padding:16px 0 24px; border-bottom:1px solid var(--fi-border); }

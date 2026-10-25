@@ -264,12 +264,16 @@ export async function renderMarketplace() {
       const distance = marketplaceLocation
         ? `<br><small>${distanceInKm(marketplaceLocation, store).toFixed(1)} km dari lokasi Anda</small>`
         : '';
-      leaflet.circleMarker(point, {
-        radius: 8,
-        color: '#fff',
-        weight: 2,
-        fillColor: '#235347',
-        fillOpacity: 1,
+      leaflet.marker(point, {
+        icon: leaflet.divIcon({
+          className: 'mp-store-map-marker',
+          html: `<span>${icon('store')}</span>`,
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+          popupAnchor: [0, -18],
+        }),
+        title: store.name || 'Toko Food Ilee',
+        alt: store.name || 'Lokasi toko',
       })
         .bindPopup(`<strong>${escapeHtml(store.name || 'Toko Food Ilee')}</strong><br>${escapeHtml(store.location || 'Lokasi toko')}${distance}`)
         .addTo(marketplaceStoreLayer);
@@ -830,6 +834,9 @@ function injectMarketplaceExperienceStyles() {
     .mp-map-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 2px 10px}
     .mp-map-heading span{color:#718074;font-size:11px}
     .mp-store-map{height:350px;overflow:hidden;border-radius:14px;background:#e8efeb}
+    .mp-store-map-marker{border:0;background:transparent}
+    .mp-store-map-marker span{box-sizing:border-box;width:36px;height:36px;border:2px solid #fff;border-radius:13px;display:grid;place-items:center;background:#235347;color:#fff;box-shadow:0 3px 10px #16383255}
+    .mp-store-map-marker .fi-icon{width:20px;height:20px;stroke:currentColor}
     @media(max-width:640px){.mp-location-panel{align-items:stretch;flex-direction:column;padding:15px}.mp-location-controls{align-items:flex-end}.mp-location-controls label{flex:1}.mp-location-controls select{width:100%}.mp-use-location{padding:0 10px}.mp-store-map{height:300px}.mp-map-heading{align-items:flex-start;flex-direction:column;gap:4px}}
     @media(max-width:760px){.mp-app .mp-results-head{align-items:flex-start;flex-direction:column;gap:15px;margin:26px 0 16px;padding:18px;border-radius:19px}.mp-app .mp-results-head h2{font-size:21px}.mp-app .mp-sort-label{box-sizing:border-box;width:100%}.mp-app .mp-sort-copy{flex:1;display:flex;align-items:center;justify-content:space-between;gap:12px}.mp-app .mp-sort-label select{min-width:0}}
     @media(max-width:380px){.mp-app .mp-results-title-row{align-items:flex-start;flex-direction:column;gap:7px}.mp-app .mp-results-head h2{font-size:20px}.mp-app .mp-results-help{max-width:260px}}
