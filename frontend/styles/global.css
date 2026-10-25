@@ -11,7 +11,7 @@
 html,
 body {
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   font-family: Arial, sans-serif;
   background: #DAF1DE;
   color: #1f2937;

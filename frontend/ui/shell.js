@@ -16,13 +16,18 @@ const links = [
 export { icon };
 
 let shellRenderVersion = 0;
+let lastMobileNavIndex = -1;
+let lastMobileNavKind = '';
+let mobileNavObserver;
+let mobileNavIndicator;
+let mobileNavRootObserver;
 
 export function dashboardHeader(active = '') {
   const currentRoute = location.hash || '#dashboard';
   const nav = links
     .map(([label, href, key]) => {
       const isActive = active ? active === key : currentRoute === href;
-      return `<a class="fi-nav-link${isActive ? ' is-active' : ''}" href="${href}"${isActive ? ' aria-current="page"' : ''}>${icon(key)}<span>${label}</span></a>`;
+      return `<a class="fi-nav-link${isActive ? ' is-active' : ''}" href="${href}" aria-label="${label}"${isActive ? ' aria-current="page"' : ''}>${icon(key)}<span>${label}</span></a>`;
     })
     .join('');
   const accountLinks = [
@@ -118,6 +123,8 @@ export function injectShellStyles() {
   document.head.append(stylesheet);
 }
 export function bindShell(version = shellRenderVersion) {
+  bindHeaderScroll();
+  bindMobileNav();
   updateCartBadge();
   if (!document.documentElement.dataset.fiCartBound) {
     window.addEventListener('foodilee:cart-updated', updateCartBadge);
@@ -166,6 +173,102 @@ export function bindShell(version = shellRenderVersion) {
   }
   applyTranslations(document.getElementById('app'), getLanguage());
   hydrateAccount(version);
+}
+
+export function bindMobileNav() {
+  mobileNavObserver?.disconnect();
+  const nav = document.querySelector('#app .fi-header .fi-nav');
+  if (!nav) return;
+  const links = [...nav.querySelectorAll('.fi-nav-link')];
+  const kind = nav.closest('.landing-page') ? 'landing' : 'app';
+  if (!mobileNavIndicator) {
+    mobileNavIndicator = document.createElement('span');
+    mobileNavIndicator.className = 'fi-nav-indicator';
+    mobileNavIndicator.setAttribute('aria-hidden', 'true');
+    document.body.append(mobileNavIndicator);
+  }
+  const indicator = mobileNavIndicator;
+  if (!mobileNavRootObserver) {
+    mobileNavRootObserver = new MutationObserver(() => {
+      if (!document.querySelector('#app .fi-header .fi-nav')) indicator.classList.remove('is-visible');
+    });
+    mobileNavRootObserver.observe(document.getElementById('app'), { childList: true });
+  }
+  let currentIndex = lastMobileNavKind === kind ? lastMobileNavIndex : -1;
+  if (lastMobileNavKind !== kind) {
+    indicator.getAnimations().forEach((animation) => animation.cancel());
+    lastMobileNavIndex = -1;
+  }
+  lastMobileNavKind = kind;
+
+  const update = () => {
+    if (!nav.isConnected) return;
+    const index = links.findIndex((link) => link.classList.contains('is-active') || link.hasAttribute('aria-current'));
+    if (index < 0) {
+      indicator.classList.remove('is-visible');
+      return;
+    }
+    const link = links[index];
+    const navRect = nav.getBoundingClientRect();
+    const linkRect = link.getBoundingClientRect();
+    const target = linkRect.left + linkRect.width / 2;
+    const previous = indicator.classList.contains('is-visible')
+      ? indicator.getBoundingClientRect().left + indicator.getBoundingClientRect().width / 2
+      : target;
+    indicator.style.left = `${target}px`;
+    indicator.style.top = `${navRect.top - 11}px`;
+    indicator.innerHTML = link.querySelector('.fi-icon')?.outerHTML || link.querySelector('svg')?.outerHTML || '';
+    indicator.classList.add('is-visible');
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) indicator.getAnimations().forEach((animation) => animation.cancel());
+    if (currentIndex >= 0 && currentIndex !== index && !reducedMotion) {
+      const offset = previous - target;
+      indicator.getAnimations().forEach((animation) => animation.cancel());
+      indicator.animate(
+        [
+          { transform: `translateX(calc(-50% + ${offset}px)) scale(.92)`, opacity: .9 },
+          { transform: 'translateX(-50%) scale(1.05)', opacity: 1, offset: .78 },
+          { transform: 'translateX(-50%) scale(1)', opacity: 1 },
+        ],
+        { duration: 460, easing: 'cubic-bezier(.32, .72, .25, 1)' },
+      );
+    }
+    currentIndex = index;
+    lastMobileNavIndex = index;
+  };
+
+  update();
+  mobileNavObserver = new MutationObserver(update);
+  links.forEach((link) => mobileNavObserver.observe(link, { attributes: true, attributeFilter: ['class', 'aria-current'] }));
+  if (document.documentElement.dataset.fiNavResizeBound !== 'true') {
+    window.addEventListener('resize', () => {
+      const active = document.querySelector('#app .fi-header .fi-nav .fi-nav-link:is(.is-active, [aria-current])');
+      const bubble = mobileNavIndicator;
+      if (!active || !bubble) return;
+      const navBox = active.closest('.fi-nav').getBoundingClientRect();
+      const linkBox = active.getBoundingClientRect();
+      bubble.style.left = `${linkBox.left + linkBox.width / 2}px`;
+      bubble.style.top = `${navBox.top - 11}px`;
+    }, { passive: true });
+    document.documentElement.dataset.fiNavResizeBound = 'true';
+  }
+}
+
+export function bindHeaderScroll() {
+  const update = () => document.querySelector('#app .fi-header')?.classList.toggle('is-scrolled', window.scrollY > 12);
+  if (!document.documentElement.dataset.fiHeaderScrollBound) {
+    let frame = 0;
+    window.addEventListener('scroll', () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        update();
+      });
+    }, { passive: true });
+    document.documentElement.dataset.fiHeaderScrollBound = 'true';
+  }
+  update();
 }
 
 function updateCartBadge() {

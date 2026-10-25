@@ -1,4 +1,5 @@
 ﻿import { additionalEnglish } from './translations-en.js';
+import { transitionLanguage } from './language-motion.js';
 const LANGUAGE_KEY = 'foodilee_language';
 
 const english = Object.freeze({
@@ -302,6 +303,8 @@ export function translate(text, language = getLanguage()) {
 }
 
 const dynamicTranslations = [
+  [/^(\d+) produk$/, '$1 products'],
+  [/^Pesanan #(.+)$/, 'Order #$1'],
   [/^(\d+) produk tersedia$/, '$1 products available'],
   [/^(\d+) transaksi$/, (_, count) => `${count} ${count === '1' ? 'order' : 'orders'}`],
   [/^tersedia (.+) kg$/, '$1 kg available'],
@@ -389,8 +392,10 @@ export function getLanguage() {
   }
 }
 
-export function setLanguage(language) {
-  const selected = language === 'en' ? 'en' : 'id';
+let requestedLanguage;
+let languageChange;
+
+function commitLanguage(selected) {
   selectedLanguage = selected;
   try {
     localStorage.setItem(LANGUAGE_KEY, selected);
@@ -404,6 +409,20 @@ export function setLanguage(language) {
   );
   updateLanguageButtons(selected);
   watchTranslations();
+}
+
+export function setLanguage(language) {
+  requestedLanguage = language === 'en' ? 'en' : 'id';
+  if (languageChange) return languageChange;
+  if (requestedLanguage === getLanguage()) return Promise.resolve();
+  languageChange = (async () => {
+    while (requestedLanguage !== getLanguage()) {
+      await transitionLanguage(() => {
+        if (requestedLanguage !== getLanguage()) commitLanguage(requestedLanguage);
+      });
+    }
+  })().finally(() => { languageChange = null; });
+  return languageChange;
 }
 
 export function applyTranslations(root = document.getElementById('app'), language = getLanguage()) {

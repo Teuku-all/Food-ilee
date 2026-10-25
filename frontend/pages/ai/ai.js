@@ -11,15 +11,39 @@ const prompts = [
   'Limbah apa yang cocok untuk pakan ternak?',
 ];
 const historyKey = () => `foodilee_ai_conversation_v1:${getLanguage()}`;
+const pendingConversations = new Map();
 
 window.addEventListener('foodilee:language-changed', () => {
-  if (location.hash === '#tanya-ai') renderAI();
+  if (location.hash !== '#tanya-ai') return;
+  const input = document.getElementById('ai-input');
+  const draft = input?.value || '';
+  const selection = input ? [input.selectionStart, input.selectionEnd] : null;
+  const focused = document.activeElement;
+  const menuOpen = document.querySelector('.fi-account-menu')?.classList.contains('open');
+  renderAI();
+  const nextInput = document.getElementById('ai-input');
+  if (nextInput) {
+    nextInput.value = draft;
+    if (selection) nextInput.setSelectionRange(...selection);
+  }
+  if (menuOpen) {
+    document.querySelector('.fi-account-menu')?.classList.add('open');
+    document.querySelector('.fi-account-menu')?.setAttribute('aria-hidden', 'false');
+    document.querySelector('.fi-account-toggle')?.setAttribute('aria-expanded', 'true');
+  }
+  const choice = focused?.dataset.languageChoice;
+  const nextFocus = choice
+    ? document.querySelector(`[data-language-choice="${choice === 'en' ? 'en' : 'id'}"]`)
+    : focused?.id ? document.getElementById(focused.id) : null;
+  nextFocus?.focus({ preventScroll: true });
 });
 
 export function renderAI() {
+  const conversationKey = historyKey();
+  const pending = pendingConversations.get(conversationKey);
   let history;
   try {
-    history = JSON.parse(sessionStorage.getItem(historyKey()) || '[]');
+    history = pending?.history || JSON.parse(sessionStorage.getItem(conversationKey) || '[]');
   } catch {
     history = [];
   }
@@ -29,6 +53,12 @@ export function renderAI() {
   );
   injectAIStyles();
   const messages = document.getElementById('ai-messages');
+  if (pending) {
+    messages.insertAdjacentHTML('beforeend', '<div class="ai-typing"><i></i><i></i><i></i><span>Menyiapkan jawaban…</span></div>');
+    document.querySelectorAll('[data-prompt]').forEach((button) => { button.disabled = true; });
+    document.getElementById('ai-clear').disabled = true;
+    document.querySelector('#ai-form button').disabled = true;
+  }
   if (history.length) messages.scrollTop = messages.scrollHeight;
   document
     .querySelectorAll('[data-prompt]')
@@ -73,6 +103,7 @@ async function submitPrompt(text) {
     history = [];
   }
   history.push({ role: 'user', text: question });
+  pendingConversations.set(conversationKey, { history });
   messages.innerHTML =
     history.map(messageMarkup).join('') +
     '<div class="ai-typing"><i></i><i></i><i></i><span>Menyiapkan jawaban…</span></div>';
@@ -88,26 +119,29 @@ async function submitPrompt(text) {
         ? result.data
         : result.data?.response || result.data?.message || JSON.stringify(result.data);
     history.push({ role: 'assistant', text: answer });
-    sessionStorage.setItem(conversationKey, JSON.stringify(history));
-    if (!messages.isConnected) return;
-    messages.innerHTML = history.map(messageMarkup).join('');
-    messages.scrollTop = messages.scrollHeight;
   } catch (error) {
-    if (!messages.isConnected) return;
     history.push({
       role: 'assistant',
       text: error.message || 'Koneksi ke asisten terputus. Silakan coba lagi.',
     });
-    messages.innerHTML = history.map(messageMarkup).join('');
-    messages.scrollTop = messages.scrollHeight;
-    showToast(error.message || 'Asisten belum dapat menjawab.', 'error');
+    if (location.hash === '#tanya-ai' && historyKey() === conversationKey)
+      showToast(error.message || 'Asisten belum dapat menjawab.', 'error');
   } finally {
-    promptButtons.forEach((button) => {
-      if (button.isConnected) button.disabled = false;
-    });
-    if (clearButton?.isConnected) clearButton.disabled = false;
-    if (send?.isConnected) send.disabled = false;
-    if (input?.isConnected) input.focus();
+    sessionStorage.setItem(conversationKey, JSON.stringify(history));
+    pendingConversations.delete(conversationKey);
+    if (location.hash === '#tanya-ai' && historyKey() === conversationKey) {
+      const visibleMessages = document.getElementById('ai-messages');
+      if (visibleMessages) {
+        visibleMessages.innerHTML = history.map(messageMarkup).join('');
+        visibleMessages.scrollTop = visibleMessages.scrollHeight;
+      }
+      document.querySelectorAll('[data-prompt]').forEach((button) => { button.disabled = false; });
+      const visibleClear = document.getElementById('ai-clear');
+      const visibleSend = document.querySelector('#ai-form button');
+      if (visibleClear) visibleClear.disabled = false;
+      if (visibleSend) visibleSend.disabled = false;
+      if (input?.isConnected) input.focus();
+    }
   }
 }
 

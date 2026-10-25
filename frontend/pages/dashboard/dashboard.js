@@ -50,18 +50,94 @@ export async function renderDashboard() {
     (order) => !['completed', 'cancelled'].includes(order.status),
   ).length;
   const welcome = user.name || user.username || user.email?.split('@')[0] || 'Pengguna';
-  renderShell(
-    '',
-    `<section class="db-page"><div class="db-heading"><div><p class="db-kicker">RUANG KERJA FOOD ILEE</p><h1>Selamat datang, ${escapeHtml(welcome)}</h1><p>Kelola penawaran dan pantau perjalanan sirkularitas Anda.</p></div><div class="db-heading-actions"><a class="fi-button fi-button-outline" href="#marketplace">Jelajahi Marketplace</a><a class="fi-button" href="#tambah-limbah">+ Tambah Limbah</a></div></div><div class="db-stats"><article class="db-stat db-stat-green"><span class="db-stat-icon">↻</span><p>Total produk</p><strong>${products.length}</strong></article><article class="db-stat"><span class="db-stat-icon accent">${icon('compost')}</span><p>Stok tersedia</p><strong>${stock.toLocaleString('id-ID')} <small>kg</small></strong></article><article class="db-stat"><span class="db-stat-icon mint">${icon('orders')}</span><p>Pesanan berjalan</p><strong>${ordersAvailable ? openOrders : '--'}</strong>${ordersAvailable ? '' : '<small>Data pesanan sementara tidak tersedia</small>'}</article></div>${openOrders ? `<a class="db-priority" href="#transaksi"><span class="db-priority-icon">${icon('orders')}</span><span><strong>${openOrders} pesanan sedang berjalan</strong><small>Buka transaksi untuk memantau status pesanan.</small></span><span class="db-priority-arrow">${icon('arrow')}</span></a>` : ""}<section class="db-listing"><div class="db-listing-head"><div><p class="db-kicker">ETALASE SAYA</p><h2>Produk yang Anda tawarkan</h2></div><a class="db-view-all" href="#marketplace">Lihat marketplace <span>↗</span></a></div>${products.length ? `<div class="db-product-grid">${products.slice(0, 6).map(productCard).join('')}</div>` : `<div class="db-empty fi-card"><span>＋</span><h3>Etalase Anda siap dimulai</h3><p>Tambahkan limbah organik pertama dan hubungkan dengan calon pemanfaat.</p><a class="fi-button" href="#tambah-limbah">Tambah penawaran</a></div>`}</section></section>`,
-  );
+  renderShell('', dashboardWorkspace({ welcome, products, orders, stock, openOrders, ordersAvailable }));
   injectDashboardStyles();
-  const overviewIcon = document.querySelector('.db-stat-green .db-stat-icon');
-  if (overviewIcon) overviewIcon.innerHTML = icon('recycle');
   bindProductActions(products);
 }
 
+function dashboardWorkspace({ welcome, products, orders, stock, openOrders, ordersAvailable }) {
+  const feedCount = products.filter((product) => product.category !== 'Kompos').length;
+  const compostCount = products.length - feedCount;
+  const completedOrders = orders.filter((order) => order.status === 'completed').length;
+  const cancelledOrders = orders.filter((order) => order.status === 'cancelled').length;
+  const orderProgress = orders.length ? Math.round((completedOrders / orders.length) * 100) : 0;
+  const activeOrders = orders.filter((order) => !['completed', 'cancelled'].includes(order.status)).slice(0, 2);
+  const feedWidth = products.length ? Math.round((feedCount / products.length) * 100) : 0;
+  const compostWidth = products.length ? Math.round((compostCount / products.length) * 100) : 0;
+
+  return `<section class="db-page db-workspace">
+    <aside class="db-rail" aria-label="Menu dashboard">
+      <a class="db-rail-brand" href="#dashboard">${icon('recycle')}<span>Food Ilee<small>RUANG KERJA</small></span></a>
+      <nav class="db-rail-nav" aria-label="Navigasi dashboard">
+        <span class="db-rail-label">MENU UTAMA</span>
+        <a class="is-current" href="#dashboard" aria-current="page">${icon('home')}<span>Dashboard</span></a>
+        <a href="#marketplace">${icon('market')}<span>Marketplace</span></a>
+        <a href="#tambah-limbah">${icon('add')}<span>Tambah Limbah</span></a>
+        <a href="#transaksi">${icon('orders')}<span>Transaksi</span></a>
+        <a href="#chat">${icon('chat')}<span>Pesan</span></a>
+      </nav>
+      <nav class="db-rail-nav db-rail-secondary" aria-label="Akun dan bantuan">
+        <span class="db-rail-label">AKUN</span>
+        <a href="#profil">${icon('profile')}<span>Profil Anda</span></a>
+        <a href="#panduan">${icon('guide')}<span>Panduan</span></a>
+      </nav>
+      <div class="db-rail-note">${icon('leaf')}<span>Setiap sisa punya kesempatan kedua.</span></div>
+    </aside>
+    <div class="db-main">
+      <header class="db-welcome">
+        <div><p class="db-kicker">RUANG KERJA FOOD ILEE</p><h1>Selamat datang, ${escapeHtml(welcome)}</h1><p>Kelola penawaran dan pantau perjalanan sirkularitas Anda.</p></div>
+        <div class="db-welcome-actions"><a class="db-market-link" href="#marketplace">Jelajahi Marketplace</a><a class="fi-button db-create" href="#tambah-limbah">${icon('add')}<span>Tambah Limbah</span></a></div>
+      </header>
+      <div class="db-overview-grid">
+        <section class="db-panel db-overall" aria-labelledby="db-overall-title">
+          <div class="db-panel-head"><h2 id="db-overall-title">Ringkasan keseluruhan</h2>${icon('recycle')}</div>
+          <div class="db-overall-lead"><strong>${products.length}</strong><span>produk yang<br>Anda tawarkan</span></div>
+          <div class="db-overall-rule"></div>
+          <div class="db-summary-metrics">
+            <div><span>${icon('market')}</span><strong>${products.length}</strong><small>Total produk</small></div>
+            <div><span>${icon('compost')}</span><strong>${stock.toLocaleString('id-ID')}</strong><small>Stok tersedia · kg</small></div>
+            <div><span>${icon('orders')}</span><strong>${ordersAvailable ? openOrders : '—'}</strong><small>Pesanan berjalan</small></div>
+          </div>
+        </section>
+        <section class="db-panel db-category-panel" aria-labelledby="db-category-title">
+          <div class="db-panel-head"><div><h2 id="db-category-title">Komposisi penawaran</h2><p>Produk menurut kategori</p></div>${icon('market')}</div>
+          <div class="db-category-chart"><div class="db-category-bar"><span style="width:${feedWidth}%"></span><i style="width:${compostWidth}%"></i></div><div class="db-category-scale"><span>0</span><span>${products.length} produk</span></div></div>
+          <div class="db-category-legend"><div><i></i><span>Pakan Ternak</span><strong>${feedCount}</strong></div><div><i></i><span>Kompos</span><strong>${compostCount}</strong></div></div>
+          <a href="#marketplace" class="db-panel-link">Lihat marketplace ${icon('arrow')}</a>
+        </section>
+        <section class="db-panel db-order-panel" aria-labelledby="db-order-title">
+          <div class="db-panel-head"><div><h2 id="db-order-title">Status pesanan</h2><p>Ringkasan transaksi Anda</p></div>${icon('orders')}</div>
+          <div class="db-order-visual"><div class="db-order-ring" style="--db-progress:${orderProgress}%"><span><strong>${ordersAvailable ? orders.length : '—'}</strong><small>pesanan</small></span></div><div class="db-order-legend"><div><i></i><span>Selesai</span><strong>${ordersAvailable ? completedOrders : '—'}</strong></div><div><i></i><span>Berjalan</span><strong>${ordersAvailable ? openOrders : '—'}</strong></div><div><i></i><span>Dibatalkan</span><strong>${ordersAvailable ? cancelledOrders : '—'}</strong></div></div></div>
+          <a href="#transaksi" class="db-panel-link">Lihat transaksi ${icon('arrow')}</a>
+        </section>
+      </div>
+      <div class="db-action-grid">
+        <section class="db-panel db-quick-panel" aria-labelledby="db-quick-title">
+          <div class="db-panel-head"><h2 id="db-quick-title">Langkah berikutnya</h2>${icon('guide')}</div>
+          <div class="db-quick-list">
+            <a href="#profil"><span>${icon('profile')}</span><span>Lengkapi profil<small>Buat akun Anda lebih mudah dikenali.</small></span>${icon('arrow')}</a>
+            <a href="#tambah-limbah"><span>${icon('add')}</span><span>Tambah penawaran<small>Bagikan bahan organik yang tersedia.</small></span>${icon('arrow')}</a>
+            <a href="#transaksi"><span>${icon('orders')}</span><span>Pantau transaksi<small>Lihat perkembangan pesanan Anda.</small></span>${icon('arrow')}</a>
+          </div>
+        </section>
+        <section class="db-activity" aria-labelledby="db-activity-title">
+          <div class="db-activity-head"><div><p class="db-kicker">AKTIVITAS</p><h2 id="db-activity-title">Pesanan dalam proses <span>(${ordersAvailable ? openOrders : '—'})</span></h2></div><a href="#transaksi">Lihat semua ${icon('arrow')}</a></div>
+          <div class="db-activity-grid">${activeOrders.length ? activeOrders.map(recentOrderCard).join('') : `<a class="db-activity-card db-activity-empty" href="#transaksi">${icon('orders')}<strong>${ordersAvailable ? 'Belum ada pesanan berjalan' : 'Data pesanan belum tersedia'}</strong><small>${ordersAvailable ? 'Transaksi baru akan tampil di sini.' : 'Buka halaman transaksi untuk mencoba lagi.'}</small></a>`}<a class="db-add-card" href="#tambah-limbah">${icon('add')}<span>Tambah penawaran</span></a></div>
+        </section>
+      </div>
+      <section class="db-listing"><div class="db-listing-head"><div><p class="db-kicker">ETALASE SAYA</p><h2>Produk yang Anda tawarkan</h2></div><a class="db-view-all" href="#marketplace">Lihat marketplace ${icon('arrow')}</a></div>${products.length ? `<div class="db-product-grid">${products.slice(0, 6).map(productCard).join('')}</div>` : `<div class="db-empty fi-card"><span>${icon('add')}</span><h3>Etalase Anda siap dimulai</h3><p>Tambahkan limbah organik pertama dan hubungkan dengan calon pemanfaat.</p><a class="fi-button" href="#tambah-limbah">Tambah penawaran</a></div>`}</section>
+    </div>
+  </section>`;
+}
+
+function recentOrderCard(order) {
+  const statusLabels = { pending: 'Menunggu Pembayaran', processing: 'Diproses', shipped: 'Dikirim', payment_review: 'Sedang ditinjau' };
+  const id = String(order.id || '').slice(-6).toUpperCase() || '—';
+  return `<a class="db-activity-card" href="#transaksi"><span class="db-activity-icon">${icon('orders')}</span><strong>Pesanan #${escapeHtml(id)}</strong><small>${escapeHtml(statusLabels[order.status] || order.status || 'Dalam proses')}</small><span class="db-activity-arrow">${icon('arrow')}</span></a>`;
+}
+
 function dashboardLoadingSkeleton() {
-  return `<section class="db-page" aria-busy="true"><div class="db-heading"><div>${skeleton('145px', '10px')}<div style="height:12px"></div>${skeleton('min(370px, 90vw)', '35px')}<div style="height:9px"></div>${skeleton('min(460px, 90vw)', '14px')}</div><div class="db-heading-actions">${skeleton('145px', '42px', 'pill')}</div></div><div class="db-stats">${Array.from({ length: 3 }, () => `<article class="db-stat">${skeleton('95px', '11px')}<div style="height:15px"></div>${skeleton('65px', '33px')}</article>`).join('')}</div><section class="db-listing"><div class="db-listing-head">${skeleton('190px', '22px')}</div><div class="db-product-grid">${Array.from({ length: 3 }, () => `<article class="db-product fi-card">${skeleton('100%', '145px')}<div class="db-product-body">${skeleton('80px', '18px', 'pill')}<div style="height:12px"></div>${skeleton('70%', '17px')}</div></article>`).join('')}</div></section></section>`;
+  return `<section class="db-page db-workspace" aria-busy="true"><aside class="db-rail db-rail-loading" aria-hidden="true">${skeleton('120px', '28px')}<div style="height:34px"></div>${Array.from({ length: 5 }, () => `<div style="margin:12px 0">${skeleton('100%', '24px')}</div>`).join('')}</aside><div class="db-main"><div class="db-welcome">${skeleton('200px', '34px')}<div style="height:10px"></div>${skeleton('300px', '14px')}</div><div class="db-overview-grid">${Array.from({ length: 3 }, () => `<div class="db-panel db-panel-loading">${skeleton('55%', '18px')}<div style="height:25px"></div>${skeleton('70%', '80px')}</div>`).join('')}</div><div class="db-action-grid">${Array.from({ length: 2 }, () => `<div class="db-panel db-panel-loading">${skeleton('55%', '18px')}<div style="height:24px"></div>${skeleton('90%', '95px')}</div>`).join('')}</div><section class="db-listing"><div class="db-listing-head">${skeleton('190px', '22px')}</div><div class="db-product-grid">${Array.from({ length: 3 }, () => `<article class="db-product fi-card">${skeleton('100%', '145px')}<div class="db-product-body">${skeleton('80px', '18px', 'pill')}<div style="height:12px"></div>${skeleton('70%', '17px')}</div></article>`).join('')}</div></section></div></section>`;
 }
 
 function productCard(product) {
