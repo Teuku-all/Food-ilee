@@ -10,6 +10,28 @@ import { escapeHtml } from '../../utils/html.js';
 import { formatRupiah, icon, renderShell, showToast } from '../../ui/shell.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { skeleton } from '../../ui/skeleton.js';
+import { cropSquareImage } from '../../utils/image-crop.js';
+import { bindRegionAddress } from '../../utils/region-address.js';
+import { mountLocationPicker, validCoordinates } from '../../utils/location-map.js';
+
+const SHIPPING_ADDRESS_KEY = 'foodilee_shipping_address';
+
+function savedShippingAddress() {
+  try {
+    const address = JSON.parse(localStorage.getItem(SHIPPING_ADDRESS_KEY) || 'null');
+    return address && typeof address === 'object' && !Array.isArray(address) ? address : {};
+  } catch {
+    return {};
+  }
+}
+
+function renderShippingAddress(address) {
+  const hasAddress = Boolean(address.recipientName || address.details);
+  const region = [address.village, address.district, address.city, address.province].filter(Boolean).join(', ');
+  return `<section class="pr-address-card fi-card"><div><p class="pr-kicker">PENGIRIMAN</p><h2>Alamat tersimpan</h2><p class="pr-address-summary">${hasAddress
+    ? `${escapeHtml(address.recipientName || '')}${address.phone ? ` · ${escapeHtml(address.phone)}` : ''}<br>${escapeHtml(address.details || '')}${region ? `<br>${escapeHtml(region)}` : ''}${address.postalCode ? `<br>Kode pos ${escapeHtml(address.postalCode)}` : ''}`
+    : 'Belum ada alamat tersimpan. Tambahkan alamat agar lebih cepat saat checkout.'}</p></div><button class="fi-button fi-button-outline" type="button" data-edit-address>${hasAddress ? 'Ubah alamat' : 'Tambah alamat'}</button></section>`;
+}
 
 export async function renderProfile() {
   const navigationRevision = getNavigationRevision();
@@ -47,6 +69,8 @@ export async function renderProfile() {
       }</div></section></div><section class="pr-bottom-actions"><a class="fi-button fi-button-outline" href="#panduan">Jelajahi panduan</a><button class="fi-button pr-logout" type="button">Keluar dari akun</button></section></section>`,
     );
     injectProfileStyles();
+    document.querySelector('.pr-bottom-actions').insertAdjacentHTML('beforebegin', renderShippingAddress(savedShippingAddress()));
+    document.querySelector('[data-edit-address]').addEventListener('click', () => openEditAddress(savedShippingAddress()));
     document
       .querySelectorAll('[data-edit-profile]')
       .forEach((button) => button.addEventListener('click', () => openEditProfile(user)));
@@ -67,6 +91,100 @@ export async function renderProfile() {
 
 function profileLoadingSkeleton() {
   return `<section class="pr-page" aria-busy="true"><section class="pr-hero fi-card"><div class="pr-avatar">${skeleton('100%', '100%', 'circle')}</div><div class="pr-identity">${skeleton('150px', '25px')}<div style="height:10px"></div>${skeleton('min(360px, 90%)', '13px')}<div style="height:12px"></div>${skeleton('125px', '22px', 'pill')}</div>${skeleton('130px', '42px', 'pill')}</section><section class="pr-impact"><div class="pr-section-title"><div>${skeleton('90px', '10px')}<div style="height:8px"></div>${skeleton('190px', '22px')}</div></div><div class="pr-impact-grid">${Array.from({ length: 3 }, () => `<article class="pr-impact-card">${skeleton('34px', '34px', 'circle')}<div style="height:13px"></div>${skeleton('68px', '28px')}<div style="height:7px"></div>${skeleton('120px', '10px')}</article>`).join('')}</div></section><div class="pr-detail-grid">${Array.from({ length: 2 }, () => `<section>${skeleton('100px', '20px')}<div style="height:12px"></div><div class="pr-details fi-card">${Array.from({ length: 3 }, () => `<div>${skeleton('25px', '25px', 'circle')}<div style="flex:1">${skeleton('90px', '8px')}<div style="height:5px"></div>${skeleton('65%', '12px')}</div></div>`).join('')}</div></section>`).join('')}</div></section>`;
+}
+
+function openEditAddress(saved) {
+  const dialog = document.createElement('dialog');
+  dialog.className = 'pr-dialog pr-address-dialog';
+  dialog.innerHTML = `<form class="pr-dialog-card pr-address-form"><button class="pr-dialog-close" type="button" aria-label="Tutup">×</button><p class="pr-kicker">PENGIRIMAN</p><h2>${saved.recipientName ? 'Ubah alamat' : 'Tambah alamat'}</h2><p class="pr-dialog-intro">Alamat tersimpan di perangkat ini dan akan digunakan saat checkout.</p><div class="pr-address-fields"><label class="fi-label">Nama penerima<input class="fi-input" name="recipientName" value="${escapeHtml(saved.recipientName || '')}" required maxlength="100" autocomplete="name"></label><label class="fi-label">Nomor telepon<input class="fi-input" name="phone" value="${escapeHtml(saved.phone || '')}" required maxlength="20" inputmode="tel" autocomplete="tel"></label><label class="fi-label">Provinsi<select class="fi-input" id="profile-address-province" required><option value="">Pilih provinsi</option></select></label><label class="fi-label">Kabupaten/Kota<select class="fi-input" id="profile-address-city" required disabled><option value="">Pilih kabupaten/kota</option></select></label><label class="fi-label">Kecamatan<select class="fi-input" id="profile-address-district" required disabled><option value="">Pilih kecamatan</option></select></label><label class="fi-label">Desa/Kelurahan<select class="fi-input" id="profile-address-village" required disabled><option value="">Pilih desa/kelurahan</option></select></label><label class="fi-label">Nama jalan, nomor, RT/RW<input class="fi-input" id="profile-address-details" value="${escapeHtml(saved.details || '')}" required maxlength="240" placeholder="Contoh: Jl. Melati No. 10, RT 02/RW 01"></label><label class="fi-label">Kode pos<input class="fi-input" id="profile-address-postal" name="postalCode" value="${escapeHtml(saved.postalCode || '')}" required inputmode="numeric" pattern="[0-9]{5}" maxlength="5"></label><label class="fi-label pr-address-notes">Catatan untuk kurir (opsional)<input class="fi-input" name="notes" value="${escapeHtml(saved.notes || '')}" maxlength="200"></label></div><p class="pr-address-map-label">Titik lokasi penerima <small>Peta akan mengikuti kecamatan yang dipilih. Tandai lokasi yang sesuai alamat.</small></p><div id="profile-address-map" class="fi-location-map" role="application" aria-label="Peta alamat penerima"></div><div class="fi-map-controls"><button type="button" class="fi-button fi-button-outline" id="profile-address-locate">Gunakan lokasi perangkat</button><span id="profile-address-map-status" role="status">Pilih kecamatan untuk memuat peta.</span></div><input type="hidden" name="latitude"><input type="hidden" name="longitude"><p class="pr-address-error" role="alert"></p><div class="pr-dialog-actions"><button class="fi-button fi-button-outline" type="button" data-cancel>Batal</button><button class="fi-button" type="submit">Simpan alamat</button></div></form>`;
+  document.body.append(dialog);
+  dialog.showModal();
+  const form = dialog.querySelector('form');
+  const mapStatus = dialog.querySelector('#profile-address-map-status');
+  const regionAddressPromise = bindRegionAddress(form, 'profile-address', saved);
+  const mapPickerPromise = mountLocationPicker({
+    element: dialog.querySelector('#profile-address-map'),
+    latitudeInput: form.elements.latitude,
+    longitudeInput: form.elements.longitude,
+    status: mapStatus,
+    locateButton: dialog.querySelector('#profile-address-locate'),
+    initialLocation: saved,
+    initialArea: saved,
+    requireArea: true,
+  }).catch((error) => {
+    mapStatus.textContent = error.message;
+    return null;
+  });
+  const regionName = (level) => form.querySelector(`#profile-address-${level}`)?.selectedOptions[0]?.textContent?.trim() || '';
+  const updateAddressMapArea = async () => {
+    try {
+      const picker = await mapPickerPromise;
+      if (picker) await picker.setArea({
+        village: regionName('village'),
+        district: regionName('district'),
+        city: regionName('city'),
+        province: regionName('province'),
+      });
+    } catch (error) {
+      mapStatus.textContent = error.message;
+    }
+  };
+  form.querySelector('#profile-address-district').addEventListener('change', updateAddressMapArea);
+  form.querySelector('#profile-address-village').addEventListener('change', updateAddressMapArea);
+  for (const level of ['province', 'city']) {
+    form.querySelector(`#profile-address-${level}`).addEventListener('change', async () => {
+      const picker = await mapPickerPromise;
+      picker?.clearArea();
+    });
+  }
+  const closeDialog = () => dialog.close();
+  dialog.querySelectorAll('[data-cancel],.pr-dialog-close')
+    .forEach((button) => button.addEventListener('click', closeDialog));
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) closeDialog();
+  });
+  dialog.addEventListener('close', async () => {
+    const picker = await mapPickerPromise;
+    picker?.destroy();
+    dialog.remove();
+  });
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const submit = form.querySelector('[type="submit"]');
+    const errorNode = form.querySelector('.pr-address-error');
+    errorNode.textContent = '';
+    submit.disabled = true;
+    try {
+      const region = (await regionAddressPromise).read();
+      const picker = await mapPickerPromise;
+      if (!picker) throw new Error('Peta belum dapat dimuat. Periksa koneksi lalu coba lagi.');
+      const latitudeValue = form.elements.latitude.value;
+      const longitudeValue = form.elements.longitude.value;
+      if (!validCoordinates(latitudeValue, longitudeValue))
+        throw new Error('Pilih titik lokasi penerima pada peta.');
+      const latitude = Number(latitudeValue);
+      const longitude = Number(longitudeValue);
+      const address = {
+        recipientName: form.elements.recipientName.value.trim(),
+        phone: form.elements.phone.value.trim(),
+        ...region.region,
+        address: region.address,
+        postalCode: region.postalCode,
+        details: form.querySelector('#profile-address-details').value.trim(),
+        notes: form.elements.notes.value.trim(),
+        latitude,
+        longitude,
+      };
+      localStorage.setItem(SHIPPING_ADDRESS_KEY, JSON.stringify(address));
+      document.querySelector('.pr-address-card').outerHTML = renderShippingAddress(address);
+      document.querySelector('[data-edit-address]').addEventListener('click', () => openEditAddress(address));
+      closeDialog();
+      showToast('Alamat berhasil disimpan dan siap digunakan saat checkout.');
+    } catch (error) {
+      errorNode.textContent = error.message || 'Alamat belum dapat disimpan.';
+      submit.disabled = false;
+    }
+  });
 }
 
 function openEditProfile(user) {
@@ -110,10 +228,14 @@ function openEditProfile(user) {
     const file = avatarInput.files?.[0];
     if (!file) return;
     const loadRevision = ++cropLoadRevision;
+    if (cropObjectUrl) URL.revokeObjectURL(cropObjectUrl);
+    cropObjectUrl = null;
     cropImage = null;
     cropPreview.hidden = true;
     cropLoading.hidden = false;
     cropZoom.disabled = true;
+    currentAvatar.hidden = !user.avatar;
+    dialog.querySelector('[data-crop-placeholder]').hidden = Boolean(user.avatar);
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       avatarInput.value = '';
       cropLoading.hidden = true;
@@ -126,7 +248,6 @@ function openEditProfile(user) {
       showToast('Ukuran foto maksimal 4 MB.', 'error');
       return;
     }
-    if (cropObjectUrl) URL.revokeObjectURL(cropObjectUrl);
     cropObjectUrl = URL.createObjectURL(file);
     const image = new Image();
     image.onload = () => {
@@ -140,7 +261,6 @@ function openEditProfile(user) {
       cropPreview.hidden = false;
       cropLoading.hidden = true;
       currentAvatar.hidden = true;
-      dialog.querySelector('[data-crop-placeholder]')?.remove();
       requestAnimationFrame(() => {
         updateCropPreview();
         setTimeout(updateCropPreview, 50);
@@ -150,6 +270,8 @@ function openEditProfile(user) {
       if (loadRevision !== cropLoadRevision) return;
       cropLoading.hidden = true;
       avatarInput.value = '';
+      currentAvatar.hidden = !user.avatar;
+      dialog.querySelector('[data-crop-placeholder]').hidden = Boolean(user.avatar);
       showToast('Foto tidak dapat dibuka. Coba gambar lain.', 'error');
     };
     image.src = cropObjectUrl;
@@ -253,15 +375,10 @@ function openEditProfile(user) {
     if (!avatar?.size) formData.delete('avatar');
     else {
       try {
-        const side = Math.min(cropImage.naturalWidth, cropImage.naturalHeight) / Number(cropZoom.value);
-        const startX = (cropImage.naturalWidth - side) * cropX;
-        const startY = (cropImage.naturalHeight - side) * cropY;
-        const canvas = document.createElement('canvas');
-        canvas.width = 512;
-        canvas.height = 512;
-        canvas.getContext('2d').drawImage(cropImage, startX, startY, side, side, 0, 0, 512, 512);
-        const cropped = await new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Foto gagal diproses.')), 'image/jpeg', 0.9));
-        formData.set('avatar', new File([cropped], 'profile.jpg', { type: 'image/jpeg' }));
+        formData.set(
+          'avatar',
+          await cropSquareImage(cropImage, Number(cropZoom.value), cropX, cropY, 'profile.jpg'),
+        );
       } catch (error) {
         showToast(error.message || 'Foto gagal diproses.', 'error');
         return;
@@ -297,5 +414,6 @@ function injectProfileStyles() {
   style.textContent += `.pr-dialog{max-height:min(92vh,850px);overflow:auto}.pr-dialog-card{gap:9px}.pr-dialog-intro{margin:0 0 9px;color:#718078;font-size:13px}.pr-edit-grid{display:grid;grid-template-columns:190px minmax(0,1fr);gap:24px;align-items:start}.pr-edit-photo{display:flex;flex-direction:column;align-items:center;gap:11px}.pr-crop-frame{position:relative;width:176px;height:176px;overflow:hidden;border-radius:22px;background:linear-gradient(145deg,#d4f0dd,#b5dec7);touch-action:none;cursor:grab}.pr-crop-frame:active{cursor:grabbing}.pr-crop-frame img{position:absolute;left:0;top:0;width:100%;height:100%;max-width:none;object-fit:cover;user-select:none;pointer-events:none}.pr-crop-frame .pr-crop-preview{object-fit:fill}.pr-current-avatar{object-fit:cover}.pr-crop-frame span{position:absolute;inset:0;display:grid;place-items:center;color:#145740;font-size:54px;font-weight:600}.pr-upload-button{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:37px;padding:0 16px;border:1px solid #d6e7dd;border-radius:999px;color:#24634f;font-size:12px;font-weight:600;cursor:pointer}.pr-upload-button input{position:absolute;width:1px;height:1px;opacity:0}.pr-crop-hint{max-width:180px;color:#819087;font-size:10px;line-height:1.5;text-align:center}.pr-zoom-label{width:100%;display:grid;gap:5px;color:#52675b;font-size:11px}.pr-zoom-label input{width:100%;accent-color:#235347}.pr-edit-fields{display:grid;gap:13px}.pr-edit-fields textarea{box-sizing:border-box;height:auto;padding-top:11px;resize:vertical}.pr-dialog-actions{padding-top:10px;border-top:1px solid #edf1ed}@media(max-width:560px){.pr-edit-grid{grid-template-columns:1fr;gap:17px}.pr-edit-photo{display:grid;grid-template-columns:92px 1fr;justify-items:start;align-items:center;column-gap:14px}.pr-crop-frame{grid-row:span 3;width:92px;height:92px;border-radius:16px}.pr-crop-frame span{font-size:34px}.pr-crop-hint{max-width:none;text-align:left}.pr-zoom-label{grid-column:1/-1}.pr-edit-fields{gap:11px}}`;
   style.textContent += `.pr-avatar-placeholder{width:100%;height:100%;display:block}.pr-crop-placeholder{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}.pr-crop-loading{position:absolute;inset:0;display:grid;place-items:center;background:#eaf4ed;color:#526b5b;font-size:12px}.pr-crop-frame [hidden]{display:none!important}`;
   style.textContent += `.pr-page{max-width:1180px;margin-inline:auto;padding:4px 0 30px}.pr-hero{position:relative;grid-template-columns:112px minmax(0,1fr) auto;gap:24px;min-height:160px;padding:25px 30px;border:1px solid #dce9df;border-radius:24px;background:radial-gradient(ellipse at 88% 0%,#e5f2e7 0,transparent 38%),linear-gradient(135deg,#fff 0%,#f7fbf7 100%);box-shadow:0 12px 32px #123a2a08}.pr-avatar-wrap{width:108px;height:108px}.pr-avatar{width:108px;height:108px;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #c8ddce,0 8px 22px #123a2a14}.pr-avatar-edit{right:0;bottom:0;width:34px;height:34px;display:grid;place-items:center;box-shadow:0 3px 12px #123a2a28}.pr-avatar-edit .fi-icon{width:15px;height:15px}.pr-identity{min-width:0}.pr-identity h1{color:#0b2b26;font-size:clamp(24px,2.5vw,32px);letter-spacing:-.9px}.pr-identity>p{max-width:610px;margin:7px 0 12px;color:#63736a;font-size:13px}.pr-badges span{border:1px solid #d8e9dc;background:#eef6ef;color:#3f7154}.pr-badges span.verified{border-color:#d7e8db;background:#e7f3e9;color:#235347}.pr-edit{min-width:128px;align-self:center}.pr-impact{margin-top:30px}.pr-section-title{margin-bottom:12px}.pr-section-title h2{color:#0b2b26;font-size:18px;font-weight:600;letter-spacing:-.25px}.pr-section-title>span{font-size:10px}.pr-impact-grid{gap:12px}.pr-impact-card{position:relative;min-height:120px;padding:17px 19px;border-color:#e0eae2;border-radius:18px;background:linear-gradient(145deg,#fff,#f8fbf8);box-shadow:0 7px 22px #123a2a07}.pr-impact-icon{width:32px;height:32px;background:#e4f1e6;color:#235347}.pr-impact-icon.mint{background:#e4f1e6;color:#235347}.pr-impact-icon.light{background:#e4f1e6;color:#235347}.pr-impact-card>strong{margin:9px 0 0;color:#163832;font-size:26px;font-weight:650}.pr-impact-card>small{color:#6f7d73;font-size:9px;letter-spacing:.06em}.pr-impact-card.deep{border-color:#e0eae2;background:linear-gradient(145deg,#fff,#f8fbf8)}.pr-impact-card.deep>strong,.pr-impact-card.deep>small{color:#163832}.pr-detail-grid{gap:22px;margin-top:31px}.pr-details,.pr-products{border:1px solid #e3ebe4;border-radius:18px;background:#fff;box-shadow:0 6px 20px #123a2a06}.pr-details>div{min-height:62px;padding:12px 17px;border-color:#edf2ed}.pr-detail-icon{width:30px;height:30px;flex:none;border-radius:10px;display:grid;place-items:center;background:#f0f6f1;color:#3b7155}.pr-details small{font-size:8px}.pr-details strong{color:#283c31;font-size:12px}.pr-products{min-height:184px;padding:7px 15px}.pr-product{min-height:54px;padding-inline:3px;transition:background .18s ease}.pr-product:hover{background:#f7faf7}.pr-product img{width:42px;height:42px;border-radius:11px}.pr-product strong{color:#203b30;font-size:11px}.pr-product small{font-size:10px}.pr-product>b .fi-icon{width:15px;height:15px}.pr-empty{margin:23px 0 15px}.pr-bottom-actions{margin-top:25px;padding-top:17px}.pr-logout{border-color:#f0d9d6;background:#fff8f7}.pr-dialog{border:1px solid #dce9df}.pr-dialog-card{background:#fff}@media(max-width:760px){.pr-page{padding-top:0}.pr-detail-grid{gap:20px}.pr-section-title{align-items:center}}@media(max-width:540px){.pr-hero{grid-template-columns:68px minmax(0,1fr);gap:13px;padding:17px 15px;border-radius:20px}.pr-avatar-wrap,.pr-avatar{width:68px;height:68px}.pr-avatar{border-width:2px}.pr-avatar-edit{width:27px;height:27px}.pr-identity h1{font-size:19px}.pr-identity>p{margin:5px 0 8px;font-size:10px;line-height:1.45}.pr-badges{gap:5px}.pr-badges span{padding:4px 7px;font-size:8px}.pr-edit{grid-column:1/-1;min-height:38px}.pr-impact{margin-top:23px}.pr-impact-grid{gap:7px}.pr-impact-card{padding:11px 12px;border-radius:14px}.pr-impact-icon{width:29px;height:29px}.pr-impact-card>strong{top:14px;right:13px;font-size:21px}.pr-impact-card>small{font-size:8px}.pr-detail-grid{margin-top:25px;gap:22px}.pr-section-title h2{font-size:17px}.pr-details>div{min-height:58px}.pr-products{min-height:0}.pr-bottom-actions{margin-top:22px}}`;
+  style.textContent += `.pr-address-card{margin-top:26px;padding:20px 23px;display:flex;align-items:center;justify-content:space-between;gap:18px;border:1px solid #e0eae2;border-radius:18px;background:linear-gradient(120deg,#fff,#f7fbf7);box-shadow:0 6px 20px #123a2a06}.pr-address-card h2{margin:0;color:#163832;font-size:17px}.pr-address-summary{margin:8px 0 0;color:#63736a;font-size:12px;line-height:1.65}.pr-address-dialog{width:min(720px,calc(100% - 24px))}.pr-address-form{gap:11px}.pr-address-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 13px}.pr-address-fields .fi-label{display:grid;gap:6px;margin:0 0 9px;color:#52675b;font-size:11px;font-weight:600}.pr-address-fields .fi-input{box-sizing:border-box;width:100%;min-width:0;min-height:42px;padding:0 11px;border:1px solid #d9e4dc;border-radius:10px;background:#fff;color:#263c31;font:500 12px Inter,Arial,sans-serif}.pr-address-fields .fi-input:focus{border-color:#54977d;outline:3px solid #54977d20}.pr-address-notes{grid-column:1/-1}.pr-address-map-label{margin:5px 0 -5px;color:#52675b;font-size:11px;font-weight:650}.pr-address-map-label small{display:block;margin-top:4px;color:#74827b;font-weight:400;line-height:1.5}.pr-address-error{margin:0;color:#b44740;font-size:11px;line-height:1.5}.pr-address-error:empty{display:none}.pr-address-form .fi-location-map{height:260px;min-height:220px}.pr-address-form .fi-map-controls{margin-bottom:0}.pr-address-form .pr-dialog-actions{margin-top:3px}@media(max-width:540px){.pr-address-card{align-items:stretch;flex-direction:column;padding:17px}.pr-address-card .fi-button{width:100%}.pr-address-fields{grid-template-columns:1fr;gap:0}.pr-address-notes{grid-column:auto}.pr-address-form .fi-location-map{height:230px}}`;
   document.head.append(style);
 }

@@ -94,6 +94,7 @@ export async function renderCheckout() {
   const addressPanel = document.getElementById('co-address').closest('.co-panel');
   addressPanel.id = 'co-address-panel';
   const snapPanel = document.createElement('section');
+  snapPanel.id = 'co-snap-panel';
   snapPanel.className = 'co-snap-panel'; snapPanel.hidden = true;
   snapPanel.innerHTML = '<h2>Pembayaran aman melalui Midtrans</h2><p>Kamu tetap berada di halaman Food Ilee. Status pembayaran dikonfirmasi oleh server.</p><div id="co-snap-container"></div><p id="co-snap-status" role="status"></p><a href="#transaksi">Lihat transaksi</a>';
   document.querySelector('.co-layout').after(snapPanel);

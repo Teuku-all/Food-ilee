@@ -49,13 +49,30 @@ function storeProfileData(data, { partial = false } = {}) {
 
 function shippingOriginData(data, { partial = false } = {}) {
   const values = Object.fromEntries(SHIPPING_FIELDS.map((key) => [key, data[key]]));
+  if (partial && SHIPPING_FIELDS.some((key) => values[key] != null && typeof values[key] !== 'string'))
+    throw new Error('Data alamat pickup toko tidak valid.');
   const hasAny = Object.values(values).some((value) => value !== undefined && String(value).trim());
   let region = data.shippingOriginRegion;
   if (typeof region === 'string' && region.trim()) {
     try { region = JSON.parse(region); } catch { throw new Error('Alamat pickup tidak valid. Pilih ulang wilayah toko.'); }
   }
   const hasRegion = region && typeof region === 'object' && !Array.isArray(region);
+  if (partial && data.shippingOriginRegion != null && String(data.shippingOriginRegion).trim() && !hasRegion)
+    throw new Error('Alamat pickup tidak valid. Pilih ulang wilayah toko.');
   if (partial && !hasAny && !hasRegion) return {};
+  if (partial) {
+    if (hasRegion && ['provinceCode', 'province', 'cityCode', 'city', 'districtCode', 'district', 'villageCode', 'village', 'details']
+      .some((key) => typeof region[key] !== 'string' || !region[key].trim()))
+      throw new Error('Pilih provinsi hingga desa/kelurahan dan isi detail alamat pickup toko.');
+    if (values.shippingOriginPostalCode?.trim() && !/^\d{5}$/.test(values.shippingOriginPostalCode.trim()))
+      throw new Error('Kode pos pickup toko harus terdiri dari 5 angka.');
+    return {
+      ...Object.fromEntries(SHIPPING_FIELDS
+        .filter((key) => typeof values[key] === 'string' && values[key].trim())
+        .map((key) => [key, values[key].trim()])),
+      ...(hasRegion ? { shippingOriginRegion: region } : {}),
+    };
+  }
   if (hasAny && SHIPPING_FIELDS.some((key) => typeof values[key] !== 'string' || !values[key].trim()))
     throw new Error('Lengkapi nama kontak, telepon, alamat pickup, dan kode pos pengiriman toko.');
   if (hasRegion && SHIPPING_FIELDS.some((key) => typeof values[key] !== 'string' || !values[key].trim()))
@@ -135,9 +152,9 @@ async function getStores() {
 }
 
 async function updateStore(ownerId, data) {
-  const profile = storeProfileData(data, { partial: true });
   const existing = await prisma.store.findUnique({ where: { ownerId } });
   if (!existing) throw new Error('Toko belum dibuat');
+  const profile = storeProfileData(data, { partial: true });
   return prisma.store.update({
     where: { ownerId },
     data: {

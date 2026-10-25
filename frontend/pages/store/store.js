@@ -9,6 +9,7 @@ import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js
 import { skeleton } from '../../ui/skeleton.js';
 import { bindRegionAddress } from '../../utils/region-address.js';
 import { mountLocationPicker } from '../../utils/location-map.js';
+import { cropSquareImage } from '../../utils/image-crop.js';
 
 const statusNames = {
   pending: 'Menunggu Pembayaran',
@@ -17,6 +18,11 @@ const statusNames = {
   completed: 'Selesai',
   cancelled: 'Dibatalkan',
 };
+
+function selectedStoreArea(form) {
+  const value = (level) => form.querySelector(`#store-${level}`)?.selectedOptions[0]?.textContent?.trim() || '';
+  return { district: value('district'), city: value('city'), province: value('province') };
+}
 
 export async function renderStore() {
   const navigationRevision = getNavigationRevision();
@@ -199,36 +205,189 @@ function editStore(store) {
   document.body.append(dialog);
   dialog.showModal();
   const form = dialog.querySelector('form');
+  const photoSection = document.createElement('section');
+  photoSection.className = 'st-edit-photo-section';
+  photoSection.innerHTML = `<h3>Foto profil toko</h3><p>Foto ini akan tampil pada detail produk dan profil toko.</p><div class="st-edit-photo"><div class="st-crop-frame"><img class="st-current-photo" src="${escapeHtml(store.image || '')}" alt="Foto toko saat ini" ${store.image ? '' : 'hidden'}><img class="st-crop-preview" alt="Pratinjau foto toko" hidden><span class="st-crop-placeholder" ${store.image ? 'hidden' : ''}>${icon('store')}</span><span class="st-crop-loading" hidden>Memuat foto…</span></div><div class="st-edit-photo-controls"><label class="st-upload-button">Pilih foto toko<input name="image" type="file" accept="image/jpeg,image/png,image/webp"></label><small>JPG, PNG, atau WebP · maksimal 4 MB. Geser foto untuk mengatur posisi.</small><label class="st-zoom-label">Perbesar foto<input data-store-crop-zoom type="range" min="1" max="3" step="0.01" value="1" disabled></label></div></div>`;
+  const oldPhotoLabel = form.querySelector('input[name="image"]').closest('label');
+  oldPhotoLabel.replaceWith(photoSection);
+  const photoInput = photoSection.querySelector('input[name="image"]');
+  const currentPhoto = photoSection.querySelector('.st-current-photo');
+  const cropPreview = photoSection.querySelector('.st-crop-preview');
+  const cropPlaceholder = photoSection.querySelector('.st-crop-placeholder');
+  const cropLoading = photoSection.querySelector('.st-crop-loading');
+  const cropFrame = photoSection.querySelector('.st-crop-frame');
+  const cropZoom = photoSection.querySelector('[data-store-crop-zoom]');
+  let cropImage = null;
+  let cropObjectUrl = null;
+  let cropX = 0.5;
+  let cropY = 0.5;
+  let dragStart = null;
+  let cropLoadRevision = 0;
+  const updateCropPreview = () => {
+    if (!cropImage || !cropFrame.clientWidth) return;
+    const frameWidth = cropFrame.clientWidth;
+    const frameHeight = cropFrame.clientHeight;
+    const scale = Math.max(frameWidth / cropImage.naturalWidth, frameHeight / cropImage.naturalHeight)
+      * Number(cropZoom.value);
+    const imageWidth = cropImage.naturalWidth * scale;
+    const imageHeight = cropImage.naturalHeight * scale;
+    cropPreview.style.width = `${imageWidth}px`;
+    cropPreview.style.height = `${imageHeight}px`;
+    cropPreview.style.left = `${(frameWidth - imageWidth) * cropX}px`;
+    cropPreview.style.top = `${(frameHeight - imageHeight) * cropY}px`;
+  };
+  photoInput.addEventListener('change', () => {
+    const file = photoInput.files?.[0];
+    if (!file) return;
+    const loadRevision = ++cropLoadRevision;
+    if (cropObjectUrl) URL.revokeObjectURL(cropObjectUrl);
+    cropObjectUrl = null;
+    cropImage = null;
+    cropPreview.hidden = true;
+    currentPhoto.hidden = !store.image;
+    cropPlaceholder.hidden = Boolean(store.image);
+    cropLoading.hidden = false;
+    cropZoom.disabled = true;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      photoInput.value = '';
+      cropLoading.hidden = true;
+      showToast('Pilih foto JPG, PNG, atau WebP.', 'error');
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      photoInput.value = '';
+      cropLoading.hidden = true;
+      showToast('Ukuran foto maksimal 4 MB.', 'error');
+      return;
+    }
+    cropObjectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      if (loadRevision !== cropLoadRevision || !dialog.isConnected) return;
+      cropImage = image;
+      cropX = 0.5;
+      cropY = 0.5;
+      cropZoom.value = '1';
+      cropZoom.disabled = false;
+      cropPreview.src = cropObjectUrl;
+      cropPreview.hidden = false;
+      cropLoading.hidden = true;
+      currentPhoto.hidden = true;
+      cropPlaceholder.hidden = true;
+      requestAnimationFrame(() => {
+        updateCropPreview();
+        setTimeout(updateCropPreview, 50);
+      });
+    };
+    image.onerror = () => {
+      if (loadRevision !== cropLoadRevision) return;
+      cropLoading.hidden = true;
+      photoInput.value = '';
+      currentPhoto.hidden = !store.image;
+      cropPlaceholder.hidden = Boolean(store.image);
+      showToast('Foto tidak dapat dibuka. Coba gambar lain.', 'error');
+    };
+    image.src = cropObjectUrl;
+  });
+  cropZoom.addEventListener('input', updateCropPreview);
+  cropFrame.addEventListener('pointerdown', (event) => {
+    if (!cropImage) return;
+    dragStart = { x: event.clientX, y: event.clientY, cropX, cropY };
+    cropFrame.setPointerCapture(event.pointerId);
+  });
+  cropFrame.addEventListener('pointermove', (event) => {
+    if (!dragStart || !cropImage) return;
+    const scale = Math.max(cropFrame.clientWidth / cropImage.naturalWidth, cropFrame.clientHeight / cropImage.naturalHeight)
+      * Number(cropZoom.value);
+    const overflowX = Math.max(0, cropImage.naturalWidth * scale - cropFrame.clientWidth);
+    const overflowY = Math.max(0, cropImage.naturalHeight * scale - cropFrame.clientHeight);
+    cropX = overflowX ? Math.max(0, Math.min(1, dragStart.cropX + (event.clientX - dragStart.x) / overflowX)) : 0.5;
+    cropY = overflowY ? Math.max(0, Math.min(1, dragStart.cropY + (event.clientY - dragStart.y) / overflowY)) : 0.5;
+    updateCropPreview();
+  });
+  cropFrame.addEventListener('pointerup', () => { dragStart = null; });
+  cropFrame.addEventListener('pointercancel', () => { dragStart = null; });
+  dialog.addEventListener('close', () => {
+    if (cropObjectUrl) URL.revokeObjectURL(cropObjectUrl);
+    dialog.remove();
+  });
   const mapSection = document.createElement('div');
-  mapSection.innerHTML = '<label class="fi-label fi-map-label">Titik lokasi toko <small>Pilih titik pickup dengan klik atau geser penanda di peta.</small></label><div id="store-map" class="fi-location-map" role="application" aria-label="Peta pemilih lokasi toko"></div><div class="fi-map-controls"><button type="button" class="fi-button fi-button-outline" id="store-locate">Gunakan lokasi perangkat</button><span id="store-map-status" role="status">Memuat peta…</span></div><input type="hidden" name="latitude"><input type="hidden" name="longitude">';
+  mapSection.innerHTML = '<label class="fi-label fi-map-label">Titik lokasi toko <small>Peta mengikuti kecamatan alamat pickup. Pilih titik pickup yang benar di dalam wilayah tersebut.</small></label><div id="store-map" class="fi-location-map" role="application" aria-label="Peta pemilih lokasi toko"></div><div class="fi-map-controls"><button type="button" class="fi-button fi-button-outline" id="store-locate">Gunakan lokasi perangkat</button><span id="store-map-status" role="status">Memuat peta…</span></div><input type="hidden" name="latitude"><input type="hidden" name="longitude">';
   form.querySelector('[name="shippingOriginAddress"]').before(mapSection);
   const regionAddress = bindRegionAddress(form, 'store', store.shippingOriginRegion || {});
   const mapStatus = form.querySelector('#store-map-status');
-  mountLocationPicker({
+  const locationPickerPromise = mountLocationPicker({
     element: form.querySelector('#store-map'),
     latitudeInput: form.elements.latitude,
     longitudeInput: form.elements.longitude,
     status: mapStatus,
     locateButton: form.querySelector('#store-locate'),
     initialLocation: store,
-  }).catch((error) => { mapStatus.textContent = error.message; });
+    initialArea: store.shippingOriginRegion,
+    requireArea: true,
+  }).catch((error) => {
+    mapStatus.textContent = error.message;
+    return null;
+  });
+  const updateStoreMapArea = async () => {
+    try {
+      const picker = await locationPickerPromise;
+      if (picker) await picker.setArea({
+        village: form.querySelector('#store-village')?.selectedOptions[0]?.textContent?.trim() || '',
+        ...selectedStoreArea(form),
+      });
+    } catch (error) {
+      mapStatus.textContent = error.message;
+    }
+  };
+  form.querySelector('#store-district').addEventListener('change', updateStoreMapArea);
+  form.querySelector('#store-village').addEventListener('change', updateStoreMapArea);
+  for (const level of ['province', 'city']) {
+    form.querySelector(`#store-${level}`).addEventListener('change', async () => {
+      const picker = await locationPickerPromise;
+      picker?.clearArea();
+    });
+  }
   dialog
     .querySelectorAll('[data-cancel],.st-dialog-close')
     .forEach((button) => button.addEventListener('click', () => dialog.close()));
+  const addressSection = form.querySelector('.st-address-section');
+  addressSection.querySelectorAll('[required]').forEach((field) => field.removeAttribute('required'));
+  let pickupLocationChanged = false;
+  let pickupContactChanged = false;
+  addressSection.querySelectorAll('select,#store-details,#store-postal').forEach((field) => {
+    field.addEventListener('input', () => { pickupLocationChanged = true; });
+    field.addEventListener('change', () => { pickupLocationChanged = true; });
+  });
+  addressSection.querySelectorAll('[name="shippingOriginContactName"],[name="shippingOriginContactPhone"]')
+    .forEach((field) => field.addEventListener('input', () => { pickupContactChanged = true; }));
   dialog.querySelector('form').addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     const submit = form.querySelector('[type="submit"]');
     submit.disabled = true;
     try {
-      const pickup = (await regionAddress).read();
       if (!form.elements.latitude.value || !form.elements.longitude.value)
         throw new Error('Pilih titik lokasi pickup toko pada peta.');
       const data = new FormData(form);
-      data.set('shippingOriginAddress', pickup.address);
-      data.set('shippingOriginRegion', JSON.stringify(pickup.region));
+      if (pickupLocationChanged) {
+        const pickup = (await regionAddress).read();
+        data.set('shippingOriginAddress', pickup.address);
+        data.set('shippingOriginRegion', JSON.stringify(pickup.region));
+      } else if (!pickupContactChanged) {
+        ['shippingOriginContactName', 'shippingOriginContactPhone', 'shippingOriginAddress',
+          'shippingOriginPostalCode', 'shippingOriginRegion'].forEach((field) => data.delete(field));
+      } else {
+        ['shippingOriginAddress', 'shippingOriginPostalCode', 'shippingOriginRegion']
+          .forEach((field) => data.delete(field));
+      }
+      const image = photoInput.files?.[0];
+      if (!image?.size) data.delete('image');
+      else data.set('image', await cropSquareImage(cropImage, Number(cropZoom.value), cropX, cropY, 'store.jpg'));
       const result = await updateMyStore(data);
       if (!result.success) throw new Error(result.message || 'Informasi toko belum tersimpan.');
+      if (image?.size && !result.data?.image)
+        throw new Error('Foto toko belum tersimpan di server. Periksa koneksi penyimpanan foto lalu coba lagi.');
       dialog.close();
       dialog.remove();
       showToast('Informasi toko diperbarui.');
@@ -322,5 +481,7 @@ function injectStoreStyles() {
   `;
   style.textContent += `.st-dialog{width:min(640px,calc(100% - 24px));max-height:min(92vh,820px);overflow:auto}.st-dialog-form{padding:28px}.st-address-section{margin:0 0 20px;padding:17px;border:1px solid #d6e5e0;border-radius:18px;background:linear-gradient(145deg,#f7fbf9,#eff7f3)}.st-address-heading{display:flex;gap:11px;align-items:flex-start;margin:0 0 16px}.st-address-heading>span{flex:none;width:29px;height:29px;border-radius:9px;display:grid;place-items:center;background:#dcefe8;color:#235347;font-size:10px;font-weight:800}.st-address-heading h3{margin:1px 0 4px;color:#17473e;font-size:14px}.st-address-heading p{margin:0;color:#7b8b83;font-size:11px;line-height:1.5}.st-address-grid,.st-region-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}.st-address-detail-grid{grid-template-columns:minmax(0,1.5fr) minmax(100px,.65fr)}.st-address-section .fi-label{display:block;min-width:0;margin-bottom:11px;color:#526a60;font-size:11px;font-weight:650}.st-address-section .fi-input{box-sizing:border-box;width:100%;min-height:43px;margin-top:7px;padding:0 11px;border:1px solid #d4e1db;border-radius:11px;background:#fff;color:#26483c;font-size:12px;outline:none;transition:border-color .16s,box-shadow .16s}.st-address-section .fi-input:focus{border-color:#54977d;box-shadow:0 0 0 3px #54977d20}.st-address-section select.fi-input{padding-right:32px;cursor:pointer}.st-address-section select:disabled{background:#edf2ef;color:#a1aca6;cursor:not-allowed}.st-region-error{margin:0 0 9px;color:#a54e43;font-size:11px;line-height:1.5}.st-region-error:empty{display:none}@media(max-width:520px){.st-dialog-form{padding:22px 16px}.st-address-section{padding:14px}.st-address-grid,.st-region-grid,.st-address-detail-grid{grid-template-columns:1fr;gap:0}}`;
   style.textContent += `.st-dialog{border:1px solid #cbdcd4;border-radius:24px;background:#f8fbf9;color:#1d3d35;box-shadow:0 28px 90px #063b3038;scrollbar-color:#b8d0c5 transparent}.st-dialog-form{padding:30px}.st-dialog-form .st-kicker{width:max-content;margin:0 44px 9px 0;padding:6px 10px;border:1px solid #d2e8dc;border-radius:999px;background:#eaf5ee;color:#39745d;font-size:10px;font-weight:750;letter-spacing:.11em}.st-dialog-form h2{margin:0 42px 22px 0;color:#17483b;font-size:25px;line-height:1.25;letter-spacing:-.035em}.st-dialog-form>h3{margin:23px 0 5px;padding-top:18px;border-top:1px solid #dce8e1;color:#214e40;font-size:15px;line-height:1.35}.st-dialog-form>p:not(.st-kicker){margin:0 0 13px;color:#74847c;font-size:12px;line-height:1.55}.st-dialog-form>label.fi-label{display:block;margin:0 0 15px;color:#435e52;font-size:12px;font-weight:650}.st-dialog-form>.fi-label .fi-input{box-sizing:border-box;width:100%;min-height:46px;margin-top:7px;padding:0 13px;border:1px solid #d4e1d9;border-radius:12px;background:#fff;color:#233f34;font:500 13px Inter,Arial,sans-serif;outline:none;transition:border-color .18s,box-shadow .18s,background .18s}.st-dialog-form>.fi-label .fi-input:hover{border-color:#b7d0c2}.st-dialog-form>.fi-label .fi-input:focus{border-color:#4e9875;background:#fff;box-shadow:0 0 0 4px #4e98751c}.st-dialog-form textarea.fi-input{min-height:100px;padding:12px 13px;line-height:1.55;resize:vertical}.st-dialog-form input[type=file].fi-input{height:auto;min-height:46px;padding:9px 11px}.st-dialog-close{top:18px;right:18px;width:38px;height:38px;border:1px solid #d5e5dc;background:#fff;color:#456b59;box-shadow:0 3px 10px #153c2c0d;transition:transform .18s,background .18s,color .18s}.st-dialog-close:hover{transform:rotate(90deg);background:#eaf5ee;color:#17483b}.st-dialog-form>div:last-child{position:sticky;bottom:-30px;margin:24px -30px -30px;padding:15px 30px 20px;border-top:1px solid #e1ebe5;background:#f8fbf9eF;backdrop-filter:blur(10px)}.st-dialog-form>div:last-child .fi-button{min-width:112px;min-height:43px;border-radius:12px;font-weight:650}.st-dialog-form>div:last-child .fi-button-outline{border:1px solid #ccdcd2;background:#fff;color:#3b5e4e}@media(max-width:620px){.st-dialog{width:calc(100% - 20px);max-height:94vh;border-radius:20px}.st-dialog-form{padding:24px 18px}.st-dialog-form h2{font-size:22px}.st-dialog-form>div:last-child{bottom:-24px;margin:20px -18px -24px;padding:12px 18px 16px}.st-dialog-form>div:last-child .fi-button{min-height:44px}.st-dialog-close{top:14px;right:14px;width:35px;height:35px}}
-`;  document.head.append(style);
+`;
+  style.textContent += `.st-edit-photo-section{margin:20px 0;padding:17px;border:1px solid #dce9e1;border-radius:17px;background:linear-gradient(145deg,#f7fbf8,#eef6f0)}.st-edit-photo-section h3{margin:0 0 4px;color:#214e40;font-size:14px}.st-edit-photo-section>p{margin:0 0 14px;color:#74847c;font-size:11px;line-height:1.5}.st-edit-photo{display:grid;grid-template-columns:116px minmax(0,1fr);align-items:center;gap:16px}.st-crop-frame{position:relative;width:116px;height:116px;overflow:hidden;border-radius:20px;background:linear-gradient(145deg,#d4f0dd,#b5dec7);touch-action:none;cursor:grab}.st-crop-frame:active{cursor:grabbing}.st-crop-frame img{position:absolute;left:0;top:0;width:100%;height:100%;max-width:none;object-fit:cover;user-select:none;pointer-events:none}.st-crop-frame .st-crop-preview{object-fit:fill}.st-crop-frame .st-crop-placeholder{inset:0;display:grid;place-items:center;color:#235347;font-size:45px}.st-crop-placeholder .fi-icon{width:44px;height:44px}.st-crop-frame .st-crop-loading{inset:0;display:grid;place-items:center;background:#eaf4ed;color:#526b5b;font-size:11px}.st-crop-frame [hidden]{display:none!important}.st-edit-photo-controls{display:grid;gap:9px}.st-upload-button{position:relative;width:max-content;max-width:100%;min-height:36px;padding:0 13px;border:1px solid #cfe1d5;border-radius:999px;background:#fff;color:#24634f;font-size:11px;font-weight:650;cursor:pointer;display:inline-flex;align-items:center}.st-upload-button input{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0}.st-edit-photo-controls>small{color:#78877f;font-size:10px;line-height:1.5}.st-zoom-label{display:grid;gap:5px;color:#52675b;font-size:10px}.st-zoom-label input{width:100%;accent-color:#235347}@media(max-width:520px){.st-edit-photo{grid-template-columns:82px minmax(0,1fr);gap:12px}.st-crop-frame{width:82px;height:82px;border-radius:15px}.st-crop-placeholder .fi-icon{width:34px;height:34px}}`;
+  document.head.append(style);
 }

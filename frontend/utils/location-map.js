@@ -53,6 +53,7 @@ export function addMapTiles(leaflet, map) {
     .tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
       {
+        maxNativeZoom: 16,
         maxZoom: 19,
         attribution,
       },
@@ -62,12 +63,51 @@ export function addMapTiles(leaflet, map) {
     .tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
       {
+        maxNativeZoom: 16,
         maxZoom: 19,
         attribution,
       },
     )
     .addTo(map);
   return base;
+}
+
+async function geocodeRegion(region) {
+  const district = String(region?.district || '').trim();
+  const city = String(region?.city || '').trim();
+  const province = String(region?.province || '').trim();
+  if (!district || !city || !province) throw new Error('Pilih kecamatan, kabupaten/kota, dan provinsi terlebih dahulu.');
+  const village = String(region?.village || '').trim();
+  const candidates = [
+    ...(village && village !== 'Pilih desa/kelurahan'
+      ? [{ locality: village, query: [village, district, city, province, 'Indonesia'] }]
+      : []),
+    { locality: district, query: [district, city, province, 'Indonesia'] },
+    { locality: city, query: [city, province, 'Indonesia'] },
+  ];
+  for (const candidate of candidates) {
+    const query = new URLSearchParams({
+      q: candidate.query.join(', '),
+      format: 'jsonv2',
+      limit: '1',
+    });
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?${query}`, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) throw new Error('Lokasi alamat belum dapat dicari. Periksa koneksi lalu coba lagi.');
+    const [result] = await response.json();
+    if (!result || !Array.isArray(result.boundingbox) || result.boundingbox.length !== 4) continue;
+    const [south, north, west, east] = result.boundingbox.map(Number);
+    const center = [Number(result.lat), Number(result.lon)];
+    if (![south, north, west, east, ...center].every(Number.isFinite)) continue;
+    return {
+      center,
+      bounds: [[south, west], [north, east]],
+      locality: candidate.locality,
+    };
+  }
+  throw new Error('Lokasi alamat belum ditemukan. Periksa pilihan desa/kelurahan dan coba lagi.');
 }
 
 export async function mountLocationPicker({
@@ -77,6 +117,8 @@ export async function mountLocationPicker({
   status,
   locateButton,
   initialLocation,
+  initialArea,
+  requireArea = false,
   onChange = () => {},
 }) {
   if (!document.getElementById('fi-location-map-style')) {
@@ -88,20 +130,57 @@ export async function mountLocationPicker({
   }
   const leaflet = await loadLeaflet();
   if (!element.isConnected) return { destroy() {} };
+  let areaRequired = requireArea || Boolean(initialArea?.district);
+  let area = null;
+  let areaError = '';
+  if (areaRequired) {
+    try {
+      area = await geocodeRegion(initialArea);
+    } catch (error) {
+      areaError = error.message;
+    }
+    if (!element.isConnected) return { destroy() {} };
+  }
   const hasInitialLocation = validCoordinates(
     initialLocation?.latitude,
     initialLocation?.longitude,
   );
-  const initial = hasInitialLocation
-    ? [Number(initialLocation.latitude), Number(initialLocation.longitude)]
-    : DEFAULT_MAP_CENTER;
-  const map = leaflet.map(element).setView(initial, hasInitialLocation ? 16 : 14);
+  const initial = area
+    ? area.center
+    : hasInitialLocation
+      ? [Number(initialLocation.latitude), Number(initialLocation.longitude)]
+      : areaRequired
+        ? [0, 0]
+        : DEFAULT_MAP_CENTER;
+  const map = leaflet.map(element).setView(initial, area || hasInitialLocation ? 16 : areaRequired ? 2 : 14);
+  if (area) map.setMaxBounds(leaflet.latLngBounds(area.bounds).pad(0.02));
   addMapTiles(leaflet, map);
 
   let marker;
+  let areaRevision = 0;
+  const clearPickerArea = () => {
+    area = null;
+    areaRevision += 1;
+    map.setMaxBounds(null);
+    marker?.remove();
+    marker = null;
+    latitudeInput.value = '';
+    longitudeInput.value = '';
+    onChange(null, null);
+  };
   const update = (latitude, longitude) => {
     if (!validCoordinates(latitude, longitude)) return;
     const point = [Number(latitude), Number(longitude)];
+    if (areaRequired && !area) {
+      status.textContent = 'Pilih kecamatan terlebih dahulu agar titik pickup sesuai wilayah.';
+      return;
+    }
+    if (area && !leaflet.latLngBounds(area.bounds).contains(point)) {
+      if (marker && validCoordinates(latitudeInput.value, longitudeInput.value))
+        marker.setLatLng([Number(latitudeInput.value), Number(longitudeInput.value)]);
+      status.textContent = 'Titik harus berada di dalam kecamatan yang dipilih.';
+      return;
+    }
     latitudeInput.value = String(point[0]);
     longitudeInput.value = String(point[1]);
     if (!marker) marker = leaflet.marker(point, { draggable: true }).addTo(map);
@@ -115,7 +194,11 @@ export async function mountLocationPicker({
     onChange(point[0], point[1]);
   };
 
-  if (hasInitialLocation) update(...initial);
+  if (area && hasInitialLocation && leaflet.latLngBounds(area.bounds).contains(initial))
+    update(initialLocation.latitude, initialLocation.longitude);
+  else if (area) status.textContent = `Peta dipusatkan di ${area.locality}. Klik titik lokasi yang sesuai alamat.`;
+  else if (areaRequired) status.textContent = areaError || 'Pilih kecamatan agar peta mengikuti wilayah alamat pickup.';
+  else if (hasInitialLocation) update(...initial);
   else status.textContent = 'Klik peta untuk memilih titik alamat.';
   map.on('click', (event) => update(event.latlng.lat, event.latlng.lng));
   locateButton?.addEventListener('click', () => {
@@ -138,6 +221,32 @@ export async function mountLocationPicker({
 
   requestAnimationFrame(() => map.invalidateSize());
   return {
+    async setArea(region) {
+      areaRequired = true;
+      clearPickerArea();
+      const revision = ++areaRevision;
+      status.textContent = 'Mencari batas wilayah kecamatan…';
+      const resolved = await geocodeRegion(region);
+      if (revision !== areaRevision || !map.getContainer().isConnected) return;
+      area = resolved;
+      areaError = '';
+      const bounds = leaflet.latLngBounds(area.bounds);
+      map.setMaxBounds(bounds.pad(0.02));
+      map.fitBounds(bounds);
+      if (marker && !bounds.contains(marker.getLatLng())) {
+        marker.remove();
+        marker = null;
+        latitudeInput.value = '';
+        longitudeInput.value = '';
+        onChange(null, null);
+      }
+      status.textContent = `Peta dipusatkan di ${area.locality}. Klik titik lokasi yang sesuai alamat.`;
+    },
+    clearArea() {
+      areaRequired = true;
+      clearPickerArea();
+      status.textContent = 'Pilih kecamatan agar peta mengikuti wilayah alamat pickup.';
+    },
     setLocation(latitude, longitude) {
       if (!validCoordinates(latitude, longitude)) return;
       update(latitude, longitude);
