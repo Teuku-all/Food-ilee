@@ -3,6 +3,7 @@ const LEAFLET_JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 const DEFAULT_MAP_CENTER = [5.5483, 95.3238];
 
 let leafletPromise;
+let lastReverseGeocodeAt = 0;
 
 export function loadLeaflet() {
   if (window.L) return Promise.resolve(window.L);
@@ -76,7 +77,8 @@ async function geocodeRegion(region) {
   const district = String(region?.district || '').trim();
   const city = String(region?.city || '').trim();
   const province = String(region?.province || '').trim();
-  if (!district || !city || !province) throw new Error('Pilih kecamatan, kabupaten/kota, dan provinsi terlebih dahulu.');
+  if (!district || !city || !province)
+    throw new Error('Pilih kecamatan, kabupaten/kota, dan provinsi terlebih dahulu.');
   const village = String(region?.village || '').trim();
   const candidates = [
     ...(village && village !== 'Pilih desa/kelurahan'
@@ -95,7 +97,8 @@ async function geocodeRegion(region) {
       headers: { Accept: 'application/json' },
       signal: AbortSignal.timeout(10000),
     });
-    if (!response.ok) throw new Error('Lokasi alamat belum dapat dicari. Periksa koneksi lalu coba lagi.');
+    if (!response.ok)
+      throw new Error('Lokasi alamat belum dapat dicari. Periksa koneksi lalu coba lagi.');
     const [result] = await response.json();
     if (!result || !Array.isArray(result.boundingbox) || result.boundingbox.length !== 4) continue;
     const [south, north, west, east] = result.boundingbox.map(Number);
@@ -103,11 +106,80 @@ async function geocodeRegion(region) {
     if (![south, north, west, east, ...center].every(Number.isFinite)) continue;
     return {
       center,
-      bounds: [[south, west], [north, east]],
+      bounds: [
+        [south, west],
+        [north, east],
+      ],
       locality: candidate.locality,
     };
   }
   throw new Error('Lokasi alamat belum ditemukan. Periksa pilihan desa/kelurahan dan coba lagi.');
+}
+
+export async function reverseGeocodeCoordinates(
+  latitude,
+  longitude,
+  signal = new AbortController().signal,
+) {
+  const delay = Math.max(0, 1100 - (Date.now() - lastReverseGeocodeAt));
+  if (delay) {
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(resolve, delay);
+      signal.addEventListener(
+        'abort',
+        () => {
+          clearTimeout(timer);
+          reject(signal.reason || new Error('Pencarian alamat dibatalkan.'));
+        },
+        { once: true },
+      );
+    });
+  }
+  if (signal.aborted) throw signal.reason || new Error('Pencarian alamat dibatalkan.');
+  lastReverseGeocodeAt = Date.now();
+  const query = new URLSearchParams({
+    lat: String(latitude),
+    lon: String(longitude),
+    format: 'jsonv2',
+    addressdetails: '1',
+    zoom: '18',
+  });
+  const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${query}`, {
+    headers: { Accept: 'application/json' },
+    signal: AbortSignal.any([signal, AbortSignal.timeout(10000)]),
+  });
+  if (!response.ok)
+    throw new Error('Alamat titik peta belum dapat dicari. Periksa koneksi lalu coba lagi.');
+  const result = await response.json();
+  const address = result.address || {};
+  if (address.country_code && address.country_code.toLowerCase() !== 'id')
+    throw new Error('Titik peta harus berada di Indonesia.');
+  const names = {
+    province: [address.state, address.province, address.region].filter(Boolean),
+    city: [address.city, address.municipality, address.county, address.state_district].filter(
+      Boolean,
+    ),
+    district: [address.city_district, address.district, address.borough, address.suburb].filter(
+      Boolean,
+    ),
+    village: [
+      address.village,
+      address.hamlet,
+      address.neighbourhood,
+      address.quarter,
+      address.suburb,
+    ].filter(Boolean),
+  };
+  if (
+    !names.province.length ||
+    !names.city.length ||
+    !names.district.length ||
+    !names.village.length
+  )
+    throw new Error(
+      'Wilayah lengkap titik ini belum ditemukan. Coba pilih titik yang lebih dekat ke alamat.',
+    );
+  return names;
 }
 
 export function googleMapsDirectionsUrl(latitude, longitude) {
@@ -124,6 +196,8 @@ export async function mountLocationPicker({
   initialLocation,
   initialArea,
   requireArea = false,
+  allowRegionChange = false,
+  onAddressChange = async () => {},
   onChange = () => {},
 }) {
   if (!document.getElementById('fi-location-map-style')) {
@@ -135,10 +209,11 @@ export async function mountLocationPicker({
   }
   const leaflet = await loadLeaflet();
   if (!element.isConnected) return { destroy() {} };
-  let areaRequired = requireArea || Boolean(initialArea?.district);
+  let areaRequired = !allowRegionChange && (requireArea || Boolean(initialArea?.district));
+  const shouldLocateArea = requireArea || Boolean(initialArea?.district);
   let area = null;
   let areaError = '';
-  if (areaRequired) {
+  if (shouldLocateArea) {
     try {
       area = await geocodeRegion(initialArea);
     } catch (error) {
@@ -157,8 +232,11 @@ export async function mountLocationPicker({
       : areaRequired
         ? [0, 0]
         : DEFAULT_MAP_CENTER;
-  const map = leaflet.map(element).setView(initial, area || hasInitialLocation ? 16 : areaRequired ? 2 : 14);
-  if (area) map.setMaxBounds(leaflet.latLngBounds(area.bounds).pad(0.02));
+  const map = leaflet
+    .map(element)
+    .setView(initial, area || hasInitialLocation ? 16 : areaRequired ? 2 : 14);
+  if (area)
+    map.setMaxBounds(allowRegionChange ? null : leaflet.latLngBounds(area.bounds).pad(0.02));
   addMapTiles(leaflet, map);
   const directionsLink = document.createElement('a');
   directionsLink.className = 'fi-button fi-button-outline';
@@ -170,9 +248,12 @@ export async function mountLocationPicker({
 
   let marker;
   let areaRevision = 0;
+  let reverseGeocodeController;
   const clearPickerArea = () => {
     area = null;
     areaRevision += 1;
+    reverseGeocodeController?.abort();
+    reverseGeocodeController = null;
     map.setMaxBounds(null);
     marker?.remove();
     marker = null;
@@ -182,14 +263,14 @@ export async function mountLocationPicker({
     directionsLink.hidden = true;
     onChange(null, null);
   };
-  const update = (latitude, longitude) => {
+  const update = (latitude, longitude, resolveAddress = false) => {
     if (!validCoordinates(latitude, longitude)) return;
     const point = [Number(latitude), Number(longitude)];
-    if (areaRequired && !area) {
+    if (!allowRegionChange && areaRequired && !area) {
       status.textContent = 'Pilih kecamatan terlebih dahulu agar titik pickup sesuai wilayah.';
       return;
     }
-    if (area && !leaflet.latLngBounds(area.bounds).contains(point)) {
+    if (!allowRegionChange && area && !leaflet.latLngBounds(area.bounds).contains(point)) {
       if (marker && validCoordinates(latitudeInput.value, longitudeInput.value))
         marker.setLatLng([Number(latitudeInput.value), Number(longitudeInput.value)]);
       status.textContent = 'Titik harus berada di dalam kecamatan yang dipilih.';
@@ -202,21 +283,46 @@ export async function mountLocationPicker({
     marker.off('dragend');
     marker.on('dragend', () => {
       const position = marker.getLatLng();
-      update(position.lat, position.lng);
+      update(position.lat, position.lng, true);
     });
-    status.textContent = `Titik dipilih: ${point[0].toFixed(6)}, ${point[1].toFixed(6)}`;
+    status.textContent = `Mencari alamat untuk titik ${point[0].toFixed(6)}, ${point[1].toFixed(6)}…`;
     directionsLink.href = googleMapsDirectionsUrl(...point);
     directionsLink.hidden = false;
     onChange(point[0], point[1]);
+    if (resolveAddress) {
+      reverseGeocodeController?.abort();
+      reverseGeocodeController = new AbortController();
+      const { signal } = reverseGeocodeController;
+      const addressRevision = ++areaRevision;
+      Promise.resolve(onAddressChange(null))
+        .then(() => {
+          if (addressRevision !== areaRevision || !element.isConnected) return null;
+          return reverseGeocodeCoordinates(...point, signal);
+        })
+        .then(async (names) => {
+          if (!names || addressRevision !== areaRevision || !element.isConnected) return;
+          await onAddressChange(names);
+          if (addressRevision === areaRevision && element.isConnected)
+            status.textContent = `Alamat diperbarui: ${names.village[0]}, ${names.district[0]}, ${names.city[0]}, ${names.province[0]}.`;
+        })
+        .catch((error) => {
+          if (addressRevision !== areaRevision || !element.isConnected) return;
+          if (addressRevision === areaRevision && element.isConnected)
+            status.textContent = error.message || 'Alamat titik peta belum dapat ditentukan.';
+        });
+    }
   };
 
   if (area && hasInitialLocation && leaflet.latLngBounds(area.bounds).contains(initial))
     update(initialLocation.latitude, initialLocation.longitude);
-  else if (area) status.textContent = `Peta dipusatkan di ${area.locality}. Klik titik lokasi yang sesuai alamat.`;
-  else if (areaRequired) status.textContent = areaError || 'Pilih kecamatan agar peta mengikuti wilayah alamat pickup.';
+  else if (area)
+    status.textContent = `Peta dipusatkan di ${area.locality}. Klik titik lokasi yang sesuai alamat.`;
+  else if (areaError) status.textContent = areaError;
+  else if (areaRequired)
+    status.textContent = areaError || 'Pilih kecamatan agar peta mengikuti wilayah alamat pickup.';
   else if (hasInitialLocation) update(...initial);
   else status.textContent = 'Klik peta untuk memilih titik alamat.';
-  map.on('click', (event) => update(event.latlng.lat, event.latlng.lng));
+  map.on('click', (event) => update(event.latlng.lat, event.latlng.lng, true));
   locateButton?.addEventListener('click', () => {
     if (!navigator.geolocation) {
       status.textContent = 'Perangkat ini tidak mendukung lokasi otomatis. Pilih titik pada peta.';
@@ -225,7 +331,7 @@ export async function mountLocationPicker({
     status.textContent = 'Mencari lokasi perangkat…';
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        update(coords.latitude, coords.longitude);
+        update(coords.latitude, coords.longitude, true);
         map.setView([coords.latitude, coords.longitude], 17);
       },
       () => {
@@ -281,6 +387,7 @@ export async function mountLocationPicker({
       onChange(null, null);
     },
     destroy() {
+      reverseGeocodeController?.abort();
       map.remove();
     },
   };

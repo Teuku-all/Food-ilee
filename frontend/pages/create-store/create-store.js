@@ -33,7 +33,7 @@ export async function renderCreateStore() {
   const form = document.getElementById('store-form');
   const regionAddress = await bindRegionAddress(form, 'store');
   const mapSection = document.createElement('div');
-  mapSection.innerHTML = '<label class="fi-label fi-map-label">Titik lokasi toko <small>Peta mengikuti kecamatan alamat pickup. Pilih titik pickup yang benar di dalam wilayah tersebut.</small></label><div id="store-map" class="fi-location-map" role="application" aria-label="Peta pemilih lokasi toko"></div><div class="fi-map-controls"><button type="button" class="fi-button fi-button-outline" id="store-locate">Gunakan lokasi perangkat</button><span id="store-map-status" role="status">Memuat peta…</span></div><input type="hidden" name="latitude"><input type="hidden" name="longitude">';
+  mapSection.innerHTML = '<label class="fi-label fi-map-label">Titik lokasi toko <small>Pilih titik pickup pada peta untuk menyesuaikan alamat administratif secara otomatis.</small></label><div id="store-map" class="fi-location-map" role="application" aria-label="Peta pemilih lokasi toko"></div><div class="fi-map-controls"><button type="button" class="fi-button fi-button-outline" id="store-locate">Gunakan lokasi perangkat</button><span id="store-map-status" role="status">Memuat peta…</span></div><input type="hidden" name="latitude"><input type="hidden" name="longitude">';
   form.querySelector('[name="shippingOriginAddress"]').before(mapSection);
   const mapStatus = form.querySelector('#store-map-status');
   const mapPicker = await mountLocationPicker({
@@ -42,7 +42,8 @@ export async function renderCreateStore() {
     longitudeInput: form.elements.longitude,
     status: mapStatus,
     locateButton: form.querySelector('#store-locate'),
-    requireArea: true,
+    allowRegionChange: true,
+    onAddressChange: (names) => regionAddress.selectRegion(names),
   }).catch((error) => {
     mapStatus.textContent = error.message;
     return null;

@@ -9,6 +9,7 @@ import {
   mountLocationPicker,
   validCoordinates,
 } from '../../utils/location-map.js';
+import { selectRegionAddress } from '../../utils/region-address.js';
 import { formatProductWeight, productWeightGrams } from '../../utils/product-weight.js';
 import { translate } from '../../utils/i18n.js';
 
@@ -176,7 +177,7 @@ function readAddress() {
 function bindCheckoutMap() {
   const form = document.getElementById('co-address');
   const section = document.createElement('div');
-  section.innerHTML = '<label class="co-label fi-map-label">Titik lokasi alamat <small>Pilih titik rumah/penerima dengan klik atau geser penanda di peta.</small></label><div id="co-map" class="fi-location-map" role="application" aria-label="Peta pemilih lokasi alamat penerima"></div><div class="fi-map-controls"><button type="button" class="fi-button fi-button-outline" id="co-locate">Gunakan lokasi perangkat</button><span id="co-map-status" role="status">Memuat peta…</span></div><input type="hidden" name="latitude"><input type="hidden" name="longitude">';
+  section.innerHTML = '<label class="co-label fi-map-label">Titik lokasi alamat <small>Pilih atau geser titik di peta untuk menyesuaikan wilayah alamat secara otomatis.</small></label><div id="co-map" class="fi-location-map" role="application" aria-label="Peta pemilih lokasi alamat penerima"></div><div class="fi-map-controls"><button type="button" class="fi-button fi-button-outline" id="co-locate">Gunakan lokasi perangkat</button><span id="co-map-status" role="status">Memuat peta…</span></div><input type="hidden" name="latitude"><input type="hidden" name="longitude">';
   document.getElementById('co-save-address').before(section);
   const saved = savedAddress();
   const status = form.querySelector('#co-map-status');
@@ -187,6 +188,14 @@ function bindCheckoutMap() {
     status,
     locateButton: form.querySelector('#co-locate'),
     initialLocation: saved,
+    allowRegionChange: true,
+    onAddressChange: async (names) => {
+      await selectRegionAddress(form, 'co', names, '[name="postalCode"]');
+      address = readAddress();
+      invalidateCheckoutKey();
+      updateSummary();
+      loadRates();
+    },
     onChange: (latitude, longitude) => {
       if (latitude === null || longitude === null) return;
       address = readAddress();

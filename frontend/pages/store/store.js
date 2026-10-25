@@ -339,10 +339,12 @@ function editStore(store) {
     dialog.remove();
   });
   const mapSection = document.createElement('div');
-  mapSection.innerHTML = '<label class="fi-label fi-map-label">Titik lokasi toko <small>Peta mengikuti kecamatan alamat pickup. Pilih titik pickup yang benar di dalam wilayah tersebut.</small></label><div id="store-map" class="fi-location-map" role="application" aria-label="Peta pemilih lokasi toko"></div><div class="fi-map-controls"><button type="button" class="fi-button fi-button-outline" id="store-locate">Gunakan lokasi perangkat</button><span id="store-map-status" role="status">Memuat peta…</span></div><input type="hidden" name="latitude"><input type="hidden" name="longitude">';
+  mapSection.innerHTML = '<label class="fi-label fi-map-label">Titik lokasi toko <small>Pilih titik pickup pada peta untuk menyesuaikan alamat administratif secara otomatis.</small></label><div id="store-map" class="fi-location-map" role="application" aria-label="Peta pemilih lokasi toko"></div><div class="fi-map-controls"><button type="button" class="fi-button fi-button-outline" id="store-locate">Gunakan lokasi perangkat</button><span id="store-map-status" role="status">Memuat peta…</span></div><input type="hidden" name="latitude"><input type="hidden" name="longitude">';
   form.querySelector('[name="shippingOriginAddress"]').before(mapSection);
   const regionAddress = bindRegionAddress(form, 'store', store.shippingOriginRegion || {});
   const mapStatus = form.querySelector('#store-map-status');
+  let pickupLocationChanged = false;
+  let pickupContactChanged = false;
   const locationPickerPromise = mountLocationPicker({
     element: form.querySelector('#store-map'),
     latitudeInput: form.elements.latitude,
@@ -351,10 +353,19 @@ function editStore(store) {
     locateButton: form.querySelector('#store-locate'),
     initialLocation: store,
     initialArea: store.shippingOriginRegion,
-    requireArea: true,
+    allowRegionChange: true,
+    onAddressChange: async (names) => {
+      pickupLocationChanged = true;
+      const resolvedAddress = await regionAddress;
+      await resolvedAddress.selectRegion(names);
+    },
   }).catch((error) => {
     mapStatus.textContent = error.message;
     return null;
+  });
+  dialog.addEventListener('close', async () => {
+    const picker = await locationPickerPromise;
+    picker?.destroy();
   });
   const updateStoreMapArea = async () => {
     try {
@@ -380,8 +391,6 @@ function editStore(store) {
     .forEach((button) => button.addEventListener('click', () => dialog.close()));
   const addressSection = form.querySelector('.st-address-section');
   addressSection.querySelectorAll('[required]').forEach((field) => field.removeAttribute('required'));
-  let pickupLocationChanged = false;
-  let pickupContactChanged = false;
   addressSection.querySelectorAll('select,#store-details,#store-postal').forEach((field) => {
     field.addEventListener('input', () => { pickupLocationChanged = true; });
     field.addEventListener('change', () => { pickupLocationChanged = true; });
