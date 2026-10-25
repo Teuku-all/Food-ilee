@@ -1,3 +1,4 @@
+import { translate } from '../../utils/i18n.js';
 import { getMyStore, updateMyStore } from '../../services/store.js';
 import { deleteWaste, getWastes, updateWaste } from '../../services/waste.js';
 import { getMySales, updateOrderStatus } from '../../services/order.js';
@@ -124,7 +125,7 @@ function bindPanelActions(products, sales) {
   document.querySelectorAll('[data-product-delete]').forEach((button) =>
     button.addEventListener('click', async () => {
       const product = products.find((item) => item.id === button.dataset.productDelete);
-      if (!product || !confirm(`Hapus “${product.title}” dari toko?`)) return;
+      if (!product || !confirm(translate(`Hapus “${product.title}” dari toko?`))) return;
       button.disabled = true;
       try {
         const result = await deleteWaste(product.id);

@@ -1,3 +1,4 @@
+import { translate, getLanguage } from '../../utils/i18n.js';
 import { askAI } from '../../services/ai.js';
 import { escapeHtml } from '../../utils/html.js';
 import { renderShell, showToast } from '../../ui/shell.js';
@@ -9,12 +10,16 @@ const prompts = [
   'Bagaimana menentukan harga yang menarik?',
   'Limbah apa yang cocok untuk pakan ternak?',
 ];
-const historyKey = 'foodilee_ai_conversation_v1';
+const historyKey = () => `foodilee_ai_conversation_v1:${getLanguage()}`;
+
+window.addEventListener('foodilee:language-changed', () => {
+  if (location.hash === '#tanya-ai') renderAI();
+});
 
 export function renderAI() {
   let history;
   try {
-    history = JSON.parse(sessionStorage.getItem(historyKey) || '[]');
+    history = JSON.parse(sessionStorage.getItem(historyKey()) || '[]');
   } catch {
     history = [];
   }
@@ -28,14 +33,16 @@ export function renderAI() {
   document
     .querySelectorAll('[data-prompt]')
     .forEach((button) =>
-      button.addEventListener('click', () => submitPrompt(prompts[Number(button.dataset.prompt)])),
+      button.addEventListener('click', () =>
+        submitPrompt(translate(prompts[Number(button.dataset.prompt)])),
+      ),
     );
   document.getElementById('ai-form').addEventListener('submit', (event) => {
     event.preventDefault();
     submitPrompt(document.getElementById('ai-input').value);
   });
   document.getElementById('ai-clear').addEventListener('click', () => {
-    sessionStorage.removeItem(historyKey);
+    sessionStorage.removeItem(historyKey());
     renderAI();
   });
 }
@@ -45,6 +52,7 @@ function messageMarkup(message) {
 }
 
 async function submitPrompt(text) {
+  const conversationKey = historyKey();
   const question = String(text || '').trim();
   if (!question) return;
   const input = document.getElementById('ai-input');
@@ -60,7 +68,7 @@ async function submitPrompt(text) {
   if (clearButton) clearButton.disabled = true;
   let history;
   try {
-    history = JSON.parse(sessionStorage.getItem(historyKey) || '[]');
+    history = JSON.parse(sessionStorage.getItem(conversationKey) || '[]');
   } catch {
     history = [];
   }
@@ -80,10 +88,12 @@ async function submitPrompt(text) {
         ? result.data
         : result.data?.response || result.data?.message || JSON.stringify(result.data);
     history.push({ role: 'assistant', text: answer });
-    sessionStorage.setItem(historyKey, JSON.stringify(history));
+    sessionStorage.setItem(conversationKey, JSON.stringify(history));
+    if (!messages.isConnected) return;
     messages.innerHTML = history.map(messageMarkup).join('');
     messages.scrollTop = messages.scrollHeight;
   } catch (error) {
+    if (!messages.isConnected) return;
     history.push({
       role: 'assistant',
       text: error.message || 'Koneksi ke asisten terputus. Silakan coba lagi.',
@@ -97,7 +107,7 @@ async function submitPrompt(text) {
     });
     if (clearButton?.isConnected) clearButton.disabled = false;
     if (send?.isConnected) send.disabled = false;
-    input?.focus();
+    if (input?.isConnected) input.focus();
   }
 }
 

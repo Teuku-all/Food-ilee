@@ -1,8 +1,9 @@
+import { translate } from '../../utils/i18n.js';
 import { cancelOrder, createReview, getMyOrders, getOrder, refreshOrderPayment } from '../../services/order.js';
 import { escapeHtml } from '../../utils/html.js';
 import { showToast, injectToastStyle } from '../../utils/toast.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
-import { bindSharedHeader, dashboardFooter, dashboardHeader } from '../../ui/shell.js';
+import { bindSharedHeader, dashboardFooter, dashboardHeader, pageHeading } from '../../ui/shell.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { icon } from '../../ui/icons.js';
 
@@ -42,6 +43,7 @@ export async function renderTransactions() {
 ${dashboardHeader('orders')}
 
       <main class="tx-main">
+        ${pageHeading({ title: 'Transaksi', eyebrow: 'AKTIVITAS ANDA', description: 'Pantau setiap pesanan, dari pembayaran hingga diterima.', symbol: 'orders' })}
         <div class="tx-filters" role="group" aria-label="Filter status transaksi">
           <button class="tx-filter active" type="button" aria-pressed="true" data-status="">Semua</button>
           <button class="tx-filter" type="button" aria-pressed="false" data-status="pending">Menunggu Pembayaran</button>
@@ -236,7 +238,7 @@ function renderOrders() {
   }));
   list.querySelectorAll('[data-cancel-order]').forEach((button) => button.addEventListener('click', async () => {
     const orderId = button.dataset.cancelOrder;
-    if (!window.confirm('Batalkan pesanan ini? Pesanan yang sudah dibayar tidak dapat dibatalkan lewat fitur ini.')) return;
+    if (!window.confirm(translate('Batalkan pesanan ini? Pesanan yang sudah dibayar tidak dapat dibatalkan lewat fitur ini.'))) return;
     const revision = getNavigationRevision();
     button.disabled = true;
     button.textContent = 'Membatalkan…';

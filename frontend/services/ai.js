@@ -1,3 +1,4 @@
+import { getLanguage } from '../utils/i18n.js';
 import { apiRequest } from './api.js';
 import { getToken } from '../utils/storage.js';
 
@@ -8,7 +9,7 @@ export async function askAI(message) {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${getToken()}`,
     },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, language: getLanguage() }),
   });
 }
 
@@ -19,6 +20,6 @@ export async function getAIRecommendation(title, description) {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${getToken()}`,
     },
-    body: JSON.stringify({ title, description }),
+    body: JSON.stringify({ title, description, language: getLanguage() }),
   });
 }

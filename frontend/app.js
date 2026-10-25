@@ -60,7 +60,14 @@ window.addEventListener('foodilee:session-expired', (event) => {
 
 async function router(route = location.hash || '#beranda') {
   if (landingSectionRoutes.has(route) && document.querySelector('.landing-page')) {
-    document.getElementById(route.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document
+      .getElementById(route.slice(1))
+      ?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'instant'
+          : 'smooth',
+        block: 'start',
+      });
     return;
   }
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });

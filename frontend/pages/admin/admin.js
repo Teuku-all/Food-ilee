@@ -1,3 +1,4 @@
+import { translate } from '../../utils/i18n.js';
 import { getCurrentUser } from '../../services/user.js';
 import {
   getAdminAnalytics,
@@ -212,7 +213,7 @@ function renderPanel(currentUser) {
 function bindAdminActions(currentUser, revision) {
   document.querySelectorAll('[data-admin-ban]').forEach((button) =>
     button.addEventListener('click', async () => {
-      if (!confirm('Nonaktifkan akun ini?')) return;
+      if (!confirm(translate('Nonaktifkan akun ini?'))) return;
       button.disabled = true;
       try {
         await banAdminUser(button.dataset.adminBan);
@@ -227,7 +228,7 @@ function bindAdminActions(currentUser, revision) {
   );
   document.querySelectorAll('[data-admin-delete]').forEach((button) =>
     button.addEventListener('click', async () => {
-      if (!confirm('Hapus produk ini dari marketplace?')) return;
+      if (!confirm(translate('Hapus produk ini dari marketplace?'))) return;
       button.disabled = true;
       try {
         await deleteAdminWaste(button.dataset.adminDelete);

@@ -208,7 +208,7 @@ function startChatPolling(chatId, revision) {
 function chatItem(chat) {
   const other = otherUser(chat);
   const last = chat.messages?.[0];
-  return `<button class="ch-chat-item${chat.id === selectedChatId ? ' active' : ''}" type="button" data-chat-select="${escapeHtml(chat.id)}"><span class="ch-avatar">${escapeHtml(initials(other))}</span><span class="ch-chat-copy"><strong>${escapeHtml(displayName(other))}</strong><small>${escapeHtml(last?.text || 'Mulai percakapan')}</small></span></button>`;
+  return `<button class="ch-chat-item${chat.id === selectedChatId ? ' active' : ''}" type="button" data-chat-select="${escapeHtml(chat.id)}"><span class="ch-avatar">${escapeHtml(initials(other))}</span><span class="ch-chat-copy"><strong>${escapeHtml(displayName(other))}</strong><small ${last?.text ? 'data-no-translate' : ''}>${escapeHtml(last?.text || 'Mulai percakapan')}</small></span></button>`;
 }
 
 function otherUser(chat) {
@@ -341,7 +341,7 @@ async function submitMessage(event, chatId, revision) {
 }
 
 function messageMarkup(message, time, statusOverride = '') {
-  return `<article class="ch-bubble${message.senderId === currentUserId ? ' mine' : ''}" data-message-id="${escapeHtml(message.id)}"><p>${escapeHtml(message.text)}</p><time>${escapeHtml(time)}</time>${message.senderId === currentUserId ? statusMarkup(message, statusOverride) : ''}</article>`;
+  return `<article class="ch-bubble${message.senderId === currentUserId ? ' mine' : ''}" data-message-id="${escapeHtml(message.id)}"><p data-no-translate>${escapeHtml(message.text)}</p><time>${escapeHtml(time)}</time>${message.senderId === currentUserId ? statusMarkup(message, statusOverride) : ''}</article>`;
 }
 
 function appendMessage(box, message, statusOverride) {

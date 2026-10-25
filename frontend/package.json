@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node server.js",
     "build": "node scripts/build.mjs",
-    "preview": "node server.js --dist"
+    "preview": "node server.js --dist",
+    "test:i18n": "node --test scripts/i18n.test.mjs"
   }
 }

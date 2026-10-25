@@ -11,7 +11,7 @@ async function askAI(req, res) {
       });
     }
 
-    const response = await aiService.askAI(message);
+    const response = await aiService.askAI(message, req.body.language);
 
     res.status(200).json({
       success: true,
@@ -29,7 +29,7 @@ async function recommendWaste(req, res) {
   try {
     const { title, description } = req.body;
 
-    const response = await aiService.recommendWaste(title, description);
+    const response = await aiService.recommendWaste(title, description, req.body.language);
 
     // Bersihkan response AI
     const cleanResponse = response

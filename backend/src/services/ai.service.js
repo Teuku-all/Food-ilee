@@ -4,7 +4,7 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-async function askAI(message) {
+async function askAI(message, language = 'id') {
   const completion = await groq.chat.completions.create({
     messages: [
       {
@@ -22,7 +22,7 @@ async function askAI(message) {
           - kompos
           - daur ulang
 
-          Jawab dalam bahasa Indonesia
+          Jawab dalam bahasa ${language === 'en' ? 'Inggris (English)' : 'Indonesia'}
           yang jelas dan singkat.
           `,
       },
@@ -40,7 +40,7 @@ async function askAI(message) {
   return completion.choices[0].message.content;
 }
 
-async function recommendWaste(title, description) {
+async function recommendWaste(title, description, language = 'id') {
   const prompt = `
 
   Kamu adalah AI ahli limbah makanan.
@@ -70,7 +70,7 @@ async function recommendWaste(title, description) {
     "recycle_tip": "..."
   }
 
-  Gunakan bahasa Indonesia.
+  Gunakan bahasa ${language === 'en' ? 'Inggris (English)' : 'Indonesia'} untuk semua nilai JSON.
   `;
 
   const completion = await groq.chat.completions.create({

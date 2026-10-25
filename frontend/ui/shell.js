@@ -1,7 +1,7 @@
 import { getCachedCurrentUser, getCurrentUser } from '../services/user.js';
 import { removeToken } from '../utils/storage.js';
 import { escapeHtml } from '../utils/html.js';
-import { applyTranslations, getLanguage, setLanguage } from '../utils/i18n.js';
+import { applyTranslations, getLanguage } from '../utils/i18n.js';
 import { brandImage, icon } from './icons.js';
 
 const links = [
@@ -48,13 +48,13 @@ export function dashboardHeader(active = '') {
         <div class="fi-account">
         <button class="fi-account-toggle" id="fi-account-toggle" type="button" aria-label="Buka menu akun" aria-haspopup="true" aria-controls="fi-account-menu" aria-expanded="false">
           <span class="fi-avatar" data-user-avatar>U</span>
-          <span class="fi-account-meta"><small>Akun Anda</small><span class="fi-account-name" data-user-name>Pengguna</span></span>
+          <span class="fi-account-meta"><small>Akun Anda</small><span class="fi-account-name" data-user-name data-no-translate>Pengguna</span></span>
           <span class="fi-account-chevron" aria-hidden="true">${icon('chevron')}</span>
         </button>
         <div class="fi-account-menu" id="fi-account-menu" aria-label="Menu akun" aria-hidden="true">
           <div class="fi-account-menu-profile">
             <span class="fi-account-menu-avatar fi-avatar" data-user-avatar>U</span>
-            <div class="fi-account-menu-identity"><strong data-user-name>Pengguna</strong><small data-user-email></small></div>
+            <div class="fi-account-menu-identity"><strong data-user-name data-no-translate>Pengguna</strong><small data-user-email data-no-translate></small></div>
             <span class="fi-account-role" data-user-role>Anggota</span>
           </div>
           <nav class="fi-account-menu-links" aria-label="Tautan akun">
@@ -82,11 +82,23 @@ export function dashboardFooter() {
   return `<footer class="fi-footer"><div class="fi-footer-grid"><div class="fi-footer-brand"><a href="#beranda" aria-label="Food Ilee">${brandImage({ tone: 'dark' })}</a><p>Membangun jembatan antara limbah pangan dan inovasi berkelanjutan untuk masa depan bumi.</p></div><div><h3>Jelajahi</h3><a href="#marketplace">Marketplace</a><a href="#tambah-limbah">Tambah Limbah</a><a href="#tanya-ai">Tanya AI</a></div><div><h3>Akun</h3><a href="#profil">Profil Anda</a><a href="#transaksi">Riwayat Transaksi</a><a href="#kelola-toko">Kelola Toko</a></div><div><h3>Bantuan</h3><a href="#panduan">Panduan Food Ilee</a><a href="mailto:halo@foodilee.id">Hubungi Kami</a><span>Indonesia</span></div></div><div class="fi-footer-bottom">© 2026 Food Ilee · Memberdayakan sirkularitas untuk Indonesia hijau.</div></footer>`;
 }
 
+export function pageHeading({ title, description, eyebrow = 'FOOD ILEE', symbol = 'leaf' }) {
+  return `<header class="fi-page-heading"><span class="fi-page-heading-mark" aria-hidden="true">${icon(symbol)}</span><div><p class="fi-page-eyebrow">${escapeHtml(eyebrow)}</p><h1>${escapeHtml(title)}</h1><p>${escapeHtml(description)}</p></div></header>`;
+}
+
+const pageIntroductions = {
+  '#tambah-limbah': { title: 'Tambah Limbah', eyebrow: 'MULAI BERJUAL DI FOOD ILEE', description: 'Bagikan foto, jumlah, dan lokasi agar orang yang tepat bisa menemukannya.', symbol: 'add' },
+  '#tanya-ai': { title: 'Tanya AI', eyebrow: 'AI ASSIST', description: 'Tanyakan tentang kategori, penyimpanan, harga, atau pemanfaatan bahan organik.', symbol: 'sparkles' },
+  '#chat': { title: 'Pesan', eyebrow: 'KOMUNITAS FOOD ILEE', description: 'Terhubung, berdiskusi, dan temukan peluang bersama.', symbol: 'chat' },
+};
+
 export function renderShell(active, content, { footer = true } = {}) {
   injectShellStyles();
   const app = document.getElementById('app');
   shellRenderVersion += 1;
-  app.innerHTML = `<div class="fi-app">${dashboardHeader(active)}<div class="fi-page">${content}</div>${footer ? dashboardFooter() : ''}</div>`;
+  const introduction = pageIntroductions[location.hash];
+  const heading = introduction && !/<h1[\s>]/i.test(content) ? pageHeading(introduction) : '';
+  app.innerHTML = `<div class="fi-app">${dashboardHeader(active)}<div class="fi-page">${heading}${content}</div>${footer ? dashboardFooter() : ''}</div>`;
   bindShell(shellRenderVersion);
 }
 
@@ -121,9 +133,6 @@ export function bindShell(version = shellRenderVersion) {
     menu.addEventListener('click', (event) => {
       if (!event.target.closest('a')) return;
       closeAccountMenu(menu, toggle);
-    });
-    menu.querySelectorAll('[data-language-choice]').forEach((button) => {
-      button.addEventListener('click', () => setLanguage(button.dataset.languageChoice));
     });
     if (!document.documentElement.dataset.fiMenuBound) {
       document.addEventListener('click', (event) => {
@@ -166,7 +175,9 @@ function updateCartBadge() {
   try {
     const value = JSON.parse(sessionStorage.getItem('foodilee_checkout_cart') || '[]');
     if (Array.isArray(value)) cart = value;
-  } catch { /* Keranjang rusak atau kosong. */ }
+  } catch {
+    /* Keranjang rusak atau kosong. */
+  }
   const count = cart.reduce((total, item) => total + Math.max(0, Number(item?.quantity) || 0), 0);
   badge.textContent = count > 99 ? '99+' : String(count);
   badge.hidden = count === 0;
