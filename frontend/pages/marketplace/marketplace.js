@@ -854,5 +854,30 @@ function injectMarketplaceExperienceStyles() {
     @media(max-width:760px){.mp-app .mp-results-head{align-items:flex-start;flex-direction:column;gap:15px;margin:26px 0 16px;padding:18px;border-radius:19px}.mp-app .mp-results-head h2{font-size:21px}.mp-app .mp-sort-label{box-sizing:border-box;width:100%}.mp-app .mp-sort-copy{flex:1;display:flex;align-items:center;justify-content:space-between;gap:12px}.mp-app .mp-sort-label select{min-width:0}}
     @media(max-width:380px){.mp-app .mp-results-title-row{align-items:flex-start;flex-direction:column;gap:7px}.mp-app .mp-results-head h2{font-size:20px}.mp-app .mp-results-help{max-width:260px}}
   `;
+  style.textContent += `
+    @media(max-width:640px){
+      .mp-app .mp-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      .mp-app .mp-card{min-width:0;padding:8px;border-radius:16px}
+      .mp-app .mp-card-image-wrap{aspect-ratio:1.35;border-radius:11px}
+      .mp-app .mp-category-tag{top:7px;left:7px;padding:4px 7px;font-size:8px}
+      .mp-app .mp-demo-tag{top:7px;right:7px;padding:4px 6px;font-size:7px}
+      .mp-app .mp-card-body{padding:9px 1px 1px}
+      .mp-app .mp-title-row{flex-direction:column;align-items:flex-start;gap:2px}
+      .mp-app .mp-title-row h2,.mp-app .mp-title-row strong{max-width:100%;font-size:11px;line-height:1.4}
+      .mp-app .mp-title-row h2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+      .mp-app .mp-meta{flex-wrap:wrap;gap:4px 6px;margin-top:7px;font-size:9px}
+      .mp-app .mp-meta .fi-icon{width:12px;height:12px;vertical-align:-2px}
+      .mp-app .mp-meta i{display:none}
+      .mp-app .mp-meta span:last-child{max-width:100%;font-size:8px}
+      .mp-app .mp-updated{margin:8px 0;font-size:8px}
+      .mp-app .mp-card-action{height:35px;padding:0 6px;border-radius:10px;font-size:9px}
+    }
+    @media(max-width:360px){
+      .mp-app .mp-grid{gap:8px}
+      .mp-app .mp-card{padding:7px}
+      .mp-app .mp-title-row h2,.mp-app .mp-title-row strong{font-size:10px}
+      .mp-app .mp-card-action{font-size:8px}
+    }
+  `;
   document.head.append(style);
 }
