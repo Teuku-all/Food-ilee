@@ -1,20 +1,34 @@
-const textTargets = 'h1, h2, h3, p, a, button, label, legend, span, strong, small, li, dt, dd, time, input, select, textarea, div';
-const frameTargets = 'header, section, article, aside, footer, form, img, .landing-hero-image, .mp-promo-visual, .fi-nav, .fi-account-menu.open';
+const textTargets =
+  'h1, h2, h3, p, a, button, label, legend, span, strong, small, li, dt, dd, time, input, select, textarea, div';
+const frameTargets =
+  'header, section, article, aside, footer, form, img, .landing-hero-image, .mp-promo-visual, .fi-nav, .fi-account-menu.open';
 const motionTargets = `${textTargets}, ${frameTargets}`;
 
 function visibleTargets() {
-  return [...document.querySelectorAll(`#app :is(${motionTargets}), dialog[open] :is(${motionTargets})`)]
-    .filter((element) => {
-      if (element.closest('[hidden], [aria-hidden="true"]')) return false;
-      if (element.matches('.landing-hero')) return false;
-      if (element.localName === 'div' && !element.matches('.landing-hero-image') && ![...element.childNodes].some((node) =>
-        node.nodeType === Node.TEXT_NODE && node.textContent.trim(),
-      )) return false;
-      const rect = element.getBoundingClientRect();
-      return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.right > 0 &&
-        rect.top < window.innerHeight && rect.left < window.innerWidth &&
-        getComputedStyle(element).visibility === 'visible';
-    });
+  return [
+    ...document.querySelectorAll(`#app :is(${motionTargets}), dialog[open] :is(${motionTargets})`),
+  ].filter((element) => {
+    if (element.closest('[hidden], [aria-hidden="true"]')) return false;
+    if (element.matches('.landing-hero')) return false;
+    if (
+      element.localName === 'div' &&
+      !element.matches('.landing-hero-image') &&
+      ![...element.childNodes].some(
+        (node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim(),
+      )
+    )
+      return false;
+    const rect = element.getBoundingClientRect();
+    return (
+      rect.width > 0 &&
+      rect.height > 0 &&
+      rect.bottom > 0 &&
+      rect.right > 0 &&
+      rect.top < window.innerHeight &&
+      rect.left < window.innerWidth &&
+      getComputedStyle(element).visibility === 'visible'
+    );
+  });
 }
 
 function displayText(element) {
@@ -55,17 +69,27 @@ async function fadeText(update) {
   // Older browsers fade only text controls, keeping backgrounds and images visible.
   const route = location.hash;
   const animate = (frames, ms) => {
-    const targets = visibleTargets().filter((element) =>
-      element.matches(textTargets) && displayText(element)?.trim() &&
-      !element.matches('[data-language-choice]'),
+    const targets = visibleTargets().filter(
+      (element) =>
+        element.matches(textTargets) &&
+        displayText(element)?.trim() &&
+        !element.matches('[data-language-choice]'),
     );
-    const leaves = targets.filter((element) =>
-      !targets.some((other) => other !== element && element.contains(other)),
+    const leaves = targets.filter(
+      (element) => !targets.some((other) => other !== element && element.contains(other)),
     );
-    return Promise.all(leaves.filter((el) => el.isConnected).map(async (el) => {
-      const animation = el.animate(frames, { duration: ms, easing: 'ease-out', fill: 'both' });
-      try { await animation.finished; } finally { animation.cancel(); }
-    }));
+    return Promise.all(
+      leaves
+        .filter((el) => el.isConnected)
+        .map(async (el) => {
+          const animation = el.animate(frames, { duration: ms, easing: 'ease-out', fill: 'both' });
+          try {
+            await animation.finished;
+          } finally {
+            animation.cancel();
+          }
+        }),
+    );
   };
   await animate([{ opacity: 1 }, { opacity: 0 }], 100);
   update();
@@ -97,16 +121,20 @@ export async function transitionLanguage(update) {
   root.dataset.languageTransition = 'true';
   const frameStyles = document.createElement('style');
   const keepFramesVisible = () => {
-    frameStyles.textContent = snapshots.filter(({ frame, element, text }) =>
-      frame || displayText(element) === text,
-    ).map(({ name }) =>
-      `html[data-language-transition]::view-transition-old(${name}){display:none}` +
-      `html[data-language-transition]::view-transition-new(${name}){animation:none;mix-blend-mode:normal}`,
-    ).join('\n');
+    frameStyles.textContent = snapshots
+      .filter(({ frame, element, text }) => frame || displayText(element) === text)
+      .map(
+        ({ name }) =>
+          `html[data-language-transition]::view-transition-old(${name}){display:none}` +
+          `html[data-language-transition]::view-transition-new(${name}){animation:none;mix-blend-mode:normal}`,
+      )
+      .join('\n');
   };
   keepFramesVisible();
   document.head.append(frameStyles);
-  snapshots.forEach(({ element, name }) => { element.style.viewTransitionName = name; });
+  snapshots.forEach(({ element, name }) => {
+    element.style.viewTransitionName = name;
+  });
   let skip;
   try {
     const transition = document.startViewTransition(() => {
@@ -129,7 +157,9 @@ export async function transitionLanguage(update) {
     await transition.finished;
   } finally {
     if (skip) window.removeEventListener('hashchange', skip);
-    snapshots.forEach(({ element, original }) => { element.style.viewTransitionName = original; });
+    snapshots.forEach(({ element, original }) => {
+      element.style.viewTransitionName = original;
+    });
     frameStyles.remove();
     delete root.dataset.languageTransition;
   }

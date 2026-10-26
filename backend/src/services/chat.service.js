@@ -81,8 +81,12 @@ async function getMessages(chatId, userId) {
 
 async function markMessageDelivered(messageId, recipientId) {
   const message = await prisma.message.findFirst({
-    where: { id: messageId, senderId: { not: recipientId }, deliveredAt: null,
-      chat: { OR: [{ buyerId: recipientId }, { sellerId: recipientId }] } },
+    where: {
+      id: messageId,
+      senderId: { not: recipientId },
+      deliveredAt: null,
+      chat: { OR: [{ buyerId: recipientId }, { sellerId: recipientId }] },
+    },
     select: { id: true },
   });
   if (!message) return null;

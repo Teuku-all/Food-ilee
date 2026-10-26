@@ -2,7 +2,7 @@ import { renderLogin, renderPasswordReset } from './pages/login/login.js';
 import { renderLanding } from './pages/landing/landing.js';
 import { renderMarketplace } from './pages/marketplace/marketplace.js';
 import { renderTransactions } from './pages/transactions/transactions.js';
-import { renderTambahLimbah } from './pages/tambah-limbah/tambah-limbah.js';
+import { renderAddWaste } from './pages/add-waste/add-waste.js';
 import { renderCreateStore } from './pages/create-store/create-store.js';
 import { renderStore } from './pages/store/store.js';
 import { renderProfile } from './pages/profile/profile.js';
@@ -65,14 +65,12 @@ async function router(route = location.hash || '#beranda') {
     return;
   }
   if (landingSectionRoutes.has(route) && document.querySelector('.landing-page')) {
-    document
-      .getElementById(route.slice(1))
-      ?.scrollIntoView({
-        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-          ? 'instant'
-          : 'smooth',
-        block: 'start',
-      });
+    document.getElementById(route.slice(1))?.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'instant'
+        : 'smooth',
+      block: 'start',
+    });
     return;
   }
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -115,7 +113,7 @@ async function router(route = location.hash || '#beranda') {
     return;
   }
   if (route === '#tambah-limbah') {
-    await renderTambahLimbah();
+    await renderAddWaste();
     return;
   }
   if (route === '#tanya-ai') {
@@ -128,7 +126,8 @@ async function router(route = location.hash || '#beranda') {
   }
   if (route === '#kelola-toko') {
     await renderStore();
-    if (!isCurrentNavigation(navigationRevision) || !document.querySelector('.st-dashboard')) return;
+    if (!isCurrentNavigation(navigationRevision) || !document.querySelector('.st-dashboard'))
+      return;
     const userId = getCachedCurrentUser()?.data?.id;
     if (shouldShowOnboarding(userId)) renderOnboarding({ userId });
     return;
@@ -163,7 +162,11 @@ async function router(route = location.hash || '#beranda') {
   }
   if (route === '#dashboard') {
     let store = null;
-    try { store = await getStoreAccess(); } catch { /* Keep the legacy link usable during a store lookup failure. */ }
+    try {
+      store = await getStoreAccess();
+    } catch {
+      /* Keep the legacy link usable during a store lookup failure. */
+    }
     if (!isCurrentNavigation(navigationRevision)) return;
     location.replace(store ? '#kelola-toko' : '#marketplace');
     return;

@@ -8,15 +8,13 @@ export function productWeightGrams(product) {
 export function formatProductWeight(weightGrams) {
   const weight = Number(weightGrams);
   if (!Number.isFinite(weight) || weight <= 0) return '0 g';
-  if (weight >= 1000 && weight % 1000 === 0)
-    return `${(weight / 1000).toLocaleString('id-ID')} kg`;
+  if (weight >= 1000 && weight % 1000 === 0) return `${(weight / 1000).toLocaleString('id-ID')} kg`;
   return `${weight.toLocaleString('id-ID')} g`;
 }
 
 export function totalProductWeightGrams(products) {
   return products.reduce(
-    (total, product) =>
-      total + Number(product.stock || 0) * productWeightGrams(product),
+    (total, product) => total + Number(product.stock || 0) * productWeightGrams(product),
     0,
   );
 }

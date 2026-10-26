@@ -431,7 +431,9 @@ export function setLanguage(language) {
         if (requestedLanguage !== getLanguage()) commitLanguage(requestedLanguage);
       });
     }
-  })().finally(() => { languageChange = null; });
+  })().finally(() => {
+    languageChange = null;
+  });
   return languageChange;
 }
 

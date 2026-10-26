@@ -21,10 +21,7 @@ const excludedEntries = new Set([
 ]);
 for (const entry of fs.readdirSync(root)) {
   if (excludedEntries.has(entry)) continue;
-  fs.cpSync(path.join(root, entry), path.join(output, entry), {
-    recursive: true,
-    filter: (source) => path.basename(source) !== '__refshots',
-  });
+  fs.cpSync(path.join(root, entry), path.join(output, entry), { recursive: true });
 }
 
 const apiBaseUrl = (process.env.FOODILEE_API_BASE_URL || '').trim().replace(/\/+$/, '');
@@ -52,7 +49,10 @@ function fingerprintAssets(directory) {
       fingerprintAssets(sourcePath);
       continue;
     }
-    const digest = createHash('sha256').update(fs.readFileSync(sourcePath)).digest('hex').slice(0, 12);
+    const digest = createHash('sha256')
+      .update(fs.readFileSync(sourcePath))
+      .digest('hex')
+      .slice(0, 12);
     const { name, ext } = path.parse(entry.name);
     const hashedName = `${name}.${digest}${ext}`;
     fs.renameSync(sourcePath, path.join(directory, hashedName));

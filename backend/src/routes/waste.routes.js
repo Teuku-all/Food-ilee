@@ -23,6 +23,12 @@ router.get('/:id', wasteController.getWasteById);
 
 router.delete('/:id', authMiddleware, wasteController.deleteWaste);
 
-router.put('/:id', authMiddleware, upload.single('image'), validate(updateWasteSchema), wasteController.updateWaste);
+router.put(
+  '/:id',
+  authMiddleware,
+  upload.single('image'),
+  validate(updateWasteSchema),
+  wasteController.updateWaste,
+);
 
 module.exports = router;

@@ -7,6 +7,7 @@
     "dev": "node server.js",
     "build": "node scripts/build.mjs",
     "preview": "node server.js --dist",
+    "test": "node --test scripts/i18n.test.mjs scripts/location-map.test.mjs scripts/markdown.test.mjs scripts/region-address.test.mjs",
     "test:i18n": "node --test scripts/i18n.test.mjs"
   }
 }

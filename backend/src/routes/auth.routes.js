@@ -20,7 +20,10 @@ const passwordResetLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Terlalu banyak permintaan reset password. Coba lagi nanti.' },
+  message: {
+    success: false,
+    message: 'Terlalu banyak permintaan reset password. Coba lagi nanti.',
+  },
 });
 
 router.post('/register', validate(registerSchema), authController.register);
@@ -29,9 +32,19 @@ router.post('/login', validate(loginSchema), authController.login);
 
 router.post('/google', validate(googleLoginSchema), authController.googleLogin);
 
-router.post('/forgot-password', passwordResetLimiter, validate(forgotPasswordSchema), authController.forgotPassword);
+router.post(
+  '/forgot-password',
+  passwordResetLimiter,
+  validate(forgotPasswordSchema),
+  authController.forgotPassword,
+);
 
-router.post('/reset-password', passwordResetLimiter, validate(resetPasswordSchema), authController.resetPassword);
+router.post(
+  '/reset-password',
+  passwordResetLimiter,
+  validate(resetPasswordSchema),
+  authController.resetPassword,
+);
 
 router.get('/me', authMiddleware, authController.currentUser);
 

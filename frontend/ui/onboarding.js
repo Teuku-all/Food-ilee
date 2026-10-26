@@ -27,9 +27,21 @@ const steps = [
 ];
 
 const onboardVisuals = [
-  { src: './assets/landing-compost-demo.jpg', label: 'TEMUKAN', title: 'Yang tersisa masih berharga.' },
-  { src: './assets/demo-banana-peels.jpg', label: 'BAGIKAN', title: 'Satu unggahan, peluang baru.' },
-  { src: './assets/landing-food-demo.jpg', label: 'BERTUMBUH', title: 'Langkah kecil, dampak bersama.' },
+  {
+    src: './assets/landing-compost-demo.jpg',
+    label: 'TEMUKAN',
+    title: 'Yang tersisa masih berharga.',
+  },
+  {
+    src: './assets/demo-banana-peels.jpg',
+    label: 'BAGIKAN',
+    title: 'Satu unggahan, peluang baru.',
+  },
+  {
+    src: './assets/landing-food-demo.jpg',
+    label: 'BERTUMBUH',
+    title: 'Langkah kecil, dampak bersama.',
+  },
 ];
 
 const guideImages = [
@@ -103,7 +115,7 @@ export function renderOnboarding({ standalone = false, userId } = {}) {
             <h1 id="fi-onboard-title">${step.title}</h1>
             <p class="fi-onboard-description" id="fi-onboard-description">${step.text}</p>
             <div class="fi-onboard-footer">
-              <div class="fi-onboard-progress-label"><span>Langkah ${current} dari ${total}</span><span>${Math.round((activeStep + 1) / steps.length * 100)}% selesai</span></div>
+              <div class="fi-onboard-progress-label"><span>Langkah ${current} dari ${total}</span><span>${Math.round(((activeStep + 1) / steps.length) * 100)}% selesai</span></div>
               <div class="fi-onboard-progress" role="progressbar" aria-label="Kemajuan panduan" aria-valuemin="0" aria-valuemax="${steps.length}" aria-valuenow="${activeStep + 1}">
                 ${steps.map((_, index) => `<span class="${index === activeStep ? 'active' : index < activeStep ? 'done' : ''}"></span>`).join('')}
               </div>
@@ -152,7 +164,13 @@ function renderGuidePage() {
   const app = document.getElementById('app');
   app.innerHTML = `<div class="fi-app"><div class="fi-guide-shell">${dashboardHeader('')}<main class="fi-guide-page"><section class="fi-guide-hero"><div class="fi-guide-hero-copy"><p class="fi-guide-kicker">PANDUAN FOOD ILEE</p><h1>Mulai dari satu langkah kecil. Ciptakan dampak yang berarti.</h1><p>Food Ilee membantu Anda menemukan manfaat baru dari sisa pangan melalui marketplace, berbagi penawaran, dan wawasan pemanfaatan.</p><a class="fi-guide-primary" href="#marketplace">Jelajahi marketplace <span aria-hidden="true">→</span></a><div class="fi-guide-proof"><span aria-hidden="true">✳</span><span>Ekosistem pangan yang lebih sirkular, dimulai bersama Anda.</span></div></div><div class="fi-guide-hero-image"><img src="${guideImages[0].src}" alt="${guideImages[0].alt}" fetchpriority="high"><span class="fi-guide-image-label"><i></i> Temukan sumber daya di sekitar Anda</span></div></section><section class="fi-guide-section"><div class="fi-guide-section-head"><div><p class="fi-guide-kicker">TIGA LANGKAH MUDAH</p><h2>Perjalanan sirkular Anda dimulai di sini</h2></div><p>Pilih langkah yang ingin Anda mulai. Anda bisa menjelajahi semuanya kapan saja.</p></div><div class="fi-guide-cards">${steps.map((step, index) => `<article class="fi-guide-card"><div class="fi-guide-card-image"><img src="${guideImages[index].src}" alt="${guideImages[index].alt}" loading="lazy"><span>0${index + 1}</span></div><div class="fi-guide-card-copy"><p class="fi-guide-card-step">LANGKAH 0${index + 1}</p><h3>${step.title}</h3><p>${step.text}</p><a href="${step.href}">${step.action}<span aria-hidden="true">→</span></a></div></article>`).join('')}</div></section><section class="fi-guide-footer"><div><p class="fi-guide-kicker">SIAP MEMULAI?</p><h2>Satu pilihan Anda bisa memberi bahan pangan nilai baru.</h2></div><a class="fi-guide-primary" href="#marketplace">Mulai jelajahi <span aria-hidden="true">→</span></a></section><p class="fi-guide-photo-credit">Foto ilustrasi dari <a href="https://unsplash.com/license" target="_blank" rel="noopener noreferrer">Unsplash</a>.</p></main>${dashboardFooter()}</div></div>`;
   app.querySelectorAll('.fi-guide-page img').forEach((image) => {
-    image.addEventListener('error', () => { image.src = './assets/foodilee-login-hero.png'; }, { once: true });
+    image.addEventListener(
+      'error',
+      () => {
+        image.src = './assets/foodilee-login-hero.png';
+      },
+      { once: true },
+    );
   });
   bindShell();
   if (document.getElementById('fi-guide-style')) return;

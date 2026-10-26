@@ -12,9 +12,9 @@ html,
 body {
   width: 100%;
   overflow-x: clip;
-  font-family: Arial, sans-serif;
-  background: #DAF1DE;
-  color: #1f2937;
+  font-family: Inter, Arial, sans-serif;
+  background: var(--fi-paper, #f6f7f3);
+  color: var(--fi-text, #183e32);
 }
 
 body {
@@ -36,6 +36,11 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+/* Hidden panels must stay hidden even when their component uses flex or grid. */
+[hidden] {
+  display: none !important;
 }
 
 button {

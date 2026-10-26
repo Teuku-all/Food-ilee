@@ -37,7 +37,9 @@ const server = createServer(async (request, response) => {
     const extension = path.extname(filePath).toLowerCase();
     const isImage = ['.png', '.jpg', '.jpeg', '.webp', '.avif', '.svg', '.ico'].includes(extension);
     const isHashedAsset =
-      servingBuild && requestedPath.startsWith('/assets/') && /\.[a-f0-9]{12}\.[^.]+$/i.test(filePath);
+      servingBuild &&
+      requestedPath.startsWith('/assets/') &&
+      /\.[a-f0-9]{12}\.[^.]+$/i.test(filePath);
     const cacheControl = isHashedAsset
       ? 'public, max-age=31536000, immutable'
       : isImage

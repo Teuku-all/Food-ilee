@@ -12,16 +12,20 @@ async function getCheckoutItems(requestItems, buyerId) {
   for (const item of requestItems) {
     const id = String(item?.wasteId || '');
     const quantity = Number(item?.quantity);
-    if (!id || !Number.isSafeInteger(quantity) || quantity < 1) throw new Error('Produk atau jumlah pesanan tidak valid.');
+    if (!id || !Number.isSafeInteger(quantity) || quantity < 1)
+      throw new Error('Produk atau jumlah pesanan tidak valid.');
     quantities.set(id, (quantities.get(id) || 0) + quantity);
   }
   const products = await prisma.wasteProduct.findMany({
     where: { id: { in: [...quantities.keys()] } },
     include: { store: true, seller: { include: { store: true } } },
   });
-  if (products.length !== quantities.size) throw new Error('Satu atau beberapa produk sudah tidak tersedia.');
-  if (products.some((product) => product.sellerId === buyerId)) throw new Error('Anda tidak dapat membeli produk dari toko sendiri.');
-  if (new Set(products.map((product) => product.sellerId)).size !== 1) throw new Error('Checkout hanya dapat berisi produk dari satu toko.');
+  if (products.length !== quantities.size)
+    throw new Error('Satu atau beberapa produk sudah tidak tersedia.');
+  if (products.some((product) => product.sellerId === buyerId))
+    throw new Error('Anda tidak dapat membeli produk dari toko sendiri.');
+  if (new Set(products.map((product) => product.sellerId)).size !== 1)
+    throw new Error('Checkout hanya dapat berisi produk dari satu toko.');
   return products.map((product) => ({
     wasteId: product.id,
     title: product.title,
@@ -36,7 +40,10 @@ async function getCheckoutItems(requestItems, buyerId) {
 }
 
 function shippingOrigin(store) {
-  if (!store) throw new Error('Penjual belum memiliki toko dengan alamat pickup. Hubungi penjual untuk melengkapi profil toko.');
+  if (!store)
+    throw new Error(
+      'Penjual belum memiliki toko dengan alamat pickup. Hubungi penjual untuk melengkapi profil toko.',
+    );
   const origin = {
     contactName: store.shippingOriginContactName,
     contactPhone: store.shippingOriginContactPhone,
@@ -46,13 +53,27 @@ function shippingOrigin(store) {
     latitude: store.latitude,
     longitude: store.longitude,
   };
-  if ([origin.contactName, origin.contactPhone, origin.address, origin.postalCode]
-    .some((value) => typeof value !== 'string' || !value.trim()))
-    throw new Error('Alamat pickup penjual belum lengkap. Penjual harus melengkapi alamat pengiriman di profil toko.');
-  if (!/^\d{5}$/.test(origin.postalCode.trim())) throw new Error('Kode pos pickup penjual harus terdiri dari 5 angka.');
-  if (!Number.isFinite(origin.latitude) || origin.latitude < -90 || origin.latitude > 90
-    || !Number.isFinite(origin.longitude) || origin.longitude < -180 || origin.longitude > 180)
-    throw new Error('Titik lokasi pickup penjual belum dipilih. Minta penjual memperbarui alamat toko.');
+  if (
+    [origin.contactName, origin.contactPhone, origin.address, origin.postalCode].some(
+      (value) => typeof value !== 'string' || !value.trim(),
+    )
+  )
+    throw new Error(
+      'Alamat pickup penjual belum lengkap. Penjual harus melengkapi alamat pengiriman di profil toko.',
+    );
+  if (!/^\d{5}$/.test(origin.postalCode.trim()))
+    throw new Error('Kode pos pickup penjual harus terdiri dari 5 angka.');
+  if (
+    !Number.isFinite(origin.latitude) ||
+    origin.latitude < -90 ||
+    origin.latitude > 90 ||
+    !Number.isFinite(origin.longitude) ||
+    origin.longitude < -180 ||
+    origin.longitude > 180
+  )
+    throw new Error(
+      'Titik lokasi pickup penjual belum dipilih. Minta penjual memperbarui alamat toko.',
+    );
   return {
     ...origin,
     contactName: origin.contactName.trim(),
@@ -66,7 +87,9 @@ function midtransSplit(store, subtotal) {
   if (process.env.MIDTRANS_SPLIT_ENABLED !== 'true') return undefined;
   const platformMerchantId = process.env.MIDTRANS_PARTNER_MERCHANT_ID?.trim();
   if (!platformMerchantId || !store?.midtransMerchantId?.trim())
-    throw new Error('Pembayaran ke rekening penjual belum aktif. Food Ilee harus mengaktifkan Midtrans Partner Split dan mendaftarkan merchant penjual terlebih dahulu.');
+    throw new Error(
+      'Pembayaran ke rekening penjual belum aktif. Food Ilee harus mengaktifkan Midtrans Partner Split dan mendaftarkan merchant penjual terlebih dahulu.',
+    );
   return {
     gross_amount_split: {
       type: 'fixed',
@@ -76,26 +99,37 @@ function midtransSplit(store, subtotal) {
   };
 }
 
-async function getRates(buyerId, items, address, paymentMethod = 'midtrans', deliveryMethod = 'courier') {
-  if (!['midtrans', 'cash'].includes(paymentMethod)) throw new Error('Metode pembayaran tidak didukung.');
-  if (!['courier', 'pickup'].includes(deliveryMethod)) throw new Error('Metode pengiriman tidak didukung.');
+async function getRates(
+  buyerId,
+  items,
+  address,
+  paymentMethod = 'midtrans',
+  deliveryMethod = 'courier',
+) {
+  if (!['midtrans', 'cash'].includes(paymentMethod))
+    throw new Error('Metode pembayaran tidak didukung.');
+  if (!['courier', 'pickup'].includes(deliveryMethod))
+    throw new Error('Metode pengiriman tidak didukung.');
   if (paymentMethod === 'cash' && deliveryMethod !== 'pickup')
     throw new Error('Pembayaran cash hanya tersedia untuk jemput langsung di toko.');
   const normalized = await getCheckoutItems(items, buyerId);
-  if (normalized.some((item) => item.stock < item.quantity)) throw new Error('Stok satu atau beberapa produk tidak mencukupi.');
+  if (normalized.some((item) => item.stock < item.quantity))
+    throw new Error('Stok satu atau beberapa produk tidak mencukupi.');
   const subtotal = normalized.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   if (paymentMethod === 'midtrans') midtransSplit(normalized[0].store, subtotal);
   const origin = shippingOrigin(normalized[0].store);
   if (deliveryMethod === 'pickup') {
-    return [{
-      company: 'pickup',
-      courierType: 'pickup',
-      courierName: 'Jemput langsung',
-      serviceName: 'Ambil di toko penjual',
-      price: 0,
-      collectionMethod: 'pickup',
-      pickupAddress: origin,
-    }];
+    return [
+      {
+        company: 'pickup',
+        courierType: 'pickup',
+        courierName: 'Jemput langsung',
+        serviceName: 'Ambil di toko penjual',
+        price: 0,
+        collectionMethod: 'pickup',
+        pickupAddress: origin,
+      },
+    ];
   }
   const rates = await shippingService.getRates(origin, address, normalized);
   return rates.filter((rate) => supportedCouriers.has(rate.company));
@@ -103,15 +137,29 @@ async function getRates(buyerId, items, address, paymentMethod = 'midtrans', del
 
 function paymentUrl(token) {
   if (!token) return undefined;
-  const host = process.env.MIDTRANS_IS_PRODUCTION === 'true' ? 'https://app.midtrans.com' : 'https://app.sandbox.midtrans.com';
+  const host =
+    process.env.MIDTRANS_IS_PRODUCTION === 'true'
+      ? 'https://app.midtrans.com'
+      : 'https://app.sandbox.midtrans.com';
   return `${host}/snap/v2/vtweb/${encodeURIComponent(token)}`;
 }
 
-async function createCheckout(buyerId, {
-  items, address, courier, courierType, checkoutKey, paymentMethod = 'midtrans', deliveryMethod = 'courier',
-}) {
-  if (!['midtrans', 'cash'].includes(paymentMethod)) throw new Error('Metode pembayaran tidak didukung.');
-  if (!['courier', 'pickup'].includes(deliveryMethod)) throw new Error('Metode pengiriman tidak didukung.');
+async function createCheckout(
+  buyerId,
+  {
+    items,
+    address,
+    courier,
+    courierType,
+    checkoutKey,
+    paymentMethod = 'midtrans',
+    deliveryMethod = 'courier',
+  },
+) {
+  if (!['midtrans', 'cash'].includes(paymentMethod))
+    throw new Error('Metode pembayaran tidak didukung.');
+  if (!['courier', 'pickup'].includes(deliveryMethod))
+    throw new Error('Metode pengiriman tidak didukung.');
   if (paymentMethod === 'cash' && deliveryMethod !== 'pickup')
     throw new Error('Pembayaran cash hanya tersedia untuk jemput langsung di toko.');
   if (deliveryMethod === 'courier' && paymentMethod !== 'midtrans')
@@ -120,11 +168,15 @@ async function createCheckout(buyerId, {
     throw new Error('MIDTRANS_CLIENT_KEY belum dikonfigurasi pada backend.');
   if (typeof checkoutKey !== 'string' || !/^[a-f0-9-]{36}$/i.test(checkoutKey))
     throw new Error('Kunci checkout tidak valid. Muat ulang halaman dan coba lagi.');
-  const previous = await prisma.order.findFirst({ where: { buyerId, checkoutKey }, include: { items: true, waste: true } });
+  const previous = await prisma.order.findFirst({
+    where: { buyerId, checkoutKey },
+    include: { items: true, waste: true },
+  });
   if (previous) return { ...previous, paymentUrl: paymentUrl(previous.paymentToken) };
   if (deliveryMethod === 'courier') shippingService.validateAddress(address);
   const normalized = await getCheckoutItems(items, buyerId);
-  if (normalized.some((item) => item.stock < item.quantity)) throw new Error('Stok satu atau beberapa produk tidak mencukupi.');
+  if (normalized.some((item) => item.stock < item.quantity))
+    throw new Error('Stok satu atau beberapa produk tidak mencukupi.');
   const origin = shippingOrigin(normalized[0].store);
   let selected;
   if (deliveryMethod === 'pickup') {
@@ -148,54 +200,74 @@ async function createCheckout(buyerId, {
   const subtotal = normalized.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const shippingCost = Number(selected.price);
   const total = subtotal + shippingCost;
-  const transactionSplitSettings = paymentMethod === 'midtrans' ? midtransSplit(normalized[0].store, subtotal) : undefined;
+  const transactionSplitSettings =
+    paymentMethod === 'midtrans' ? midtransSplit(normalized[0].store, subtotal) : undefined;
   const id = randomUUID();
   let reserved;
   try {
     reserved = await prisma.$transaction(async (tx) => {
-    for (const item of normalized) {
-      const update = await tx.wasteProduct.updateMany({
-        where: { id: item.wasteId, stock: { gte: item.quantity } },
-        data: { stock: { decrement: item.quantity } },
+      for (const item of normalized) {
+        const update = await tx.wasteProduct.updateMany({
+          where: { id: item.wasteId, stock: { gte: item.quantity } },
+          data: { stock: { decrement: item.quantity } },
+        });
+        if (!update.count) throw new Error('Stok berubah saat checkout. Muat ulang keranjang.');
+      }
+      return tx.order.create({
+        data: {
+          id,
+          checkoutKey,
+          buyerId,
+          wasteId: normalized[0].wasteId,
+          quantity: normalized.reduce((sum, item) => sum + item.quantity, 0),
+          subtotal,
+          discount: 0,
+          shippingCost,
+          total,
+          paymentMethod,
+          ...(paymentMethod === 'midtrans'
+            ? {
+                sellerSettlementAmount: subtotal,
+                sellerSettlementStatus: transactionSplitSettings ? 'split' : 'pending_manual',
+              }
+            : {}),
+          ...(paymentMethod === 'cash'
+            ? {
+                sellerSettlementAmount: subtotal,
+                sellerSettlementStatus: 'cash_pending',
+                status: 'processing',
+              }
+            : {}),
+          shippingAddress:
+            deliveryMethod === 'pickup'
+              ? { collectionMethod: 'pickup' }
+              : { ...address, collectionMethod: selected.collectionMethod || 'pickup' },
+          sellerShippingOrigin: origin,
+          courier: selected.company,
+          courierService: selected.courierType,
+          courierServiceName: selected.serviceName,
+          ...(deliveryMethod === 'pickup' ? { shippingStatus: 'awaiting_pickup' } : {}),
+          items: {
+            create: normalized.map(
+              ({ wasteId, title, unitPrice, quantity, image, weightPerUnitGrams }) => ({
+                wasteId,
+                title,
+                unitPrice,
+                quantity,
+                image,
+                weightPerUnitGrams,
+              }),
+            ),
+          },
+        },
       });
-      if (!update.count) throw new Error('Stok berubah saat checkout. Muat ulang keranjang.');
-    }
-    return tx.order.create({
-      data: {
-        id,
-        checkoutKey,
-        buyerId,
-        wasteId: normalized[0].wasteId,
-        quantity: normalized.reduce((sum, item) => sum + item.quantity, 0),
-        subtotal,
-        discount: 0,
-        shippingCost,
-        total,
-        paymentMethod,
-        ...(paymentMethod === 'midtrans' ? {
-          sellerSettlementAmount: subtotal,
-          sellerSettlementStatus: transactionSplitSettings ? 'split' : 'pending_manual',
-        } : {}),
-        ...(paymentMethod === 'cash' ? {
-          sellerSettlementAmount: subtotal,
-          sellerSettlementStatus: 'cash_pending',
-          status: 'processing',
-        } : {}),
-        shippingAddress: deliveryMethod === 'pickup'
-          ? { collectionMethod: 'pickup' }
-          : { ...address, collectionMethod: selected.collectionMethod || 'pickup' },
-        sellerShippingOrigin: origin,
-        courier: selected.company,
-        courierService: selected.courierType,
-        courierServiceName: selected.serviceName,
-        ...(deliveryMethod === 'pickup' ? { shippingStatus: 'awaiting_pickup' } : {}),
-        items: { create: normalized.map(({ wasteId, title, unitPrice, quantity, image, weightPerUnitGrams }) => ({ wasteId, title, unitPrice, quantity, image, weightPerUnitGrams })) },
-      },
-    });
     });
   } catch (error) {
     if (error.code === 'P2002') {
-      const existing = await prisma.order.findFirst({ where: { buyerId, checkoutKey }, include: { items: true, waste: true } });
+      const existing = await prisma.order.findFirst({
+        where: { buyerId, checkoutKey },
+        include: { items: true, waste: true },
+      });
       if (existing) return { ...existing, paymentUrl: paymentUrl(existing.paymentToken) };
     }
     throw error;
@@ -215,18 +287,41 @@ async function createCheckout(buyerId, {
     return prisma.order.findUnique({ where: { id }, include: { items: true, waste: true } });
   }
   try {
-    const buyer = await prisma.user.findUnique({ where: { id: buyerId }, select: { email: true, name: true } });
+    const buyer = await prisma.user.findUnique({
+      where: { id: buyerId },
+      select: { email: true, name: true },
+    });
     const payment = await snap.createTransaction({
       transaction_details: { order_id: `ORDER-${id}`, gross_amount: total },
       item_details: [
-        ...normalized.map((item) => ({ id: item.wasteId, price: item.unitPrice, quantity: item.quantity, name: item.title.slice(0, 50) })),
-        ...(Number(selected.price) ? [{ id: 'shipping', price: Number(selected.price), quantity: 1, name: `Ongkir ${selected.courierName} ${selected.serviceName}`.slice(0, 50) }] : []),
+        ...normalized.map((item) => ({
+          id: item.wasteId,
+          price: item.unitPrice,
+          quantity: item.quantity,
+          name: item.title.slice(0, 50),
+        })),
+        ...(Number(selected.price)
+          ? [
+              {
+                id: 'shipping',
+                price: Number(selected.price),
+                quantity: 1,
+                name: `Ongkir ${selected.courierName} ${selected.serviceName}`.slice(0, 50),
+              },
+            ]
+          : []),
       ],
-      customer_details: { email: buyer?.email || '', first_name: buyer?.name || 'Pembeli Food Ilee' },
+      customer_details: {
+        email: buyer?.email || '',
+        first_name: buyer?.name || 'Pembeli Food Ilee',
+      },
       ...(transactionSplitSettings ? { transaction_split_settings: transactionSplitSettings } : {}),
       callbacks: { finish: `${process.env.FRONTEND_URL || 'http://localhost:5501'}/#transaksi` },
     });
-    const paidOrder = await prisma.order.update({ where: { id }, data: { paymentToken: payment.token } });
+    const paidOrder = await prisma.order.update({
+      where: { id },
+      data: { paymentToken: payment.token },
+    });
     if (normalized[0].sellerId) {
       try {
         await notificationService.createNotification(
@@ -240,7 +335,14 @@ async function createCheckout(buyerId, {
     }
     return { ...reserved, ...paidOrder, paymentUrl: payment.redirect_url };
   } catch (error) {
-    await prisma.$transaction(normalized.map((item) => prisma.wasteProduct.update({ where: { id: item.wasteId }, data: { stock: { increment: item.quantity } } })));
+    await prisma.$transaction(
+      normalized.map((item) =>
+        prisma.wasteProduct.update({
+          where: { id: item.wasteId },
+          data: { stock: { increment: item.quantity } },
+        }),
+      ),
+    );
     await prisma.order.delete({ where: { id } });
     throw error;
   }
@@ -297,9 +399,31 @@ async function createOrder(buyerId, wasteId, quantity) {
     });
     const order = await prisma.order.create({
       data: {
-        id, quantity, total, subtotal: total, buyerId, wasteId, paymentToken: payment.token,
-        ...(waste.sellerId ? { sellerSettlementAmount: total, sellerSettlementStatus: transactionSplitSettings ? 'split' : 'pending_manual' } : {}),
-        items: { create: [{ wasteId, title: waste.title, unitPrice: waste.price, quantity, image: waste.image, weightPerUnitGrams: waste.weightPerUnitGrams }] },
+        id,
+        quantity,
+        total,
+        subtotal: total,
+        buyerId,
+        wasteId,
+        paymentToken: payment.token,
+        ...(waste.sellerId
+          ? {
+              sellerSettlementAmount: total,
+              sellerSettlementStatus: transactionSplitSettings ? 'split' : 'pending_manual',
+            }
+          : {}),
+        items: {
+          create: [
+            {
+              wasteId,
+              title: waste.title,
+              unitPrice: waste.price,
+              quantity,
+              image: waste.image,
+              weightPerUnitGrams: waste.weightPerUnitGrams,
+            },
+          ],
+        },
       },
     });
     if (waste.sellerId) {
@@ -334,7 +458,9 @@ async function getMyOrders(buyerId) {
     include: {
       waste: {
         include: {
-          store: { select: { id: true, name: true, description: true, location: true, image: true } },
+          store: {
+            select: { id: true, name: true, description: true, location: true, image: true },
+          },
           seller: {
             select: {
               id: true,
@@ -356,7 +482,16 @@ async function getMyOrders(buyerId) {
 async function getMyOrder(orderId, buyerId) {
   return prisma.order.findFirst({
     where: { id: orderId, buyerId },
-    include: { items: true, waste: { include: { store: { select: { id: true, name: true, description: true, location: true, image: true } } } } },
+    include: {
+      items: true,
+      waste: {
+        include: {
+          store: {
+            select: { id: true, name: true, description: true, location: true, image: true },
+          },
+        },
+      },
+    },
   });
 }
 
@@ -364,8 +499,10 @@ function expiredMidtransStatus(error) {
   const response = error?.ApiResponse || error?.rawHttpClientData?.data || {};
   const statusCode = Number(response.status_code || error?.httpStatusCode);
   const message = `${response.status_message || ''} ${error?.message || ''}`.toLowerCase();
-  if (statusCode === 407 || String(response.transaction_status || '').toLowerCase() === 'expire') return 'expire';
-  if (statusCode === 404 && /transaction.*(not found|does not exist|doesn't exist)/i.test(message)) return 'expire';
+  if (statusCode === 407 || String(response.transaction_status || '').toLowerCase() === 'expire')
+    return 'expire';
+  if (statusCode === 404 && /transaction.*(not found|does not exist|doesn't exist)/i.test(message))
+    return 'expire';
   return null;
 }
 
@@ -379,8 +516,13 @@ async function cancelMyOrder(orderId, buyerId) {
     error.statusCode = 404;
     throw error;
   }
-  if (order.status === 'cancelled' && order.paymentStatus !== 'paid') return getMyOrder(orderId, buyerId);
-  if (order.status !== 'pending' || order.paymentStatus !== 'pending' || order.paymentMethod !== 'midtrans') {
+  if (order.status === 'cancelled' && order.paymentStatus !== 'paid')
+    return getMyOrder(orderId, buyerId);
+  if (
+    order.status !== 'pending' ||
+    order.paymentStatus !== 'pending' ||
+    order.paymentMethod !== 'midtrans'
+  ) {
     const error = new Error('Pesanan hanya dapat dibatalkan sebelum pembayaran berhasil.');
     error.statusCode = 409;
     throw error;
@@ -397,8 +539,11 @@ async function cancelMyOrder(orderId, buyerId) {
         if (expiredStatus) return expiredStatus;
         throw error;
       }
-      if (Number(transaction.status_code) === 407
-        || String(transaction.transaction_status || '').toLowerCase() === 'expire') return 'expire';
+      if (
+        Number(transaction.status_code) === 407 ||
+        String(transaction.transaction_status || '').toLowerCase() === 'expire'
+      )
+        return 'expire';
       if (Number(transaction.gross_amount) !== Number(order.total)) {
         const error = new Error('Nominal transaksi Midtrans tidak sesuai dengan pesanan.');
         error.statusCode = 409;
@@ -407,21 +552,26 @@ async function cancelMyOrder(orderId, buyerId) {
       const status = String(transaction.transaction_status || '').toLowerCase();
       const fraudStatus = String(transaction.fraud_status || '').toLowerCase();
       return status === 'capture' && fraudStatus !== 'accept'
-        ? fraudStatus === 'challenge' ? 'challenge' : 'deny'
+        ? fraudStatus === 'challenge'
+          ? 'challenge'
+          : 'deny'
         : status;
     };
     transactionStatus = await readTransactionStatus();
     if (transactionStatus === 'pending') {
       try {
         const cancelled = await snap.transaction.cancel(`ORDER-${order.id}`);
-        transactionStatus = Number(cancelled.status_code) === 407
-          ? 'expire'
-          : String(cancelled.transaction_status || '').toLowerCase();
+        transactionStatus =
+          Number(cancelled.status_code) === 407
+            ? 'expire'
+            : String(cancelled.transaction_status || '').toLowerCase();
       } catch (cancelError) {
         // The transaction may expire or settle between the status check and cancel request.
-        transactionStatus = expiredMidtransStatus(cancelError) || await readTransactionStatus().catch(() => {
-          throw cancelError;
-        });
+        transactionStatus =
+          expiredMidtransStatus(cancelError) ||
+          (await readTransactionStatus().catch(() => {
+            throw cancelError;
+          }));
       }
     }
   } catch (cause) {
@@ -432,10 +582,13 @@ async function cancelMyOrder(orderId, buyerId) {
       statusMessage: cause.ApiResponse?.status_message,
       message: cause.message,
     });
-    const error = new Error('Status pembayaran belum dapat dipastikan. Pesanan belum dibatalkan; coba lagi.');
+    const error = new Error(
+      'Status pembayaran belum dapat dipastikan. Pesanan belum dibatalkan; coba lagi.',
+    );
     const httpStatus = cause.httpStatusCode || cause.status;
     if (httpStatus === 401 || httpStatus === 403) {
-      error.message = 'Midtrans menolak akses pemeriksaan pembayaran. Periksa Server Key dan mode Sandbox/Production pada backend.';
+      error.message =
+        'Midtrans menolak akses pemeriksaan pembayaran. Periksa Server Key dan mode Sandbox/Production pada backend.';
     } else if (httpStatus) {
       error.message += ` (respons Midtrans HTTP ${httpStatus}).`;
     }
@@ -446,13 +599,17 @@ async function cancelMyOrder(orderId, buyerId) {
 
   if (transactionStatus === 'settlement' || transactionStatus === 'capture') {
     await updatePaymentStatus(order.id, transactionStatus);
-    const error = new Error('Pembayaran sudah berhasil. Pesanan tidak dapat dibatalkan melalui fitur ini.');
+    const error = new Error(
+      'Pembayaran sudah berhasil. Pesanan tidak dapat dibatalkan melalui fitur ini.',
+    );
     error.statusCode = 409;
     throw error;
   }
 
   if (!['cancel', 'expire', 'deny', 'failure'].includes(transactionStatus)) {
-    const error = new Error('Transaksi belum berhasil dibatalkan di penyedia pembayaran. Pesanan belum dibatalkan.');
+    const error = new Error(
+      'Transaksi belum berhasil dibatalkan di penyedia pembayaran. Pesanan belum dibatalkan.',
+    );
     error.statusCode = 409;
     throw error;
   }
@@ -470,7 +627,9 @@ async function cancelMyOrder(orderId, buyerId) {
       throw error;
     }
 
-    const items = order.items.length ? order.items : [{ wasteId: order.wasteId, quantity: order.quantity }];
+    const items = order.items.length
+      ? order.items
+      : [{ wasteId: order.wasteId, quantity: order.quantity }];
     for (const item of items) {
       await tx.wasteProduct.update({
         where: { id: item.wasteId },
@@ -506,7 +665,9 @@ async function updatePaymentStatus(orderId, status) {
           data: { paymentStatus: 'paid', status: 'payment_review' },
         });
         if (!claimed.count) return null;
-        const items = order.items.length ? order.items : [{ wasteId: order.wasteId, quantity: order.quantity }];
+        const items = order.items.length
+          ? order.items
+          : [{ wasteId: order.wasteId, quantity: order.quantity }];
         for (const item of items) {
           const stock = await tx.wasteProduct.updateMany({
             where: { id: item.wasteId, stock: { gte: item.quantity } },
@@ -527,7 +688,10 @@ async function updatePaymentStatus(orderId, status) {
       return prisma.order.findUnique({ where: { id: orderId } });
     } catch (error) {
       if (error.code !== 'INSUFFICIENT_STOCK') throw error;
-      return prisma.order.update({ where: { id: orderId }, data: { paymentStatus: 'paid', status: 'payment_review' } });
+      return prisma.order.update({
+        where: { id: orderId },
+        data: { paymentStatus: 'paid', status: 'payment_review' },
+      });
     }
   }
   if (orderStatus === 'cancelled' && order.status === 'cancelled') return order;
@@ -539,7 +703,9 @@ async function updatePaymentStatus(orderId, status) {
         data: { paymentStatus, status: 'cancelled' },
       });
       if (!updated.count) return;
-      const items = order.items.length ? order.items : [{ wasteId: order.wasteId, quantity: order.quantity }];
+      const items = order.items.length
+        ? order.items
+        : [{ wasteId: order.wasteId, quantity: order.quantity }];
       for (const item of items) {
         await tx.wasteProduct.update({
           where: { id: item.wasteId },
@@ -570,12 +736,20 @@ async function createShipmentForOrder(orderId, paymentMethod) {
     where: { id: orderId },
     include: { buyer: { select: { email: true } }, items: true },
   });
-  const eligible = paymentMethod === 'cod'
-    ? order?.paymentMethod === 'cod' && order.paymentStatus === 'pending'
-    : order?.paymentMethod !== 'cod' && order?.paymentStatus === 'paid' && order?.courier !== 'pickup';
+  const eligible =
+    paymentMethod === 'cod'
+      ? order?.paymentMethod === 'cod' && order.paymentStatus === 'pending'
+      : order?.paymentMethod !== 'cod' &&
+        order?.paymentStatus === 'paid' &&
+        order?.courier !== 'pickup';
   if (!order || !eligible || !order.shippingAddress || order.biteshipOrderId) return;
   const reserved = await prisma.order.updateMany({
-    where: { id: orderId, paymentMethod, paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid', biteshipOrderId: null },
+    where: {
+      id: orderId,
+      paymentMethod,
+      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid',
+      biteshipOrderId: null,
+    },
     data: { biteshipOrderId: `creating:${orderId}`, shippingStatus: 'creating' },
   });
   if (!reserved.count) return;
@@ -608,12 +782,17 @@ async function createShipmentForOrder(orderId, paymentMethod) {
 async function updateShippingStatus(payload) {
   const externalId = payload.order_id;
   if (!externalId) throw new Error('Notifikasi Biteship tidak memiliki order_id.');
-  const order = await prisma.order.findFirst({ where: { biteshipOrderId: externalId }, include: { items: true } });
+  const order = await prisma.order.findFirst({
+    where: { biteshipOrderId: externalId },
+    include: { items: true },
+  });
   if (!order) throw new Error('Pesanan pengiriman tidak ditemukan.');
   const data = {};
   if (typeof payload.status === 'string' && payload.status) data.shippingStatus = payload.status;
-  if (typeof payload.courier_waybill_id === 'string' && payload.courier_waybill_id) data.trackingNumber = payload.courier_waybill_id;
-  if (typeof payload.courier_link === 'string' && payload.courier_link.startsWith('https://')) data.trackingUrl = payload.courier_link;
+  if (typeof payload.courier_waybill_id === 'string' && payload.courier_waybill_id)
+    data.trackingNumber = payload.courier_waybill_id;
+  if (typeof payload.courier_link === 'string' && payload.courier_link.startsWith('https://'))
+    data.trackingUrl = payload.courier_link;
   if (!Object.keys(data).length) return order;
   if (order.paymentMethod === 'cod') {
     const normalizedStatus = String(payload.status || '').toLowerCase();
@@ -627,13 +806,23 @@ async function updateShippingStatus(payload) {
     if (['cancelled', 'rejected', 'courier_not_found', 'returned'].includes(normalizedStatus)) {
       await prisma.$transaction(async (tx) => {
         const cancelled = await tx.order.updateMany({
-          where: { id: order.id, paymentMethod: 'cod', paymentStatus: 'pending', status: 'processing' },
+          where: {
+            id: order.id,
+            paymentMethod: 'cod',
+            paymentStatus: 'pending',
+            status: 'processing',
+          },
           data: { ...data, paymentStatus: 'cancelled', status: 'cancelled' },
         });
         if (!cancelled.count) return;
-        const items = order.items?.length ? order.items : [{ wasteId: order.wasteId, quantity: order.quantity }];
+        const items = order.items?.length
+          ? order.items
+          : [{ wasteId: order.wasteId, quantity: order.quantity }];
         for (const item of items) {
-          await tx.wasteProduct.update({ where: { id: item.wasteId }, data: { stock: { increment: item.quantity } } });
+          await tx.wasteProduct.update({
+            where: { id: item.wasteId },
+            data: { stock: { increment: item.quantity } },
+          });
         }
       });
       return prisma.order.findUnique({ where: { id: order.id } });
@@ -647,7 +836,13 @@ async function getMySales(sellerId) {
     where: { waste: { sellerId } },
     include: {
       buyer: { select: { id: true, name: true, email: true } },
-      waste: { include: { store: { select: { id: true, name: true, description: true, location: true, image: true } } } },
+      waste: {
+        include: {
+          store: {
+            select: { id: true, name: true, description: true, location: true, image: true },
+          },
+        },
+      },
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -658,7 +853,8 @@ async function updateSellerOrderStatus(orderId, sellerId, status) {
   if (!allowed.includes(status)) throw new Error('Status pesanan tidak didukung');
   const order = await prisma.order.findFirst({ where: { id: orderId, waste: { sellerId } } });
   if (!order) throw new Error('Pesanan tidak ditemukan');
-  if (order.paymentMethod === 'cod') throw new Error('Status pesanan COD diperbarui otomatis dari webhook kurir.');
+  if (order.paymentMethod === 'cod')
+    throw new Error('Status pesanan COD diperbarui otomatis dari webhook kurir.');
   const isPickup = order.courier === 'pickup';
   const transitions = isPickup
     ? { processing: ['completed'] }

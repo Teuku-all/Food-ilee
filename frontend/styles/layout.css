@@ -14,12 +14,22 @@
 
 #app .fi-header:not(.landing-nav) {
   box-sizing: border-box;
-  padding-right: max(var(--fi-layout-gutter), calc((100vw - var(--fi-layout-width)) / 2 + var(--fi-layout-gutter)));
-  padding-left: max(var(--fi-layout-gutter), calc((100vw - var(--fi-layout-width)) / 2 + var(--fi-layout-gutter)));
+  padding-right: max(
+    var(--fi-layout-gutter),
+    calc((100vw - var(--fi-layout-width)) / 2 + var(--fi-layout-gutter))
+  );
+  padding-left: max(
+    var(--fi-layout-gutter),
+    calc((100vw - var(--fi-layout-width)) / 2 + var(--fi-layout-gutter))
+  );
 }
 
-#app .fi-footer { padding-right: 0; padding-left: 0; }
-#app .fi-footer-grid, #app .fi-footer-bottom {
+#app .fi-footer {
+  padding-right: 0;
+  padding-left: 0;
+}
+#app .fi-footer-grid,
+#app .fi-footer-bottom {
   box-sizing: border-box;
   width: min(100%, var(--fi-layout-width));
   margin-inline: auto;
@@ -28,8 +38,14 @@
 }
 
 #app .landing-page header.fi-header.landing-nav {
-  padding-right: max(var(--fi-layout-gutter), calc((100vw - var(--fi-layout-width)) / 2 + var(--fi-layout-gutter)));
-  padding-left: max(var(--fi-layout-gutter), calc((100vw - var(--fi-layout-width)) / 2 + var(--fi-layout-gutter)));
+  padding-right: max(
+    var(--fi-layout-gutter),
+    calc((100vw - var(--fi-layout-width)) / 2 + var(--fi-layout-gutter))
+  );
+  padding-left: max(
+    var(--fi-layout-gutter),
+    calc((100vw - var(--fi-layout-width)) / 2 + var(--fi-layout-gutter))
+  );
 }
 
 #app .fi-header-brand .fi-brand-image {
@@ -57,7 +73,10 @@
   object-fit: contain;
 }
 
-#app .fi-app > .fi-page > :is(.db-page, .ai-page, .cs-page, .pr-page, .st-page, .wa-page, .ch-page, .nt-page) {
+#app
+  .fi-app
+  > .fi-page
+  > :is(.db-page, .ai-page, .cs-page, .pr-page, .st-page, .wa-page, .ch-page, .nt-page) {
   box-sizing: border-box;
   width: 100%;
   max-width: none;
@@ -83,7 +102,10 @@
   padding-left: var(--fi-layout-gutter);
 }
 
-#app .fi-guide-page { padding-top: 32px; padding-bottom: 60px; }
+#app .fi-guide-page {
+  padding-top: 32px;
+  padding-bottom: 60px;
+}
 
 /* Keep section artwork edge-to-edge while its content follows the page grid. */
 #app .landing-page .landing-section:not(.landing-how):not(.landing-impact):not(.landing-final) {
@@ -96,7 +118,10 @@
 
 #app .landing-page .landing-story {
   box-sizing: border-box;
-  width: min(calc(100% - var(--fi-layout-gutter) - var(--fi-layout-gutter)), var(--fi-layout-width));
+  width: min(
+    calc(100% - var(--fi-layout-gutter) - var(--fi-layout-gutter)),
+    var(--fi-layout-width)
+  );
   margin-right: auto;
   margin-left: auto;
   padding: 0;
@@ -123,32 +148,76 @@
 #app .landing-reveal {
   filter: none;
   transform: translateY(12px);
-  transition: opacity 360ms ease, transform 360ms cubic-bezier(.2, .7, .25, 1);
+  transition:
+    opacity 360ms ease,
+    transform 360ms cubic-bezier(0.2, 0.7, 0.25, 1);
   backface-visibility: visible;
 }
 
-#app .landing-reveal.is-visible { transform: translateY(0); }
+#app .landing-reveal.is-visible {
+  transform: translateY(0);
+}
 #app .landing-category.landing-reveal.is-visible:hover,
-#app .landing-values article.landing-reveal.is-visible:hover { transform: translateY(-4px); }
+#app .landing-values article.landing-reveal.is-visible:hover {
+  transform: translateY(-4px);
+}
 
 @media (prefers-reduced-motion: reduce) {
-  #app .landing-reveal, #app .landing-reveal.is-visible { opacity: 1; transform: none; transition: none; }
+  #app .landing-reveal,
+  #app .landing-reveal.is-visible {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
 @media (max-width: 768px) {
-  #app .fi-app > .fi-page { padding-top: 24px; padding-bottom: 42px; }
-  #app .mp-main, #app .tx-main, #app .ca-main, #app .co-main { padding-top: 25px; padding-bottom: 46px; }
-  #app .tx-main { padding-top: 18px; }
-  #app .landing-page .landing-section:not(.landing-how):not(.landing-impact):not(.landing-final) { padding-top: 64px; padding-bottom: 64px; }
-  #app .landing-page .landing-hero-content { padding-right: var(--fi-layout-gutter); padding-left: var(--fi-layout-gutter); }
+  #app .fi-app > .fi-page {
+    padding-top: 24px;
+    padding-bottom: 42px;
+  }
+  #app .mp-main,
+  #app .tx-main,
+  #app .ca-main,
+  #app .co-main {
+    padding-top: 25px;
+    padding-bottom: 46px;
+  }
+  #app .tx-main {
+    padding-top: 18px;
+  }
+  #app .landing-page .landing-section:not(.landing-how):not(.landing-impact):not(.landing-final) {
+    padding-top: 64px;
+    padding-bottom: 64px;
+  }
+  #app .landing-page .landing-hero-content {
+    padding-right: var(--fi-layout-gutter);
+    padding-left: var(--fi-layout-gutter);
+  }
 }
 
 @media (max-width: 480px) {
-  :root { --fi-layout-gutter: 16px; }
-  #app .fi-app > .fi-page { padding-top: 20px; padding-bottom: 36px; }
-  #app .mp-main, #app .tx-main, #app .ca-main, #app .co-main { padding-top: 20px; padding-bottom: 38px; }
-  #app .tx-main { padding-top: 14px; }
-  #app .fi-guide-page { padding-top: 20px; padding-bottom: 40px; }
+  :root {
+    --fi-layout-gutter: 16px;
+  }
+  #app .fi-app > .fi-page {
+    padding-top: 20px;
+    padding-bottom: 36px;
+  }
+  #app .mp-main,
+  #app .tx-main,
+  #app .ca-main,
+  #app .co-main {
+    padding-top: 20px;
+    padding-bottom: 38px;
+  }
+  #app .tx-main {
+    padding-top: 14px;
+  }
+  #app .fi-guide-page {
+    padding-top: 20px;
+    padding-bottom: 40px;
+  }
 }
 
 /* Use the full Food Ilee wordmark in each header, scaled for small screens. */
@@ -158,15 +227,23 @@
   height: auto;
 }
 @media (max-width: 640px) {
-  #app .fi-header-brand .fi-brand-image { width: 140px; max-width: min(100%, 140px); }
+  #app .fi-header-brand .fi-brand-image {
+    width: 140px;
+    max-width: min(100%, 140px);
+  }
 }
 @media (max-width: 380px) {
-  #app .fi-header-brand .fi-brand-image { width: 122px; max-width: min(100%, 122px); }
+  #app .fi-header-brand .fi-brand-image {
+    width: 122px;
+    max-width: min(100%, 122px);
+  }
 }
 
 /* Keep the account action circular and centered on compact dashboard headers. */
 @media (max-width: 1100px) {
-  #app .fi-header-actions .fi-account { width: 46px; }
+  #app .fi-header-actions .fi-account {
+    width: 46px;
+  }
   #app .fi-header-actions .fi-account-toggle {
     box-sizing: border-box;
     width: 46px;
@@ -182,7 +259,9 @@
     border-radius: 50%;
   }
   #app .fi-header-actions .fi-account-meta,
-  #app .fi-header-actions .fi-account-chevron { display: none; }
+  #app .fi-header-actions .fi-account-chevron {
+    display: none;
+  }
 }
 
 #app .landing-page .landing-highlights {
@@ -202,7 +281,7 @@
   background: rgb(5 31 32 / 34%);
   color: #e2f1e8;
   font-size: 10px;
-  letter-spacing: .01em;
+  letter-spacing: 0.01em;
 }
 #app .landing-page .landing-highlights i {
   color: var(--fi-sage);
@@ -211,8 +290,15 @@
   font-weight: 700;
 }
 @media (max-width: 640px) {
-  #app .landing-page .landing-highlights { gap: 7px; margin-top: 21px; }
-  #app .landing-page .landing-highlights span { min-height: 31px; padding-inline: 10px; font-size: 9px; }
+  #app .landing-page .landing-highlights {
+    gap: 7px;
+    margin-top: 21px;
+  }
+  #app .landing-page .landing-highlights span {
+    min-height: 31px;
+    padding-inline: 10px;
+    font-size: 9px;
+  }
 }
 
 /* Compact footer rhythm across signed-in pages and the landing page. */
@@ -251,6 +337,11 @@
     padding-bottom: 14px;
     gap: 17px 14px;
   }
-  #app .fi-footer-grid > div { gap: 5px; }
-  #app .fi-footer-bottom { min-height: 38px; padding-block: 7px; }
+  #app .fi-footer-grid > div {
+    gap: 5px;
+  }
+  #app .fi-footer-bottom {
+    min-height: 38px;
+    padding-block: 7px;
+  }
 }

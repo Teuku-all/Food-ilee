@@ -1,3 +1,4 @@
+import { loadStylesheet } from '../../utils/stylesheet.js';
 import { translate } from '../../utils/i18n.js';
 import { getCurrentUser } from '../../services/user.js';
 import {
@@ -21,10 +22,7 @@ let adminAnalytics = { totalUsers: 0, totalWastes: 0, totalOrders: 0, totalReven
 
 export async function renderAdmin() {
   const revision = getNavigationRevision();
-  renderShell(
-    '',
-    adminDashboardSkeleton(),
-  );
+  renderShell('', adminDashboardSkeleton());
   injectStyles();
   try {
     const profile = await getCurrentUser();
@@ -74,7 +72,9 @@ function isPendingOrder(order) {
 function countByMonth(items, year, month) {
   return items.filter((item) => {
     const date = new Date(item.createdAt);
-    return !Number.isNaN(date.getTime()) && date.getFullYear() === year && date.getMonth() === month;
+    return (
+      !Number.isNaN(date.getTime()) && date.getFullYear() === year && date.getMonth() === month
+    );
   }).length;
 }
 
@@ -96,35 +96,50 @@ function renderAdminActivityChart() {
   const step = 54;
   const grid = Array.from({ length: 5 }, (_, index) => {
     const y = top + (chartHeight / 4) * index;
-    const value = Math.round(scale * (4 - index) / 4);
-    return `<g class="ad-chart-gridline"><line x1="45" y1="${y}" x2="704" y2="${y}"/><text x="4" y="${y + 4}">${value}</text></g>`;
+    const value = Math.round((scale * (4 - index)) / 4);
+    return `<g class="ad-chart-gridline"><line x1="45" y1="${y}" x2="704" y2="${y}"/><text x="29" y="${y + 4}">${value}</text></g>`;
   }).join('');
-  const bars = months.map((month, index) => {
-    const x = 53 + index * step;
-    const productHeight = month.products ? Math.max(5, month.products / scale * chartHeight) : 0;
-    const orderHeight = month.orders ? Math.max(5, month.orders / scale * chartHeight) : 0;
-    return `<g><rect class="ad-chart-bar is-products" x="${x}" y="${bottom - productHeight}" width="13" height="${productHeight}" rx="6"><title>${month.label}: ${month.products} produk baru</title></rect><rect class="ad-chart-bar is-orders" x="${x + 17}" y="${bottom - orderHeight}" width="13" height="${orderHeight}" rx="6"><title>${month.label}: ${month.orders} pesanan</title></rect><text class="ad-chart-month" x="${x + 15}" y="191">${month.label}</text></g>`;
-  }).join('');
+  const bars = months
+    .map((month, index) => {
+      const x = 53 + index * step;
+      const productHeight = month.products
+        ? Math.max(5, (month.products / scale) * chartHeight)
+        : 0;
+      const orderHeight = month.orders ? Math.max(5, (month.orders / scale) * chartHeight) : 0;
+      return `<g><rect class="ad-chart-bar is-products" x="${x}" y="${bottom - productHeight}" width="13" height="${productHeight}" rx="6"><title>${month.label}: ${month.products} produk baru</title></rect><rect class="ad-chart-bar is-orders" x="${x + 17}" y="${bottom - orderHeight}" width="13" height="${orderHeight}" rx="6"><title>${month.label}: ${month.orders} pesanan</title></rect><text class="ad-chart-month" x="${x + 15}" y="191">${month.label}</text></g>`;
+    })
+    .join('');
   const productsLastYear = months.reduce((sum, month) => sum + month.products, 0);
   const ordersLastYear = months.reduce((sum, month) => sum + month.orders, 0);
-  return `<div class="ad-chart-wrap" role="img" aria-label="Aktivitas 12 bulan terakhir: ${productsLastYear} produk baru dan ${ordersLastYear} pesanan"><svg class="ad-chart-svg" viewBox="0 0 720 204" preserveAspectRatio="none" aria-hidden="true">${grid}${bars}</svg></div>`;
+  return `<p class="ad-scroll-hint">Geser grafik untuk melihat bulan lainnya.</p><div class="ad-chart-wrap" tabindex="0" role="img" aria-label="Aktivitas 12 bulan terakhir: ${productsLastYear} produk baru dan ${ordersLastYear} pesanan"><svg class="ad-chart-svg" viewBox="0 0 720 204" preserveAspectRatio="none" aria-hidden="true">${grid}${bars}</svg></div>`;
 }
 
 function renderPendingOrders(orders) {
   const pending = orders.filter(isPendingOrder);
-  if (!pending.length) return `<div class="ad-pending-empty">${icon('shield')}<strong>Tidak ada pesanan tertunda</strong></div>`;
-  return pending.slice(0, 4).map((order) => {
-    const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : 'Tanggal tidak tersedia';
-    const title = order.waste?.title || 'Produk organik';
-    const buyer = order.buyer?.name || order.buyer?.email || 'Pembeli Food Ilee';
-    const label = order.paymentStatus === 'pending' ? 'Menunggu bayar' : 'Pesanan baru';
-    return `<button type="button" class="ad-pending-row" data-admin-panel="orders"><span class="ad-pending-icon">${icon('orders')}</span><span class="ad-pending-copy"><strong>${escapeHtml(title)}</strong><small>${escapeHtml(buyer)} · ${escapeHtml(date)}</small></span><span class="ad-pending-status">${label}</span></button>`;
-  }).join('');
+  if (!pending.length)
+    return `<div class="ad-pending-empty">${icon('shield')}<strong>Tidak ada pesanan tertunda</strong></div>`;
+  return pending
+    .slice(0, 4)
+    .map((order) => {
+      const date = order.createdAt
+        ? new Date(order.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+        : 'Tanggal tidak tersedia';
+      const title = order.waste?.title || 'Produk organik';
+      const buyer = order.buyer?.name || order.buyer?.email || 'Pembeli Food Ilee';
+      const label = order.paymentStatus === 'pending' ? 'Menunggu bayar' : 'Pesanan baru';
+      return `<button type="button" class="ad-pending-row" data-admin-panel="orders"><span class="ad-pending-icon">${icon('orders')}</span><span class="ad-pending-copy"><strong>${escapeHtml(title)}</strong><small>${escapeHtml(buyer)} · ${escapeHtml(date)}</small></span><span class="ad-pending-status">${label}</span></button>`;
+    })
+    .join('');
 }
 
 function renderAdminDashboard(analytics, currentUser, revision) {
   const pendingTotal = adminData.orders.filter(isPendingOrder).length;
-  const initials = String(currentUser.name || currentUser.username || 'Admin').split(/\s+/).slice(0, 2).map((part) => part[0] || '').join('').toLocaleUpperCase('id-ID');
+  const initials = String(currentUser.name || currentUser.username || 'Admin')
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0] || '')
+    .join('')
+    .toLocaleUpperCase('id-ID');
   const stats = [
     ['Pengguna terdaftar', Number(analytics.totalUsers || 0), 'profile'],
     ['Toko aktif', Number(analytics.totalStores || 0), 'store'],
@@ -133,43 +148,72 @@ function renderAdminDashboard(analytics, currentUser, revision) {
     ['Transaksi tertunda', pendingTotal, 'bell'],
     ['Omzet dibayar', formatRupiah(analytics.totalRevenue || 0), 'cart'],
   ];
-  const tab = (panel, label) => `<button type="button" role="tab" aria-selected="${activePanel === panel}" data-admin-panel="${panel}" class="${activePanel === panel ? 'active' : ''}">${label}</button>`;
-  renderShell('', `<section class="ad-page"><div class="ad-layout"><aside class="ad-sidebar" aria-label="Navigasi admin">
+  const tab = (panel, label) =>
+    `<button type="button" role="tab" aria-selected="${activePanel === panel}" data-admin-panel="${panel}" class="${activePanel === panel ? 'active' : ''}">${label}</button>`;
+  renderShell(
+    '',
+    `<section class="ad-page"><div class="ad-layout"><aside class="ad-sidebar" aria-label="Navigasi admin">
     <a class="ad-brand" href="#admin"><span class="ad-brand-mark">${icon('leaf')}</span><span>Food Ilee</span></a>
-    <nav class="ad-side-nav"><a class="is-current" href="#admin-overview" data-admin-scroll-target="admin-overview">${icon('home')}<span>Ringkasan</span></a><button type="button" data-admin-panel="users" class="${activePanel === 'users' ? 'active' : ''}">${icon('profile')}<span>Pengguna</span></button><button type="button" data-admin-panel="wastes" class="${activePanel === 'wastes' ? 'active' : ''}">${icon('box')}<span>Produk</span></button><button type="button" data-admin-panel="orders" class="${activePanel === 'orders' ? 'active' : ''}">${icon('orders')}<span>Pesanan</span></button><a href="#admin-chart" data-admin-scroll-target="admin-chart">${icon('guide')}<span>Statistik</span></a></nav>
+    <nav class="ad-side-nav"><a class="is-current" aria-current="location" href="#admin-overview" data-admin-scroll-target="admin-overview">${icon('home')}<span>Ringkasan</span></a><button type="button" data-admin-panel="users">${icon('profile')}<span>Pengguna</span></button><button type="button" data-admin-panel="wastes">${icon('box')}<span>Produk</span></button><button type="button" data-admin-panel="orders">${icon('orders')}<span>Pesanan</span></button><a href="#admin-chart" data-admin-scroll-target="admin-chart">${icon('guide')}<span>Statistik</span></a></nav>
     <div class="ad-sidebar-profile"><span class="ad-sidebar-avatar">${escapeHtml(initials || 'A')}</span><strong>${escapeHtml(currentUser.name || currentUser.username || 'Administrator')}</strong></div>
   </aside><main class="ad-main">
     <header class="ad-heading"><h1>Dashboard admin</h1></header>
     <section class="ad-stats" aria-label="Statistik utama">${stats.map(([label, value, iconName]) => `<article class="ad-stat"><span class="ad-stat-icon">${icon(iconName)}</span><small>${label}</small><strong>${typeof value === 'number' ? value.toLocaleString('id-ID') : value}</strong></article>`).join('')}</section>
     <section class="ad-overview-grid" id="admin-overview"><section class="ad-panel ad-chart-panel fi-card" id="admin-chart" aria-labelledby="admin-chart-title"><div class="ad-panel-heading"><h2 id="admin-chart-title">Aktivitas 12 bulan</h2><div class="ad-chart-legend"><span><i class="is-products"></i>Produk</span><span><i class="is-orders"></i>Pesanan</span></div></div>${renderAdminActivityChart()}</section><section class="ad-panel ad-pending-panel fi-card" aria-labelledby="admin-pending-title"><div class="ad-panel-heading"><h2 id="admin-pending-title">Pesanan tertunda</h2></div><div class="ad-pending-list">${renderPendingOrders(adminData.orders)}</div><button type="button" class="ad-panel-link" data-admin-panel="orders">Lihat semua pesanan ${icon('arrow')}</button></section></section>
     <section class="ad-management" id="admin-management"><div class="ad-management-heading"><h2>Kelola data</h2></div><div class="ad-toolbar"><label class="ad-search"><span aria-hidden="true">${icon('search')}</span><input id="admin-search" type="search" placeholder="Cari data…" aria-label="Cari pada tabel admin"></label><div class="ad-toolbar-right"><div class="ad-tabs" role="tablist" aria-label="Pilih jenis data">${tab('users', 'Pengguna')}${tab('wastes', 'Produk')}${tab('orders', 'Pesanan')}</div><span id="admin-search-note" role="status" hidden></span></div></div><section id="admin-panel" class="ad-panel fi-card" role="tabpanel">${renderPanel(currentUser)}</section></section>
-  </main></div></section>`);
+  </main></div></section>`,
+  );
   injectStyles();
   document.querySelectorAll('[data-admin-panel]').forEach((button) =>
     button.addEventListener('click', () => {
       activePanel = button.dataset.adminPanel;
-      document.querySelectorAll('[data-admin-panel]').forEach((item) => {
+      document.querySelectorAll('.ad-tabs [data-admin-panel]').forEach((item) => {
         const active = item.dataset.adminPanel === activePanel;
         item.classList.toggle('active', active);
-        if (item.getAttribute('role') === 'tab') item.setAttribute('aria-selected', String(active));
+        item.setAttribute('aria-selected', String(active));
       });
+      setAdminSidebarCurrent(
+        document.querySelector(`.ad-side-nav [data-admin-panel="${activePanel}"]`),
+      );
       document.getElementById('admin-panel').innerHTML = renderPanel(currentUser);
       applyAdminSearch();
       bindAdminActions(currentUser, revision);
       if (!button.closest('.ad-tabs')) {
-        document.getElementById('admin-management')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+        document.getElementById('admin-management')?.scrollIntoView({
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            ? 'instant'
+            : 'smooth',
+          block: 'start',
+        });
       }
     }),
   );
   document.querySelectorAll('[data-admin-scroll-target]').forEach((link) =>
     link.addEventListener('click', (event) => {
       event.preventDefault();
-      document.getElementById(link.dataset.adminScrollTarget)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+      setAdminSidebarCurrent(link);
+      document.getElementById(link.dataset.adminScrollTarget)?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'instant'
+          : 'smooth',
+        block: 'start',
+      });
     }),
   );
   document.getElementById('admin-search')?.addEventListener('input', applyAdminSearch);
   applyAdminSearch();
   bindAdminActions(currentUser, revision);
+}
+
+// Sidebar destinations and table tabs represent separate navigation states.
+function setAdminSidebarCurrent(current) {
+  document.querySelectorAll('.ad-side-nav a,.ad-side-nav button').forEach((item) => {
+    const active = item === current;
+    item.classList.toggle('is-current', active && item.tagName === 'A');
+    item.classList.toggle('active', active && item.tagName === 'BUTTON');
+    if (active) item.setAttribute('aria-current', 'location');
+    else item.removeAttribute('aria-current');
+  });
 }
 
 function applyAdminSearch() {
@@ -201,7 +245,7 @@ function renderPanel(currentUser) {
   if (activePanel === 'users') {
     if (!adminData.users.length) return '<p class="ad-empty">Belum ada akun pengguna.</p>';
     return (
-      '<div class="ad-table-wrap"><table><thead><tr><th>Pengguna</th><th>Peran</th><th>Status</th><th>Aksi</th></tr></thead><tbody>' +
+      '<p class="ad-scroll-hint">Geser tabel untuk melihat seluruh kolom.</p><div class="ad-table-wrap" tabindex="0" role="region" aria-label="Tabel data admin, geser untuk melihat kolom lainnya"><table><thead><tr><th>Pengguna</th><th>Peran</th><th>Status</th><th>Aksi</th></tr></thead><tbody>' +
       adminData.users
         .map(
           (user) =>
@@ -230,7 +274,7 @@ function renderPanel(currentUser) {
   if (activePanel === 'wastes') {
     if (!adminData.wastes.length) return '<p class="ad-empty">Belum ada produk.</p>';
     return (
-      '<div class="ad-table-wrap"><table><thead><tr><th>Produk</th><th>Penjual</th><th>Harga</th><th>Aksi</th></tr></thead><tbody>' +
+      '<p class="ad-scroll-hint">Geser tabel untuk melihat seluruh kolom.</p><div class="ad-table-wrap" tabindex="0" role="region" aria-label="Tabel data admin, geser untuk melihat kolom lainnya"><table><thead><tr><th>Produk</th><th>Penjual</th><th>Harga</th><th>Aksi</th></tr></thead><tbody>' +
       adminData.wastes
         .map(
           (waste) =>
@@ -258,7 +302,7 @@ function renderPanel(currentUser) {
   }
   if (!adminData.orders.length) return '<p class="ad-empty">Belum ada transaksi.</p>';
   return (
-    '<div class="ad-table-wrap"><table><thead><tr><th>Produk</th><th>Pembeli</th><th>Status</th><th>Total</th></tr></thead><tbody>' +
+    '<p class="ad-scroll-hint">Geser tabel untuk melihat seluruh kolom.</p><div class="ad-table-wrap" tabindex="0" role="region" aria-label="Tabel data admin, geser untuk melihat kolom lainnya"><table><thead><tr><th>Produk</th><th>Pembeli</th><th>Status</th><th>Total</th></tr></thead><tbody>' +
     adminData.orders
       .map(
         (order) =>
@@ -318,13 +362,5 @@ function bindAdminActions(currentUser, revision) {
 }
 
 function injectStyles() {
-  if (document.getElementById('admin-page-style')) return;
-  const style = document.createElement('style');
-  style.id = 'admin-page-style';
-  style.textContent =
-    '.ad-page{max-width:1180px;margin:0 auto;padding:4px 0 30px}.ad-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px}.ad-kicker{margin:0 0 7px;color:#49827d;font-size:10px;font-weight:700;letter-spacing:.14em}.ad-heading h1{margin:0;color:var(--fi-deep);font-size:clamp(29px,4vw,38px);letter-spacing:-.04em}.ad-heading p:not(.ad-kicker){margin-top:8px;color:var(--fi-muted);font-size:14px}.ad-role{padding:8px 12px;border-radius:999px;background:#d8eeeb;color:#176d69;font-size:11px;font-weight:600}.ad-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:22px}.ad-stats article{min-width:0;padding:17px;border:1px solid var(--fi-line);border-radius:18px;background:var(--fi-card)}.ad-stats small{display:block;color:var(--fi-muted);font-size:11px}.ad-stats strong{display:block;overflow:hidden;margin-top:8px;color:var(--fi-deep);font-size:clamp(18px,2vw,26px);text-overflow:ellipsis;white-space:nowrap}.ad-tabs{display:flex;gap:7px;margin-bottom:12px;padding:5px;border:1px solid var(--fi-line);border-radius:14px;background:#eaf3f2;overflow:auto}.ad-tabs button{flex:none;min-height:38px;padding:0 15px;border-radius:10px;background:transparent;color:#55716e;font-size:12px;font-weight:600}.ad-tabs button.active{background:#0B2B26;color:#eff9f8}.ad-panel{overflow:hidden;padding:0;border-radius:19px}.ad-table-wrap{width:100%;overflow-x:auto}table{width:100%;border-collapse:collapse;text-align:left}th,td{padding:14px 16px;border-bottom:1px solid #DAF1DE;white-space:nowrap}th{background:#f2f8f7;color:#56716f;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}td{color:#365856;font-size:12px}td strong,td small{display:block}td strong{color:#163832;font-size:12px}td small{margin-top:4px;color:#748c89;font-size:10px}.ad-status{padding:5px 8px;border-radius:999px;background:#e1f0ee;color:#176d69;font-size:10px}.ad-status.banned{background:#fae7e5;color:#a34b43}.ad-action{min-height:32px;padding:0 10px;border:1px solid #bfd4d2;border-radius:999px;background:#fff;font-size:10px;font-weight:600}.ad-action.danger{border-color:#efd4d1;color:#a34b43}.ad-action:disabled{opacity:.5}.ad-empty,.ad-state{min-height:180px;padding:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--fi-muted);text-align:center}.ad-state h1{color:var(--fi-deep);font-size:24px}.ad-state p{max-width:540px;font-size:13px;line-height:1.6}.ad-state .fi-button{margin-top:8px}@media(max-width:760px){.ad-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.ad-heading{align-items:flex-start;flex-direction:column}}@media(max-width:520px){.ad-stats{gap:8px}.ad-stats article{padding:13px}.ad-tabs button{padding:0 12px;font-size:11px}th,td{padding:11px 12px}}';
-  style.textContent += `.ad-heading{position:relative;isolation:isolate;box-sizing:border-box;min-height:176px;align-items:center;overflow:hidden;margin-bottom:20px;padding:28px 32px;border:1px solid #cfe1d2;border-radius:24px;background:radial-gradient(ellipse at 88% 18%,#d9eee0 0,transparent 34%),linear-gradient(115deg,#f8fbf7,#edf5ef 65%,#e4f1e8);box-shadow:0 12px 30px #174e320c}.ad-heading:before{position:absolute;z-index:-1;right:-50px;top:-142px;width:320px;height:320px;border:1px solid #a8cdb544;border-radius:50%;content:'';box-shadow:0 0 0 22px #a9cfad14,0 0 0 45px #a9cfad10}.ad-heading>div{position:relative;z-index:1}.ad-kicker{display:inline-flex;margin:0 0 10px;padding:6px 10px;border:1px solid #cfe1d2;border-radius:999px;background:#ffffffad;color:#557b61}.ad-heading h1{font-size:clamp(30px,3.5vw,40px);font-weight:620;letter-spacing:-1.3px}.ad-heading p:not(.ad-kicker){margin:9px 0 0;color:#607369;line-height:1.6}.ad-role{position:relative;z-index:1;padding:9px 13px;border:1px solid #d0e3d4;background:#ffffffc9;color:#39734d}.ad-stats{gap:14px;margin-bottom:25px}.ad-stats article{position:relative;overflow:hidden;padding:19px 20px;border-color:#d7e5d9;border-radius:18px;background:linear-gradient(145deg,#fff,#f8fbf8);box-shadow:0 7px 20px #0B2B2608;transition:transform .18s ease,box-shadow .18s ease}.ad-stats article:hover{transform:translateY(-2px);box-shadow:0 12px 24px #0B2B2610}.ad-stats article:after{position:absolute;top:18px;right:18px;width:9px;height:9px;border-radius:50%;background:#78ae83;box-shadow:0 0 0 5px #78ae831a;content:''}.ad-stats article:nth-child(2):after{background:#63a59a;box-shadow:0 0 0 5px #63a59a1a}.ad-stats article:nth-child(3):after{background:#7e9dc0;box-shadow:0 0 0 5px #7e9dc01a}.ad-stats article:nth-child(4):after{background:#d3a653;box-shadow:0 0 0 5px #d3a6531a}.ad-stats small{font-size:11px;font-weight:600;letter-spacing:.02em}.ad-stats strong{margin-top:10px;font-size:clamp(21px,2.2vw,28px);letter-spacing:-.4px}.ad-tabs{width:max-content;max-width:100%;box-sizing:border-box;gap:5px;margin:0 0 10px;padding:5px;border-color:#d8e5dc;border-radius:13px;background:#edf4ee}.ad-tabs button{min-height:39px;padding:0 17px;border-radius:9px;transition:background .16s,color .16s,box-shadow .16s}.ad-tabs button.active{background:#163832;box-shadow:0 3px 8px #16383222}.ad-tabs button:focus-visible,.ad-search input:focus-visible,.ad-action:focus-visible{outline:3px solid #7bb88a;outline-offset:2px}.ad-tools{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 12px}.ad-search{display:flex;align-items:center;gap:9px;width:min(390px,100%);height:41px;box-sizing:border-box;padding:0 13px;border:1px solid #dce8df;border-radius:12px;background:#fff;color:#66806c}.ad-search>span{font-size:20px;line-height:1}.ad-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#0B2B26;font:400 12px Inter,Arial,sans-serif}.ad-search input::placeholder{color:#98a79b}.ad-tools>[role=status]{color:#77877a;font-size:10px}.ad-panel{border-color:#e0e9e2;border-radius:18px;box-shadow:0 8px 24px #0B2B2608}.ad-table-wrap table{width:100%;border-collapse:collapse;text-align:left}.ad-table-wrap th,.ad-table-wrap td{padding:13px 16px;border-bottom:1px solid #edf2ed;white-space:nowrap}.ad-table-wrap th{position:sticky;top:0;z-index:1;background:#f5f9f5;color:#718476;font-size:9px;letter-spacing:.09em}.ad-table-wrap td{color:#53675a;font-size:11px}.ad-table-wrap td strong{color:#263f2d;font-size:12px}.ad-table-wrap td small{color:#829084;font-size:10px}.ad-table-wrap tbody tr{transition:background .14s ease}.ad-table-wrap tbody tr:nth-child(even){background:#fbfdfb}.ad-table-wrap tbody tr:hover{background:#f0f7f1}.ad-table-wrap tbody tr[hidden]{display:none}.ad-status{padding:5px 9px;background:#e8f4e9;color:#39734d;font-weight:600}.ad-action{min-height:34px;padding:0 12px;border-color:#d6e4d8;color:#436a4d;cursor:pointer;transition:background .15s,border-color .15s}.ad-action:hover:not(:disabled){border-color:#8db696;background:#f1f8f2}.ad-action.danger{background:#fffafa}.ad-empty{min-height:150px;color:#77877a;font-size:12px}@media(max-width:760px){.ad-heading{min-height:155px;padding:24px}.ad-stats{gap:10px}.ad-tools{align-items:flex-start;flex-direction:column}.ad-search{width:100%}.ad-tools>[role=status]{align-self:flex-end}.ad-tabs{width:100%}}@media(max-width:520px){.ad-page{padding-top:0}.ad-heading{min-height:145px;padding:20px;border-radius:20px}.ad-heading:before{right:-190px;top:-160px}.ad-heading h1{font-size:30px}.ad-role{padding:7px 10px;font-size:10px}.ad-stats article{padding:14px}.ad-stats article:after{top:14px;right:14px}.ad-stats small{max-width:calc(100% - 18px);font-size:10px}.ad-tabs button{padding:0 12px}th,td{padding:11px 12px}}`;
-  style.textContent += `.ad-toolbar{display:flex;align-items:center;gap:14px;margin:0 0 12px}.ad-search{flex:1;width:auto;max-width:none}.ad-toolbar-right{min-width:0;display:flex;align-items:center;gap:11px}.ad-tabs{flex:none;width:auto;max-width:100%;margin:0}.ad-toolbar-right>[role=status]{color:#77877a;font-size:10px;white-space:nowrap}@media(max-width:760px){.ad-toolbar{align-items:stretch;flex-direction:column;gap:9px}.ad-search{width:100%}.ad-toolbar-right{justify-content:space-between}.ad-tabs{flex:1}.ad-toolbar-right>[role=status]{white-space:normal;text-align:right}}@media(max-width:520px){.ad-toolbar-right{align-items:flex-start;flex-direction:column}.ad-tabs{width:100%;flex:auto}.ad-toolbar-right>[role=status]{align-self:flex-end}}`;
-  style.textContent += `.ad-page{max-width:1380px;margin-inline:auto}`;
-  document.head.append(style);
+  loadStylesheet('admin-page-style', new URL('../../styles/pages/admin.css', import.meta.url));
 }

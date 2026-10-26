@@ -58,10 +58,11 @@ io.on('connection', (socket) => {
   });
 });
 
-
 server.on('error', (error) => {
   if (error.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} sudah dipakai. Atur PORT di backend/.env atau hentikan server yang lama.`);
+    console.error(
+      `Port ${PORT} sudah dipakai. Atur PORT di backend/.env atau hentikan server yang lama.`,
+    );
   } else {
     console.error('Backend gagal dijalankan:', error.message);
   }

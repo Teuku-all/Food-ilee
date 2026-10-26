@@ -2,9 +2,10 @@ const orderService = require('../services/order.service');
 
 function withPaymentUrl(order) {
   if (!order?.paymentToken || order.paymentStatus !== 'pending') return order;
-  const snapHost = process.env.MIDTRANS_IS_PRODUCTION === 'true'
-    ? 'https://app.midtrans.com'
-    : 'https://app.sandbox.midtrans.com';
+  const snapHost =
+    process.env.MIDTRANS_IS_PRODUCTION === 'true'
+      ? 'https://app.midtrans.com'
+      : 'https://app.sandbox.midtrans.com';
   return {
     ...order,
     paymentUrl: `${snapHost}/snap/v2/vtweb/${encodeURIComponent(order.paymentToken)}`,
@@ -49,7 +50,9 @@ async function getShippingRates(req, res) {
     );
     res.json({ success: true, data });
   } catch (error) {
-    const unavailable = /BITESHIP|Biteship|tidak dapat dihubungi|timeout|waktu|layanan data/i.test(error.message);
+    const unavailable = /BITESHIP|Biteship|tidak dapat dihubungi|timeout|waktu|layanan data/i.test(
+      error.message,
+    );
     res.status(unavailable ? 503 : 400).json({ success: false, message: error.message });
   }
 }
@@ -57,22 +60,27 @@ async function getShippingRates(req, res) {
 async function createCheckout(req, res) {
   try {
     const order = await orderService.createCheckout(req.user.id, req.body);
-    const snapHost = process.env.MIDTRANS_IS_PRODUCTION === 'true'
-      ? 'https://app.midtrans.com'
-      : 'https://app.sandbox.midtrans.com';
+    const snapHost =
+      process.env.MIDTRANS_IS_PRODUCTION === 'true'
+        ? 'https://app.midtrans.com'
+        : 'https://app.sandbox.midtrans.com';
     res.status(201).json({
       success: true,
-      data: order.paymentMethod !== 'midtrans'
-        ? order
-        : {
-            ...order,
-            snapToken: order.paymentToken,
-            snapClientKey: process.env.MIDTRANS_CLIENT_KEY,
-            snapJsUrl: `${snapHost}/snap/snap.js`,
-          },
+      data:
+        order.paymentMethod !== 'midtrans'
+          ? order
+          : {
+              ...order,
+              snapToken: order.paymentToken,
+              snapClientKey: process.env.MIDTRANS_CLIENT_KEY,
+              snapJsUrl: `${snapHost}/snap/snap.js`,
+            },
     });
   } catch (error) {
-    const unavailable = /BITESHIP|Biteship|tidak dapat dihubungi|timeout|waktu|layanan data|Midtrans/i.test(error.message);
+    const unavailable =
+      /BITESHIP|Biteship|tidak dapat dihubungi|timeout|waktu|layanan data|Midtrans/i.test(
+        error.message,
+      );
     res.status(unavailable ? 503 : 400).json({ success: false, message: error.message });
   }
 }

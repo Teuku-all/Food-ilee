@@ -1,46 +1,239 @@
-/* Shared finishing layer: clear surfaces, readable type and reachable navigation. */
+/* Shared component finish. Page files own layouts; this file owns consistency. */
 #app {
-  --fi-surface: #f7faf7;
+  --fi-surface: var(--fi-paper);
 }
-#app :is(.fi-app, .mp-app, .tx-app, .ca-app, .co-app) {
-  background: var(--fi-surface);
+#app :is(.fi-app, .mp-app, .tx-app, .ca-app, .co-app, .landing-page) {
+  background: var(--fi-paper);
 }
-#app :is(.fi-card, .fi-stat, .tx-order-card, .mp-card) {
-  border-color: #dce7de;
-  border-radius: 20px;
+#app :is(.fi-page, .mp-main, .tx-main, .ca-main, .co-main) {
+  line-height: 1.6;
 }
 #app :is(.fi-page, .mp-main, .tx-main, .ca-main, .co-main) h1 {
   letter-spacing: -0.04em;
-  line-height: 1.18;
+  line-height: 1.2;
 }
 #app :is(.fi-page, .mp-main, .tx-main, .ca-main, .co-main) p {
   line-height: 1.65;
 }
-#app :is(.fi-input, .auth-form input) {
+#app
+  :is(
+    .fi-card,
+    .mp-card,
+    .tx-order-card,
+    .ca-list-panel,
+    .ca-summary,
+    .co-panel,
+    .co-summary,
+    .st-inventory,
+    .db-panel,
+    .db-quick-panel,
+    .pr-panel,
+    .ad-panel
+  ) {
+  border-color: var(--fi-border);
+  box-shadow: var(--fi-shadow-card);
+}
+#app :is(.fi-account-menu, .mp-sort-menu) {
+  box-shadow: var(--fi-shadow-menu);
+}
+#app :is(.db-overall, .pr-impact-card.deep) {
+  box-shadow: 0 8px 24px rgb(24 62 50 / 12%);
+}
+
+/* Comfortable controls, with one visible keyboard focus treatment. */
+#app :is(.fi-button, .tx-button, .mp-card-action, .auth-submit, .cs-submit, .wa-submit) {
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+#app :is(.fi-input, .auth-form input:not([type='checkbox'])) {
   min-height: 46px;
 }
-#app .fi-account-menu {
-  max-height: min(600px, calc(100dvh - 100px));
+#app :is(button, input, select, textarea, a):focus-visible,
+body > dialog :is(button, input, select, textarea, a):focus-visible {
+  outline: 3px solid var(--fi-focus);
+  outline-offset: 3px;
+}
+#app .fi-header :is(button, a):focus-visible {
+  outline-color: #c4dfcb;
+}
+#app :is(.fi-input, .auth-form input)::placeholder {
+  color: #7a887e;
+  opacity: 1;
+}
+#app :is(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+}
+#app :is(.fi-button, .tx-button, .mp-card-action, .auth-submit):disabled {
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+}
+#app input[type='checkbox'] {
+  accent-color: var(--fi-green);
+}
+#app .auth-form input[type='checkbox'] {
+  min-height: 0;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Numbers stay aligned while values update. Secondary text remains readable. */
+#app :is(.db-panel, .ad-table-wrap, .ad-stats, .ca-summary, .co-summary, .tx-total) {
+  font-variant-numeric: tabular-nums;
+}
+#app .st-dashboard-heading > span,
+#app .db-panel-head p,
+#app .db-panel-link,
+#app .db-category-legend > div,
+#app .db-order-legend > div,
+#app .db-summary-metrics small,
+#app .db-store-description,
+#app .db-store-identity small,
+#app .db-focus-copy small,
+#app .db-focus-state,
+#app .db-order-card-copy small,
+#app .db-order-card-copy > span,
+#app .db-activity-empty small,
+#app .db-add-card small,
+#app .st-dashboard-revenue,
+#app .db-activity-head > a {
+  font-size: 12px;
+  line-height: 1.55;
+}
+#app .db-card-eyebrow,
+#app .db-category-scale,
+#app .db-order-ring small,
+#app .db-quick-panel .st-kicker,
+#app .db-activity-head .st-kicker {
+  font-size: 11px;
+  line-height: 1.5;
+}
+#app .db-store-identity strong,
+#app .db-focus-copy strong,
+#app .db-order-card-copy strong,
+#app .db-add-card,
+#app .db-panel-head h3 {
+  font-size: 14px;
+  line-height: 1.45;
+}
+#app .db-summary-metrics > div {
+  padding: 12px 10px;
+}
+#app .db-summary-metrics small {
+  margin-top: 8px;
+}
+#app .db-summary-metrics strong {
+  font-size: 24px;
+}
+#app .db-panel-head p,
+#app .db-category-scale,
+#app .db-focus-copy small,
+#app .db-order-card-copy small,
+#app .db-order-card-copy > span,
+#app .db-activity-empty small,
+#app .db-add-card small {
+  color: var(--fi-secondary);
+}
+#app .db-overall .db-store-description,
+#app .db-overall .db-store-identity small {
+  color: #dbe6d9;
+}
+#app .db-overall .db-summary-metrics small {
+  color: #52644f;
+}
+#app .db-overview-grid > .db-panel {
+  min-height: 320px;
+  padding: 24px;
+}
+#app .db-action-grid {
+  margin-top: 20px;
+  gap: 20px;
+}
+#app .db-focus-item {
+  min-height: 76px;
+}
+#app .db-activity-grid {
+  gap: 14px;
+}
+#app .db-activity-card,
+#app .db-add-card {
+  min-height: 180px;
+}
+
+/* Table containers get depth; row boundaries and hover do the rest. */
+#app :is(.ad-table-wrap, .ad-table-panel, .ad-insight, .ad-feed) {
+  border-color: var(--fi-border);
+  box-shadow: var(--fi-shadow-card);
+}
+#app .ad-table-wrap {
+  scrollbar-width: thin;
+  overscroll-behavior-inline: contain;
+}
+#app .ad-table-wrap table {
+  font-size: 13px;
+}
+#app .ad-table-wrap th {
+  padding-block: 15px;
+  color: #52664f;
+  background: #f0f4ed;
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+}
+#app .ad-table-wrap td {
+  padding-block: 17px;
+  border-bottom-color: #e8ede5;
+  line-height: 1.5;
+}
+#app .ad-table-wrap tbody tr:hover {
+  background: #f5f8f2;
+}
+#app :is(.ad-side-nav a, .ad-side-nav button, .ad-filter) {
+  min-height: 44px;
+  font-size: 12px;
+}
+#app :is(.ad-stat-label, .ad-trend, .ad-activity-copy small, .ad-side-profile small) {
+  font-size: 12px;
+}
+
+/* Native dialogs retain focus handling and scroll inside the viewport. */
+body > dialog {
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+  margin: auto;
   overflow-y: auto;
   overscroll-behavior: contain;
+  border: 1px solid var(--fi-border);
+  border-radius: 24px;
+  background: var(--fi-white);
+  color: var(--fi-text);
+  font-family: Inter, Arial, sans-serif;
+  line-height: 1.6;
+  box-shadow: var(--fi-shadow-dialog);
 }
-#app .fi-nav-link {
-  transition:
-    background-color 0.2s,
-    color 0.2s,
-    box-shadow 0.2s,
-    transform 0.2s;
+body > dialog::backdrop {
+  background: rgb(5 31 32 / 45%);
+  backdrop-filter: blur(5px);
 }
-#app .fi-footer {
-  margin-top: 32px;
+body > dialog :is(input, select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+  font: inherit;
 }
+body:has(> dialog[open]) {
+  overflow: hidden;
+}
+
 .public-language {
   display: flex;
+  flex-shrink: 0;
   gap: 3px;
   padding: 3px;
   border: 1px solid #ffffff45;
   border-radius: 99px;
-  flex-shrink: 0;
 }
 .public-language button {
   min-width: 32px;
@@ -57,57 +250,54 @@
 }
 .auth-panel > .public-language {
   align-self: flex-end;
+  width: fit-content;
   margin: 16px 24px 0;
   color: #235347;
   border-color: #cbded1;
-  width: fit-content;
 }
-#app .landing-page .landing-section {
-  scroll-margin-top: 24px;
+#app .landing-nav .public-language {
+  color: #fff;
 }
-#app .landing-page .landing-values article {
-  border-radius: 20px;
+#app .landing-nav .public-language .is-selected {
+  color: #163832;
 }
-#app .landing-page .landing-category {
-  border-radius: 22px;
+#app .landing-page .landing-values article,
+#app .landing-page .landing-steps article {
+  border-color: var(--fi-border);
+  box-shadow: var(--fi-shadow-card);
 }
-#app .landing-page .landing-about {
-  background: #f7faf7;
+#app .fi-footer {
+  margin-top: 32px;
 }
-#app .landing-page .landing-market {
-  background: #f7faf7;
+#app .fi-footer-grid :is(a, span),
+#app .fi-footer-brand p {
+  font-size: 13px;
+  line-height: 1.75;
 }
-#app .landing-page .landing-ai {
-  background: #f7faf7;
+#app .fi-footer-grid h3 {
+  font-size: 12px;
+  margin-bottom: 12px;
 }
-#app .landing-page .landing-hero h1 {
-  text-wrap: balance;
-}
+
 @media (hover: hover) {
-  #app :is(.mp-card, .tx-order-card):hover {
+  #app .mp-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 14px 32px #16383212;
+    box-shadow: var(--fi-shadow-menu);
   }
-  #app .fi-nav-link:hover .fi-icon {
-    transform: translateY(-2px);
+  #app .tx-order-card:hover {
+    transform: none;
+    border-color: #bbcdbd;
+    box-shadow: var(--fi-shadow-card);
   }
 }
-#app .fi-nav-link .fi-icon {
-  transition: transform 0.2s ease;
-}
+
 @media (max-width: 768px) {
-  :root {
-    --fi-bottom-space: calc(82px + env(safe-area-inset-bottom, 0px));
-  }
-  body:has(.fi-header) {
-    padding-bottom: var(--fi-bottom-space);
-  }
   #app .fi-header,
   #app .landing-page header.fi-header.landing-nav {
-    height: 68px;
-    min-height: 68px;
     display: flex;
     flex-wrap: nowrap;
+    height: 68px;
+    min-height: 68px;
     padding: 0 16px;
     gap: 12px;
     overflow: visible;
@@ -123,68 +313,9 @@
     margin-left: auto;
     gap: 8px;
   }
-  #app .fi-header .fi-nav {
-    position: fixed;
-    z-index: 1000;
-    inset: auto 0 0;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    width: 100%;
-    height: auto;
-    min-height: var(--fi-bottom-space);
-    margin: 0;
-    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
-    gap: 2px;
-    border: 0;
-    border-top: 1px solid #d6e4d9;
-    border-radius: 20px 20px 0 0;
-    background: #f9fcf9;
-    box-shadow: 0 -6px 24px #153d2d12;
-    overflow: visible;
-    transform: none;
-  }
-  #app .fi-header .fi-nav .fi-nav-link {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 5px;
-    min-width: 0;
-    min-height: 62px;
-    height: auto;
-    padding: 7px 2px;
-    border: 0;
-    border-radius: 14px;
-    background: transparent;
-    color: #5c7065;
-    font-size: 10px;
-    line-height: 1.25;
-    text-align: center;
-    white-space: normal;
-    box-shadow: none;
-    animation: none;
-  }
-  #app .fi-header .fi-nav .fi-nav-link .fi-icon {
-    display: block;
-    width: 21px;
-    height: 21px;
-    margin: 0;
-  }
-  #app .fi-header .fi-nav .fi-nav-link:is(.is-active, [aria-current]) {
-    background: #e1eee4;
-    color: #1d5440;
-    font-weight: 700;
-  }
-  #app .fi-header .fi-nav .fi-nav-link:active {
-    transform: scale(0.94);
-  }
-  #app .fi-account-meta,
-  #app .fi-account-chevron {
-    display: none;
-  }
   #app .fi-account-toggle {
-    padding: 4px;
     min-height: 44px;
+    padding: 4px;
   }
   #app .fi-cart-link {
     min-width: 44px;
@@ -194,118 +325,55 @@
     display: none;
   }
   #app .landing-actions .landing-join {
-    padding: 10px 12px;
     min-height: 40px;
+    padding: 10px 12px;
     font-size: 11px;
     white-space: nowrap;
   }
   #app .landing-actions .landing-join span {
     display: none;
   }
-  #app .landing-page .landing-hero {
-    min-height: 620px;
+  #app .auth-panel > .public-language {
+    margin: 0 0 16px auto;
   }
-  #app .landing-page .landing-hero-content {
-    padding: 48px 20px 50px;
-    width: 100%;
-  }
-  #app .landing-page .landing-hero h1 {
-    font-size: clamp(36px, 9.4vw, 58px);
-    line-height: 1.13;
-  }
-  #app .landing-page .landing-hero-content > p:not(.landing-eyebrow) {
-    font-size: 14px;
-    max-width: 38ch;
-    line-height: 1.75;
-  }
-  #app .landing-page .landing-highlights {
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  #app .landing-page .landing-section {
-    padding-top: 52px;
-    padding-bottom: 52px;
-  }
-  #app .landing-page h2 {
-    font-size: clamp(28px, 7.5vw, 38px);
-    line-height: 1.18;
-  }
-  #app .landing-page .landing-values {
-    gap: 12px;
-  }
-  #app .landing-page .landing-hero-cta {
-    flex-wrap: wrap;
-    gap: 20px;
-  }
-  #app :is(input, textarea, select) {
+  /* 16px prevents automatic input zoom on iOS, including body-level dialogs. */
+  #app :is(input, textarea, select),
+  body > dialog :is(input, textarea, select) {
     font-size: 16px;
   }
-  #app :is(.fi-button, .tx-button, .mp-card-action) {
-    min-height: 44px;
+  #app .fi-app > .fi-page {
+    padding-top: 24px;
+    padding-bottom: 32px;
+  }
+  #app .db-overview-grid > .db-panel {
+    min-height: 0;
+    padding: 22px;
+  }
+  #app .db-overall .db-store-description {
+    margin-bottom: 18px;
+  }
+  #app .db-action-grid {
+    margin-top: 16px;
+    gap: 16px;
+  }
+  #app .db-activity-card,
+  #app .db-add-card {
+    padding: 16px;
+  }
+  #app .db-focus-state {
+    font-size: 11px;
   }
   #app .fi-footer {
     margin-top: 0;
+  }
+  #app .fi-footer-grid {
+    gap: 28px 20px;
   }
   #app .fi-toast,
   body > .fi-toast {
     bottom: calc(var(--fi-bottom-space) + 12px);
     max-width: calc(100vw - 32px);
   }
-  #app .fi-app > .fi-page {
-    padding-top: 24px;
-    padding-bottom: 32px;
-  }
-  #app :is(.ca-checkout-bar, .co-sticky-bar) {
-    bottom: var(--fi-bottom-space);
-  }
-  dialog {
-    max-height: calc(100dvh - 32px);
-    overflow-y: auto;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  #app *,
-  #app *::before,
-  #app *::after {
-    animation: none !important;
-    transition: none !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-#app .auth-form input[type='checkbox'] {
-  min-height: 0;
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-#app .public-language button {
-  min-width: 32px;
-}
-@media (max-width: 768px) {
-  #app .auth-panel > .public-language {
-    margin: 0 0 16px auto;
-  }
-  #app .landing-page .landing-nav .public-language {
-    color: #fff;
-  }
-  #app .landing-page .landing-nav .public-language .is-selected {
-    color: #163832;
-  }
-  #app .landing-page .landing-nav .fi-nav-link span {
-    max-width: 100%;
-    overflow-wrap: anywhere;
-  }
-  #app .ai-chat-head small,
-  #app .ai-disclaimer {
-    font-size: 11px;
-  }
-  #app .fi-footer-grid {
-    gap: 28px 20px;
-  }
-}
-
-@media (max-width: 768px) {
   body > .toast {
     top: 80px;
     right: 16px;
@@ -313,48 +381,37 @@
     font-size: 13px;
     line-height: 1.5;
   }
-}
-
-@keyframes fi-feedback-in {
-  from {
-    opacity: 0;
-    translate: 0 8px;
+  #app :is(.ca-checkout-bar, .co-sticky-bar) {
+    bottom: var(--fi-bottom-space);
   }
-  to {
-    opacity: 1;
-    translate: 0 0;
+  body > dialog {
+    max-width: calc(100vw - 20px);
+    max-height: calc(100dvh - 20px);
+    border-radius: 20px;
   }
 }
-@keyframes fi-nav-select {
-  0% {
-    transform: scale(0.88);
+@media (max-width: 380px) {
+  #app .db-summary-metrics {
+    gap: 6px;
   }
-  65% {
-    transform: scale(1.08);
+  #app .db-summary-metrics > div {
+    padding-inline: 8px;
   }
-  100% {
-    transform: scale(1);
+  #app .db-summary-metrics small {
+    font-size: 11px;
   }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .fi-toast {
-    animation: fi-feedback-in 220ms ease-out both;
-  }
-  #app .fi-nav-link.is-active .fi-icon {
-    animation: fi-nav-select 280ms ease-out both;
-  }
-  #app :is(.mp-categories button, .tx-filter):active {
-    transform: scale(0.96);
+  #app .db-activity-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
-
-#app .landing-page {
-  background: #f7faf7;
-}
-
-#app .landing-nav .public-language {
-  color: #fff;
-}
-#app .landing-nav .public-language .is-selected {
-  color: #163832;
+@media (prefers-reduced-motion: reduce) {
+  #app *,
+  #app *::before,
+  #app *::after,
+  body > dialog,
+  body > dialog::backdrop {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }

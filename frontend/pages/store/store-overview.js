@@ -10,7 +10,10 @@ const statusLabels = {
 };
 
 function recentSaleCard(order) {
-  const id = String(order.id || '').slice(-6).toUpperCase() || '—';
+  const id =
+    String(order.id || '')
+      .slice(-6)
+      .toUpperCase() || '—';
   const productName = order.waste?.title || 'Produk organik';
   const date = order.createdAt
     ? new Date(order.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
@@ -34,7 +37,14 @@ function focusItem({ done, iconName, title, detail, href, tab, edit = false }) {
   </${element}>`;
 }
 
-export function renderStoreOverview({ store, products, sales, revenue, salesAvailable, reviewCount = 0 }) {
+export function renderStoreOverview({
+  store,
+  products,
+  sales,
+  revenue,
+  salesAvailable,
+  reviewCount = 0,
+}) {
   const stock = products.reduce((sum, product) => sum + Math.max(0, Number(product.stock) || 0), 0);
   const feedCount = products.filter((product) => product.category !== 'Kompos').length;
   const compostCount = products.length - feedCount;

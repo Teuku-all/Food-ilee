@@ -20,6 +20,19 @@
   --fi-blue-bright: var(--fi-sage);
   --fi-radius: 22px;
 
+  /* Shared surface and elevation scale: cards < menus < dialogs. */
+  --fi-paper: #f6f7f3;
+  --fi-white: #ffffff;
+  --fi-border: #dfe6dd;
+  --fi-text: #183e32;
+  --fi-secondary: #5f7065;
+  --fi-accent: #96723e;
+  --fi-shadow-card: 0 2px 4px rgb(24 62 50 / 2%), 0 8px 24px rgb(24 62 50 / 4%);
+  --fi-shadow-menu: 0 4px 12px rgb(24 62 50 / 6%), 0 16px 40px rgb(24 62 50 / 10%);
+  --fi-shadow-dialog: 0 12px 32px rgb(5 31 32 / 12%), 0 32px 80px rgb(5 31 32 / 16%);
+  --fi-elevation: var(--fi-shadow-card);
+  --fi-focus: #397e60;
+
   --green: var(--fi-forest-700);
   --green-dark: var(--fi-forest-950);
   --gray: var(--fi-muted);

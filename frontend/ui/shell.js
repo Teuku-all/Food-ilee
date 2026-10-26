@@ -17,11 +17,6 @@ const links = [
 export { icon };
 
 let shellRenderVersion = 0;
-let lastMobileNavIndex = -1;
-let lastMobileNavKind = '';
-let mobileNavObserver;
-let mobileNavIndicator;
-let mobileNavRootObserver;
 
 export function dashboardHeader(active = '') {
   const currentRoute = location.hash || '#marketplace';
@@ -96,9 +91,24 @@ export function pageHeading({ title, description, eyebrow = 'FOOD ILEE', symbol 
 }
 
 const pageIntroductions = {
-  '#tambah-limbah': { title: 'Tambah Limbah', eyebrow: 'MULAI BERJUAL DI FOOD ILEE', description: 'Bagikan foto, jumlah, dan lokasi agar orang yang tepat bisa menemukannya.', symbol: 'add' },
-  '#tanya-ai': { title: 'Tanya AI', eyebrow: 'AI ASSIST', description: 'Tanyakan tentang kategori, penyimpanan, harga, atau pemanfaatan bahan organik.', symbol: 'sparkles' },
-  '#chat': { title: 'Pesan', eyebrow: 'KOMUNITAS FOOD ILEE', description: 'Terhubung, berdiskusi, dan temukan peluang bersama.', symbol: 'chat' },
+  '#tambah-limbah': {
+    title: 'Tambah Limbah',
+    eyebrow: 'MULAI BERJUAL DI FOOD ILEE',
+    description: 'Bagikan foto, jumlah, dan lokasi agar orang yang tepat bisa menemukannya.',
+    symbol: 'add',
+  },
+  '#tanya-ai': {
+    title: 'Tanya AI',
+    eyebrow: 'AI ASSIST',
+    description: 'Tanyakan tentang kategori, penyimpanan, harga, atau pemanfaatan bahan organik.',
+    symbol: 'sparkles',
+  },
+  '#chat': {
+    title: 'Pesan',
+    eyebrow: 'KOMUNITAS FOOD ILEE',
+    description: 'Terhubung, berdiskusi, dan temukan peluang bersama.',
+    symbol: 'chat',
+  },
 };
 
 export function renderShell(active, content, { footer = true } = {}) {
@@ -138,9 +148,17 @@ export function bindShell(version = shellRenderVersion) {
   const menu = document.querySelector('.fi-account-menu');
   if (toggle && menu) {
     toggle.addEventListener('click', () => {
-      const open = menu.classList.toggle('open');
-      toggle.setAttribute('aria-expanded', String(open));
-      menu.setAttribute('aria-hidden', String(!open));
+      setAccountMenuOpen(menu, toggle, !menu.classList.contains('open'));
+    });
+    toggle.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowDown') return;
+      event.preventDefault();
+      setAccountMenuOpen(menu, toggle, true);
+      menu.querySelector('a:not([hidden]), button:not([disabled])')?.focus();
+    });
+    toggle.closest('.fi-account')?.addEventListener('focusout', (event) => {
+      if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget))
+        closeAccountMenu(menu, toggle);
     });
     menu.addEventListener('click', (event) => {
       if (!event.target.closest('a')) return;
@@ -188,9 +206,14 @@ async function syncStoreNavigation(version) {
     if (version !== shellRenderVersion || !header.isConnected || getToken() !== token) return;
     const nav = header.querySelector('.fi-nav');
     const existing = nav?.querySelector('.fi-nav-store');
-    header.querySelector('.fi-header-brand')?.setAttribute('href', store ? '#kelola-toko' : '#marketplace');
+    header
+      .querySelector('.fi-header-brand')
+      ?.setAttribute('href', store ? '#kelola-toko' : '#marketplace');
     if (store && !existing) {
-      nav.insertAdjacentHTML('beforeend', `<a class="fi-nav-link fi-nav-store${location.hash === '#kelola-toko' ? ' is-active' : ''}" href="#kelola-toko" aria-label="Kelola Toko"${location.hash === '#kelola-toko' ? ' aria-current="page"' : ''}>${icon('store')}<span>Kelola Toko</span></a>`);
+      nav.insertAdjacentHTML(
+        'beforeend',
+        `<a class="fi-nav-link fi-nav-store${location.hash === '#kelola-toko' ? ' is-active' : ''}" href="#kelola-toko" aria-label="Kelola Toko"${location.hash === '#kelola-toko' ? ' aria-current="page"' : ''}>${icon('store')}<span>Kelola Toko</span></a>`,
+      );
       applyTranslations(nav.lastElementChild, getLanguage());
       bindMobileNav();
     } else if (!store && existing) {
@@ -203,97 +226,31 @@ async function syncStoreNavigation(version) {
 }
 
 export function bindMobileNav() {
-  mobileNavObserver?.disconnect();
-  const nav = document.querySelector('#app .fi-header .fi-nav');
-  if (!nav) return;
-  const links = [...nav.querySelectorAll('.fi-nav-link')];
-  const kind = nav.closest('.landing-page') ? 'landing' : 'app';
-  if (!mobileNavIndicator) {
-    mobileNavIndicator = document.createElement('span');
-    mobileNavIndicator.className = 'fi-nav-indicator';
-    mobileNavIndicator.setAttribute('aria-hidden', 'true');
-    document.body.append(mobileNavIndicator);
-  }
-  const indicator = mobileNavIndicator;
-  if (!mobileNavRootObserver) {
-    mobileNavRootObserver = new MutationObserver(() => {
-      if (!document.querySelector('#app .fi-header .fi-nav')) indicator.classList.remove('is-visible');
-    });
-    mobileNavRootObserver.observe(document.getElementById('app'), { childList: true });
-  }
-  let currentIndex = lastMobileNavKind === kind ? lastMobileNavIndex : -1;
-  if (lastMobileNavKind !== kind) {
-    indicator.getAnimations().forEach((animation) => animation.cancel());
-    lastMobileNavIndex = -1;
-  }
-  lastMobileNavKind = kind;
-
-  const update = () => {
-    if (!nav.isConnected) return;
-    const index = links.findIndex((link) => link.classList.contains('is-active') || link.hasAttribute('aria-current'));
-    if (index < 0) {
-      indicator.classList.remove('is-visible');
-      return;
-    }
-    const link = links[index];
-    const navRect = nav.getBoundingClientRect();
-    const linkRect = link.getBoundingClientRect();
-    const target = linkRect.left + linkRect.width / 2;
-    const indicatorTop = navRect.top + (navRect.height - indicator.offsetHeight) / 2;
-    const previous = indicator.classList.contains('is-visible')
-      ? indicator.getBoundingClientRect().left + indicator.getBoundingClientRect().width / 2
-      : target;
-    indicator.style.left = `${target}px`;
-    indicator.style.top = `${indicatorTop}px`;
-    indicator.innerHTML = link.querySelector('.fi-icon')?.outerHTML || link.querySelector('svg')?.outerHTML || '';
-    indicator.classList.add('is-visible');
-
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reducedMotion) indicator.getAnimations().forEach((animation) => animation.cancel());
-    if (currentIndex >= 0 && currentIndex !== index && !reducedMotion) {
-      const offset = previous - target;
-      indicator.getAnimations().forEach((animation) => animation.cancel());
-      indicator.animate(
-        [
-          { transform: `translateX(calc(-50% + ${offset}px)) scale(.9)`, opacity: .82 },
-          { transform: 'translateX(-50%) scale(1.04)', opacity: 1, offset: .82 },
-          { transform: 'translateX(-50%) scale(1)', opacity: 1 },
-        ],
-        { duration: 520, easing: 'cubic-bezier(.22, 1, .36, 1)' },
-      );
-    }
-    currentIndex = index;
-    lastMobileNavIndex = index;
-  };
-
-  update();
-  mobileNavObserver = new MutationObserver(update);
-  links.forEach((link) => mobileNavObserver.observe(link, { attributes: true, attributeFilter: ['class', 'aria-current'] }));
-  if (document.documentElement.dataset.fiNavResizeBound !== 'true') {
-    window.addEventListener('resize', () => {
-      const active = document.querySelector('#app .fi-header .fi-nav .fi-nav-link:is(.is-active, [aria-current])');
-      const bubble = mobileNavIndicator;
-      if (!active || !bubble) return;
-      const navBox = active.closest('.fi-nav').getBoundingClientRect();
-      const linkBox = active.getBoundingClientRect();
-      bubble.style.left = `${linkBox.left + linkBox.width / 2}px`;
-      bubble.style.top = `${navBox.top + (navBox.height - bubble.offsetHeight) / 2}px`;
-    }, { passive: true });
-    document.documentElement.dataset.fiNavResizeBound = 'true';
-  }
+  // Keep the real icon inside the fixed dock. A detached, pixel-positioned clone
+  // drifts when mobile browser chrome changes the viewport during scrolling.
+  document.querySelectorAll('body > .fi-nav-indicator').forEach((indicator) => indicator.remove());
+  document.querySelectorAll('#app .fi-header .fi-nav-link').forEach((link) => {
+    const label = link.querySelector('span')?.textContent.trim();
+    if (label) link.setAttribute('aria-label', label);
+  });
 }
 
 export function bindHeaderScroll() {
-  const update = () => document.querySelector('#app .fi-header')?.classList.toggle('is-scrolled', window.scrollY > 12);
+  const update = () =>
+    document.querySelector('#app .fi-header')?.classList.toggle('is-scrolled', window.scrollY > 12);
   if (!document.documentElement.dataset.fiHeaderScrollBound) {
     let frame = 0;
-    window.addEventListener('scroll', () => {
-      if (frame) return;
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        update();
-      });
-    }, { passive: true });
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (frame) return;
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          update();
+        });
+      },
+      { passive: true },
+    );
     document.documentElement.dataset.fiHeaderScrollBound = 'true';
   }
   update();
@@ -316,10 +273,14 @@ function updateCartBadge() {
   link.setAttribute('aria-label', `Keranjang belanja, ${count} barang`);
 }
 
+function setAccountMenuOpen(menu, toggle, open) {
+  menu.classList.toggle('open', open);
+  menu.setAttribute('aria-hidden', String(!open));
+  toggle.setAttribute('aria-expanded', String(open));
+}
+
 function closeAccountMenu(menu, toggle) {
-  menu.classList.remove('open');
-  menu.setAttribute('aria-hidden', 'true');
-  toggle.setAttribute('aria-expanded', 'false');
+  setAccountMenuOpen(menu, toggle, false);
 }
 
 async function hydrateAccount(version) {

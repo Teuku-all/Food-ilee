@@ -1,4 +1,34 @@
 export const additionalEnglish = {
+  'PILIHAN ANDA': 'YOUR SELECTION',
+  'Periksa jumlah dan pilih produk sebelum melanjutkan pembayaran.':
+    'Check quantities and select products before continuing to payment.',
+  'Stok produk habis': 'This product is out of stock',
+  'Hapus produk ini atau lanjutkan dengan produk lainnya.':
+    'Remove this product or continue with other products.',
+  'Isi alamat lengkap agar produk sampai di tempat yang tepat.':
+    'Enter your complete address so your products reach the right place.',
+  'Periksa rincian dan jumlah produk yang ingin Anda pesan.':
+    'Check the details and quantities of the products you want to order.',
+  'Pilih layanan pengiriman yang sesuai dengan kebutuhan Anda.':
+    'Choose a delivery service that suits your needs.',
+  'Harga, stok, dan ongkir diperiksa kembali sebelum pesanan dibuat.':
+    'Prices, stock, and delivery costs are checked before your order is placed.',
+  'Selesaikan pembayaran dengan aman melalui Midtrans.':
+    'Complete your payment securely through Midtrans.',
+  'Tutup dialog': 'Close dialog',
+  'Bagikan pengalaman transaksi Anda…': 'Share your order experience…',
+  '1 / 5 — Tidak puas': '1 / 5 — Very dissatisfied',
+  '2 / 5 — Kurang puas': '2 / 5 — Dissatisfied',
+  '3 / 5 — Cukup': '3 / 5 — Neutral',
+  '4 / 5 — Puas': '4 / 5 — Satisfied',
+  '5 / 5 — Sangat puas': '5 / 5 — Very satisfied',
+  'Geser grafik untuk melihat bulan lainnya.': 'Scroll the chart to see other months.',
+  'Geser tabel untuk melihat seluruh kolom.': 'Scroll the table to see all columns.',
+  'Tabel data admin, geser untuk melihat kolom lainnya':
+    'Admin data table, scroll to see more columns',
+  'Pertanyaan untuk Ilee Assistant': 'Question for Ilee Assistant',
+  'Percakapan dengan Ilee Assistant': 'Conversation with Ilee Assistant',
+  'Riwayat pesan': 'Message history',
   'KILAS TOKO': 'STORE AT A GLANCE',
   'Data dari pengelolaan toko Anda': 'Based on your store data',
   'Penawaran Anda': 'Your listings',
@@ -14,10 +44,11 @@ export const additionalEnglish = {
   'Coba muat ulang halaman toko.': 'Try reloading the store page.',
   'Lihat semua': 'View all',
   'MENU UTAMA': 'MAIN MENU',
-  'AKUN': 'ACCOUNT',
+  AKUN: 'ACCOUNT',
   'RUANG TOKO': 'STORE WORKSPACE',
   'Transaksi pembelian': 'Purchase orders',
-  'Kelola penawaran dan pantau aktivitas toko Anda.': 'Manage your listings and track your store activity.',
+  'Kelola penawaran dan pantau aktivitas toko Anda.':
+    'Manage your listings and track your store activity.',
   'Ringkasan toko': 'Store summary',
   'Pesanan masuk': 'Incoming orders',
   'Status pesanan toko': 'Store order status',
@@ -30,7 +61,7 @@ export const additionalEnglish = {
   'Buka halaman toko untuk mencoba lagi.': 'Open the store page to try again.',
   'Kembali ke marketplace': 'Back to marketplace',
   'RUANG KERJA': 'WORKSPACE',
-  'AKTIVITAS': 'ACTIVITY',
+  AKTIVITAS: 'ACTIVITY',
   'Setiap sisa punya kesempatan kedua.': 'Every leftover deserves a second chance.',
   'Ringkasan keseluruhan': 'Overall summary',
   'produk yang': 'products',
@@ -39,8 +70,8 @@ export const additionalEnglish = {
   'Komposisi penawaran': 'Listing mix',
   'Produk menurut kategori': 'Listings by category',
   'Ringkasan transaksi Anda': 'Your order summary',
-  'pesanan': 'orders',
-  'Berjalan': 'In progress',
+  pesanan: 'orders',
+  Berjalan: 'In progress',
   'Langkah berikutnya': 'Next steps',
   'Lengkapi profil': 'Complete your profile',
   'Buat akun Anda lebih mudah dikenali.': 'Help others recognize your account.',
@@ -55,8 +86,10 @@ export const additionalEnglish = {
   'Sedang ditinjau': 'Under review',
   'Dalam proses': 'In progress',
   'KOMUNITAS FOOD ILEE': 'FOOD ILEE COMMUNITY',
-  'Terhubung, berdiskusi, dan temukan peluang bersama.': 'Connect, talk, and discover opportunities together.',
-  'Pantau setiap pesanan, dari pembayaran hingga diterima.': 'Track every order, from payment to delivery.',
+  'Terhubung, berdiskusi, dan temukan peluang bersama.':
+    'Connect, talk, and discover opportunities together.',
+  'Pantau setiap pesanan, dari pembayaran hingga diterima.':
+    'Track every order, from payment to delivery.',
 
   Jelajahi: 'Explore',
   Akun: 'Account',

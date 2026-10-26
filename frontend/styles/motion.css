@@ -3,7 +3,7 @@
   caret-color: transparent;
 }
 
-#app :is(input, textarea, select, [contenteditable="true"], [role="textbox"]) {
+#app :is(input, textarea, select, [contenteditable='true'], [role='textbox']) {
   caret-color: var(--fi-ink);
 }
 
@@ -21,12 +21,11 @@
   outline: none;
 }
 
-#app :is(button, a, [role="button"]) {
+#app :is(button, a, [role='button']) {
   -webkit-tap-highlight-color: transparent;
 }
 
-#app :is(button, a, [role="button"]):focus-visible {
+#app :is(button, a, [role='button']):focus-visible {
   outline: 2px solid var(--fi-green);
   outline-offset: 3px;
 }
-

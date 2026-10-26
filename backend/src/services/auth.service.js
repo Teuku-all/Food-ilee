@@ -33,18 +33,25 @@ async function sendPasswordResetEmail({ email, name, resetUrl }) {
   });
 
   if (!response.ok) {
-    throw passwordResetError('Layanan email reset password sedang tidak tersedia. Coba lagi nanti.', 503);
+    throw passwordResetError(
+      'Layanan email reset password sedang tidak tersedia. Coba lagi nanti.',
+      503,
+    );
   }
 }
 
 function escapeEmailHtml(value) {
-  return String(value).replace(/[&<>"']/g, (character) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  })[character]);
+  return String(value).replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      })[character],
+  );
 }
 
 async function registerUser(data) {
@@ -126,7 +133,10 @@ async function loginUser(data) {
 
 async function requestPasswordReset(email) {
   if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL || !process.env.FRONTEND_URL) {
-    throw passwordResetError('Layanan reset password belum dikonfigurasi. Hubungi administrator.', 503);
+    throw passwordResetError(
+      'Layanan reset password belum dikonfigurasi. Hubungi administrator.',
+      503,
+    );
   }
 
   const user = await prisma.user.findUnique({
@@ -146,7 +156,11 @@ async function requestPasswordReset(email) {
   try {
     const resetUrl = new URL(process.env.FRONTEND_URL);
     resetUrl.hash = `reset-password?token=${token}`;
-    await sendPasswordResetEmail({ email: user.email, name: user.name, resetUrl: resetUrl.toString() });
+    await sendPasswordResetEmail({
+      email: user.email,
+      name: user.name,
+      resetUrl: resetUrl.toString(),
+    });
   } catch (error) {
     await prisma.user.updateMany({
       where: { id: user.id, passwordResetTokenHash: tokenHash },
@@ -164,7 +178,10 @@ async function resetPassword(token, newPassword) {
     select: { id: true },
   });
   if (!user) {
-    throw passwordResetError('Tautan reset tidak valid atau sudah kedaluwarsa. Minta tautan baru.', 400);
+    throw passwordResetError(
+      'Tautan reset tidak valid atau sudah kedaluwarsa. Minta tautan baru.',
+      400,
+    );
   }
 
   const password = await bcrypt.hash(newPassword, 10);
@@ -178,7 +195,10 @@ async function resetPassword(token, newPassword) {
     },
   });
   if (result.count !== 1) {
-    throw passwordResetError('Tautan reset tidak valid atau sudah kedaluwarsa. Minta tautan baru.', 400);
+    throw passwordResetError(
+      'Tautan reset tidak valid atau sudah kedaluwarsa. Minta tautan baru.',
+      400,
+    );
   }
 }
 

@@ -9,11 +9,6 @@
     "format": "prettier --write README.md package.json backend/package.json frontend/package.json backend/src frontend",
     "format:check": "prettier --check README.md package.json backend/package.json frontend/package.json backend/src frontend"
   },
-  "dependencies": {
-    "@google/generative-ai": "^0.24.1",
-    "groq-sdk": "^1.2.0",
-    "socket.io-client": "^4.8.3"
-  },
   "devDependencies": {
     "prettier": "^3.9.10"
   }

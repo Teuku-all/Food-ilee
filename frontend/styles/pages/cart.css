@@ -1,0 +1,484 @@
+/* Page-specific presentation. Shared tokens are defined in variables.css. */
+
+/* Cart layouts */
+.ca-app {
+  min-height: 100vh;
+  background: #daf1de;
+  color: #163832;
+  font-family: Inter, Arial, sans-serif;
+}
+.ca-main {
+  max-width: 1240px;
+  margin: auto;
+  padding: 30px 28px 68px;
+}
+.ca-heading {
+  margin: 0 0 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #bfcec5;
+}
+.ca-heading h1 {
+  margin: 0;
+  color: #104b3e;
+  font-size: clamp(28px, 3.5vw, 36px);
+  line-height: 1.12;
+  letter-spacing: -1px;
+}
+.ca-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: start;
+  gap: 22px;
+}
+.ca-list-panel,
+.ca-summary {
+  border: 1px solid #c4d5ca;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 10px 28px #1638320b;
+}
+.ca-list-panel {
+  min-width: 0;
+  padding: 20px 22px;
+}
+.ca-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 13px;
+}
+.ca-list-heading h2,
+.ca-summary h2 {
+  margin: 0;
+  color: #174a3b;
+  font-size: 18px;
+}
+.ca-list-heading p {
+  margin: 5px 0 0;
+  color: #718078;
+  font-size: 12px;
+}
+.ca-select-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #315746;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ca-select-all input,
+.ca-check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #235347;
+  cursor: pointer;
+}
+.ca-table-head,
+.ca-item {
+  display: grid;
+  grid-template-columns: 20px 64px minmax(100px, 1fr) 120px 104px 36px;
+  align-items: center;
+  gap: 10px;
+}
+.ca-table-head {
+  min-height: 40px;
+  padding: 0 8px;
+  border-top: 1px solid #cbd8d0;
+  border-bottom: 1px solid #cbd8d0;
+  color: #68786f;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.ca-table-head span:first-child {
+  grid-column: 1 / 4;
+}
+.ca-table-head span:nth-child(2) {
+  grid-column: 4;
+  text-align: center;
+}
+.ca-table-head span:nth-child(3) {
+  grid-column: 5;
+  text-align: right;
+}
+.ca-table-head span:nth-child(4) {
+  grid-column: 6;
+  text-align: center;
+}
+.ca-item {
+  min-height: 94px;
+  padding: 13px 8px;
+  border-bottom: 1px solid #d5dfd8;
+  transition: background 160ms ease;
+}
+.ca-item:last-child {
+  border-bottom: 0;
+}
+.ca-item.is-selected {
+  background: linear-gradient(90deg, #f3faf5, transparent 90%);
+}
+.ca-item.is-unavailable {
+  opacity: 0.65;
+}
+.ca-check {
+  grid-column: 1;
+  grid-row: 1;
+  position: relative;
+  z-index: 1;
+  width: 18px;
+  align-self: center;
+}
+.ca-product-image {
+  grid-column: 2;
+  grid-row: 1;
+  width: 64px;
+  height: 64px;
+  border: 1px solid #dce5de;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #f1f5f2;
+}
+.ca-product {
+  grid-column: 3;
+  grid-row: 1;
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+.ca-product strong {
+  overflow: hidden;
+  color: #243b31;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.ca-product span,
+.ca-product small {
+  color: #77847d;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.ca-quantity {
+  grid-column: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.ca-quantity button {
+  width: 34px;
+  height: 36px;
+  border: 1px solid #cad9cf;
+  border-radius: 8px;
+  background: #fff;
+  color: #175c4c;
+  font-size: 15px;
+  cursor: pointer;
+}
+.ca-quantity button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ca-quantity span {
+  min-width: 46px;
+  color: #394c41;
+  font-size: 11px;
+  text-align: center;
+  white-space: nowrap;
+}
+.ca-item-total {
+  grid-column: 5;
+  color: #243b31;
+  font-size: 13px;
+  text-align: right;
+  white-space: nowrap;
+}
+.ca-remove {
+  grid-column: 6;
+  width: 36px;
+  height: 38px;
+  padding: 5px;
+  border: 0;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: #75837a;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background 160ms ease;
+}
+.ca-remove:hover {
+  background: #fcefed;
+  color: #a34538;
+}
+.ca-remove svg {
+  width: 16px;
+  height: 16px;
+}
+.ca-summary {
+  position: sticky;
+  top: 94px;
+  padding: 20px;
+}
+.ca-summary-heading {
+  padding-bottom: 13px;
+  border-bottom: 1px solid #d8e2db;
+}
+.ca-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid #e1e9e3;
+  color: #64736a;
+  font-size: 12px;
+}
+.ca-summary-row strong {
+  color: #243b31;
+  font-size: 12px;
+}
+.ca-summary > button {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #07594b;
+  color: #fff;
+  font:
+    650 12px Inter,
+    Arial,
+    sans-serif;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+.ca-summary > button:not(:disabled):hover {
+  transform: translateY(-1px);
+  background: #064c41;
+  box-shadow: 0 8px 18px #07594b28;
+}
+.ca-summary > button:disabled {
+  background: #aebdb4;
+  cursor: not-allowed;
+}
+.ca-empty {
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.ca-empty > span {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+  background: #daf1de;
+  font-size: 23px;
+}
+.ca-empty strong {
+  color: #24483a;
+  font-size: 14px;
+}
+.ca-empty p {
+  margin: 7px 0 14px;
+  color: #78857d;
+  font-size: 12px;
+}
+.ca-empty a {
+  padding: 10px 15px;
+  border-radius: 999px;
+  background: #07594b;
+  color: white;
+  font-size: 11px;
+  text-decoration: none;
+}
+.ca-loading {
+  padding: 30px;
+  color: #718078;
+  font-size: 12px;
+  text-align: center;
+}
+/* Stack before table columns become cramped on tablet-sized screens. */
+@media (max-width: 1000px) {
+  .ca-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .ca-summary {
+    position: static;
+  }
+}
+@media (max-width: 760px) {
+  .ca-main {
+    padding: 26px 16px 54px;
+  }
+  .ca-layout {
+    grid-template-columns: 1fr;
+  }
+  .ca-summary {
+    position: static;
+    order: 0;
+  }
+  .ca-list-panel {
+    padding: 17px 14px;
+  }
+  .ca-table-head {
+    display: none;
+  }
+  .ca-item {
+    grid-template-columns: 20px 64px minmax(0, 1fr) 36px;
+    gap: 10px;
+    padding: 14px 2px;
+  }
+  .ca-check {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .ca-product-image {
+    grid-column: 2;
+    grid-row: 1;
+    width: 64px;
+    height: 64px;
+    margin: 0;
+  }
+  .ca-product {
+    grid-column: 3;
+    grid-row: 1;
+    margin: 0;
+  }
+  .ca-quantity {
+    grid-column: 2/4;
+    grid-row: 2;
+    justify-content: flex-start;
+  }
+  .ca-item-total {
+    grid-column: 2/4;
+    grid-row: 3;
+    justify-self: start;
+    margin: 0;
+    font-size: 12px;
+  }
+  .ca-remove {
+    grid-column: 4;
+    grid-row: 1;
+    align-self: start;
+  }
+  .ca-quantity {
+    position: relative;
+  }
+  .ca-item-total {
+    align-self: center;
+  }
+  .ca-heading {
+    margin: 0 0 16px;
+  }
+  .ca-heading h1 {
+    font-size: 32px;
+  }
+  .ca-list-heading h2 {
+    font-size: 16px;
+  }
+}
+@media (max-width: 390px) {
+  .ca-list-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .ca-item {
+    grid-template-columns: 18px 54px minmax(0, 1fr) 36px;
+    gap: 8px;
+  }
+  .ca-product-image {
+    width: 54px;
+    height: 54px;
+  }
+  .ca-quantity {
+    grid-column: 2/4;
+    grid-row: 2;
+  }
+  .ca-item-total {
+    grid-column: 2/4;
+    grid-row: 3;
+    justify-self: start;
+    margin: 0;
+    font-size: 12px;
+  }
+  .ca-remove {
+    grid-column: 4;
+  }
+  .ca-product strong {
+    font-size: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ca-item,
+  .ca-remove,
+  .ca-summary > button {
+    transition: none;
+  }
+}
+
+.ca-heading > p {
+  margin: 0 0 9px;
+  color: #557666;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+.ca-heading > span {
+  display: block;
+  margin-top: 10px;
+  color: #64756b;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.ca-summary > button {
+  margin-top: 18px;
+}
+.ca-empty p {
+  max-width: 330px;
+  line-height: 1.65;
+}
+.ca-select-all {
+  min-height: 44px;
+}
+.ca-list-panel,
+.ca-summary {
+  border-color: #dce5df;
+  box-shadow:
+    0 2px 4px #16383204,
+    0 12px 30px #16383208;
+}
+.ca-app :is(button, a, input):focus-visible {
+  outline: 3px solid #54977b;
+  outline-offset: 3px;
+}
+@media (pointer: coarse) {
+  .ca-quantity button {
+    width: 40px;
+    height: 44px;
+  }
+  .ca-remove {
+    width: 40px;
+    height: 44px;
+  }
+}

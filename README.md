@@ -19,21 +19,21 @@ Repositori: https://github.com/Teuku-all/Food-ilee
 
 ## Tech Stack
 
-| Lapisan | Teknologi |
-| --- | --- |
-| Frontend | HTML, CSS, JavaScript (ES Module) tanpa framework, Leaflet, socket.io-client |
-| Backend | Node.js 18+, Express 4, Socket.IO, JWT, bcryptjs, Joi, Helmet, Multer |
-| Database | PostgreSQL dengan Prisma ORM |
+| Lapisan           | Teknologi                                                                                       |
+| ----------------- | ----------------------------------------------------------------------------------------------- |
+| Frontend          | HTML, CSS, JavaScript (ES Module) tanpa framework, Leaflet, socket.io-client                    |
+| Backend           | Node.js 18+, Express 4, Socket.IO, JWT, bcryptjs, Joi, Helmet, Multer                           |
+| Database          | PostgreSQL dengan Prisma ORM                                                                    |
 | Layanan eksternal | Google OAuth, Groq, Cloudinary, Midtrans Snap, Biteship, Resend, API Wilayah Indonesia (Emsifa) |
-| Deployment | Vercel (dua proyek: `backend` dan `frontend`) |
+| Deployment        | Vercel (dua proyek: `backend` dan `frontend`)                                                   |
 
 ## Tim
 
-| Nama | Peran |
-| --- | --- |
-| Abdullah Asy-Syifawi | Backend |
-| Teuku Al Jumanatul Ali | Frontend |
-| Abdi Dzil Ikram | Desain UI/UX |
+| Nama                   | Peran                              |
+| ---------------------- | ---------------------------------- |
+| Abdullah Asy-Syifawi   | Backend                            |
+| Teuku Al Jumanatul Ali | Frontend                           |
+| Abdi Dzil Ikram        | Desain UI/UX                       |
 | M. Rayyanta Adha Barus | Project manager, pengelola API key |
 
 ## Struktur Proyek
@@ -52,16 +52,48 @@ Repositori: https://github.com/Teuku-all/Food-ilee
 │       ├── app.js           # Aplikasi Express (diekspor ke Vercel)
 │       └── server.js        # HTTP server + Socket.IO (lokal)
 ├── frontend/
-│   ├── pages/               # Renderer halaman
-│   ├── services/            # Klien API
-│   ├── ui/ utils/ styles/   # Komponen, utilitas (i18n, peta), stylesheet
-│   ├── assets/              # Gambar aplikasi
-│   ├── scripts/             # Build dan uji i18n
+│   ├── pages/               # Renderer halaman, satu folder per rute
+│   ├── services/            # Klien API dan realtime
+│   ├── ui/                  # Komponen antarmuka bersama (shell, onboarding, ikon)
+│   ├── utils/               # Utilitas: i18n, markdown, peta, penyimpanan
+│   ├── styles/              # Stylesheet
+│   ├── assets/              # Aset aplikasi (logo, gambar)
+│   ├── scripts/             # Build dan uji
 │   ├── app.js               # Router hash dan guard autentikasi
 │   └── server.js            # Static file server lokal
-├── docs/                    # Catatan checkout, referensi desain, review UI
-└── ui-refference/           # Materi referensi desain UI
+├── docs/
+│   ├── checkout.md          # Alur checkout, pengiriman, dan pembayaran
+│   ├── design-references.md # Riset dan arah desain
+│   ├── ui-review-2026-10-25.md
+│   └── reference/           # Tangkapan layar referensi dan audit UI
+└── package.json             # Skrip orkestrasi dan Prettier
 ```
+
+Nama folder dan berkas halaman memakai bahasa Inggris, sedangkan hash rute tetap
+bahasa Indonesia agar tautan yang sudah ada tidak rusak. Contohnya rute
+`#tambah-limbah` dirender oleh `frontend/pages/add-waste/add-waste.js`.
+
+CSS khusus halaman berada di `frontend/styles/pages/`. Panduan komponen, urutan stylesheet,
+dan pola interaksi tersedia di [docs/frontend-ui.md](docs/frontend-ui.md).
+
+| Rute                                   | Modul halaman                                     |
+| -------------------------------------- | ------------------------------------------------- |
+| `#beranda`                             | `pages/landing/landing.js`                        |
+| `#login`, `#daftar`, `#reset-password` | `pages/login/login.js`                            |
+| `#marketplace`                         | `pages/marketplace/marketplace.js`                |
+| `#transaksi`                           | `pages/transactions/transactions.js`              |
+| `#tambah-limbah`                       | `pages/add-waste/add-waste.js`                    |
+| `#buat-toko`                           | `pages/create-store/create-store.js`              |
+| `#kelola-toko`                         | `pages/store/store.js`                            |
+| `#dashboard`                           | Mengalihkan ke `#kelola-toko` atau `#marketplace` |
+| `#profil`                              | `pages/profile/profile.js`                        |
+| `#tanya-ai`                            | `pages/ai/ai.js`                                  |
+| `#cart`                                | `pages/cart/cart.js`                              |
+| `#checkout`                            | `pages/checkout/checkout.js`                      |
+| `#chat`                                | `pages/chat/chat.js`                              |
+| `#notifikasi`                          | `pages/notifications/notifications.js`            |
+| `#admin`                               | `pages/admin/admin.js`                            |
+| `#panduan`                             | `ui/onboarding.js`                                |
 
 ## Prasyarat
 
@@ -138,51 +170,52 @@ psql -U postgres -d foodilee -c "UPDATE \"User\" SET role='admin' WHERE email='e
 
 Template lengkap ada di [`backend/.env.example`](backend/.env.example). Jangan pernah meng-commit file `.env` atau kredensial asli.
 
-| Variabel | Fungsi |
-| --- | --- |
-| `DATABASE_URL`, `JWT_SECRET` | Wajib untuk backend |
-| `PORT`, `FRONTEND_URL`, `CORS_ORIGINS` | Port dan origin yang diizinkan |
-| `GOOGLE_CLIENT_ID` | Login Google. Isi juga `googleClientId` di `frontend/config.js` dan daftarkan `http://localhost:5501` sebagai Authorized JavaScript origin |
-| `GROQ_API_KEY` | Asisten AI dan rekomendasi limbah |
-| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Unggah gambar |
-| `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_IS_PRODUCTION` | Pembayaran online (pakai kunci Sandbox dengan `MIDTRANS_IS_PRODUCTION=false`) |
-| `MIDTRANS_SPLIT_ENABLED`, `MIDTRANS_PARTNER_MERCHANT_ID` | Pembagian dana ke merchant penjual (biarkan `false` bila belum diaktifkan Midtrans) |
-| `BITESHIP_API_KEY`, `BITESHIP_COURIERS` (`gojek,grab`), `BITESHIP_WEBHOOK_SECRET` | Tarif dan pengiriman kurir |
-| `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Email reset kata sandi (pengirim harus terverifikasi di Resend) |
+| Variabel                                                                          | Fungsi                                                                                                                                     |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`, `JWT_SECRET`                                                      | Wajib untuk backend                                                                                                                        |
+| `PORT`, `FRONTEND_URL`, `CORS_ORIGINS`                                            | Port dan origin yang diizinkan                                                                                                             |
+| `GOOGLE_CLIENT_ID`                                                                | Login Google. Isi juga `googleClientId` di `frontend/config.js` dan daftarkan `http://localhost:5501` sebagai Authorized JavaScript origin |
+| `GROQ_API_KEY`                                                                    | Asisten AI dan rekomendasi limbah                                                                                                          |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`            | Unggah gambar                                                                                                                              |
+| `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_IS_PRODUCTION`            | Pembayaran online (pakai kunci Sandbox dengan `MIDTRANS_IS_PRODUCTION=false`)                                                              |
+| `MIDTRANS_SPLIT_ENABLED`, `MIDTRANS_PARTNER_MERCHANT_ID`                          | Pembagian dana ke merchant penjual (biarkan `false` bila belum diaktifkan Midtrans)                                                        |
+| `BITESHIP_API_KEY`, `BITESHIP_COURIERS` (`gojek,grab`), `BITESHIP_WEBHOOK_SECRET` | Tarif dan pengiriman kurir                                                                                                                 |
+| `RESEND_API_KEY`, `RESEND_FROM_EMAIL`                                             | Email reset kata sandi (pengirim harus terverifikasi di Resend)                                                                            |
 
 Fitur tanpa kredensial yang sesuai tidak aktif, tetapi bagian aplikasi lainnya tetap berjalan.
 
 ## Perintah Berguna
 
-| Perintah | Fungsi |
-| --- | --- |
-| `npm run dev:backend` | Backend dengan auto-reload (nodemon) |
-| `npm run start:backend` | Backend tanpa file watcher |
-| `npm run dev:frontend` | Static server frontend (port 5501) |
-| `npm --prefix frontend run build` | Build produksi ke `frontend/dist` (nama aset gambar di-hash) |
-| `npm --prefix frontend run preview` | Pratinjau hasil build |
-| `npm --prefix frontend run test:i18n` | Uji katalog terjemahan |
-| `npm --prefix backend run db:migrate` | Buat migrasi baru saat pengembangan |
-| `npm --prefix backend run db:deploy` | Terapkan migrasi yang ada |
-| `npm run format` / `npm run format:check` | Format dan cek format kode (Prettier) |
+| Perintah                                  | Fungsi                                                       |
+| ----------------------------------------- | ------------------------------------------------------------ |
+| `npm run dev:backend`                     | Backend dengan auto-reload (nodemon)                         |
+| `npm run start:backend`                   | Backend tanpa file watcher                                   |
+| `npm run dev:frontend`                    | Static server frontend (port 5501)                           |
+| `npm --prefix frontend run build`         | Build produksi ke `frontend/dist` (nama aset gambar di-hash) |
+| `npm --prefix frontend run preview`       | Pratinjau hasil build                                        |
+| `npm --prefix frontend test`              | Jalankan seluruh uji frontend (i18n, markdown, peta, alamat) |
+| `npm --prefix frontend run test:i18n`     | Uji katalog terjemahan saja                                  |
+| `npm --prefix backend run db:migrate`     | Buat migrasi baru saat pengembangan                          |
+| `npm --prefix backend run db:deploy`      | Terapkan migrasi yang ada                                    |
+| `npm run format` / `npm run format:check` | Format dan cek format kode (Prettier)                        |
 
 ## Ringkasan API
 
 Semua endpoint berada di bawah `/api`. Endpoint terproteksi memerlukan header `Authorization: Bearer <JWT>`.
 
-| Prefiks | Endpoint utama |
-| --- | --- |
-| `/auth` | `POST /register`, `/login`, `/google`, `/forgot-password`, `/reset-password`; `GET /me` |
-| `/users` | `GET /me`, `/username-availability`, `/:username`; `PUT /me` |
-| `/stores` | `POST /`; `GET /`; `GET` dan `PUT /me` |
-| `/wastes` | `GET /`, `/:id`; `POST /`; `PUT` dan `DELETE /:id` |
-| `/orders` | `POST /rates`, `/checkout`, `/:id/cancel`; `GET /my`, `/sales`, `/:id`; `PATCH /:id/status` |
-| `/payments` | `GET /:id/status`; `POST /midtrans/webhook`, `/biteship/webhook` |
-| `/chat` | `GET /`; `POST /`; `GET` dan `POST /:chatId/messages` |
-| `/reviews` | `POST /`; `GET /:wasteId` |
-| `/notifications` | `GET /`; `PATCH /:id/read` |
-| `/ai` | `POST /chat`, `/recommend` |
-| `/admin` | `GET /users`, `/wastes`, `/orders`, `/analytics`; `PATCH /users/:id/ban`; `DELETE /wastes/:id` |
+| Prefiks          | Endpoint utama                                                                                 |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| `/auth`          | `POST /register`, `/login`, `/google`, `/forgot-password`, `/reset-password`; `GET /me`        |
+| `/users`         | `GET /me`, `/username-availability`, `/:username`; `PUT /me`                                   |
+| `/stores`        | `POST /`; `GET /`; `GET` dan `PUT /me`                                                         |
+| `/wastes`        | `GET /`, `/:id`; `POST /`; `PUT` dan `DELETE /:id`                                             |
+| `/orders`        | `POST /rates`, `/checkout`, `/:id/cancel`; `GET /my`, `/sales`, `/:id`; `PATCH /:id/status`    |
+| `/payments`      | `GET /:id/status`; `POST /midtrans/webhook`, `/biteship/webhook`                               |
+| `/chat`          | `GET /`; `POST /`; `GET` dan `POST /:chatId/messages`                                          |
+| `/reviews`       | `POST /`; `GET /:wasteId`                                                                      |
+| `/notifications` | `GET /`; `PATCH /:id/read`                                                                     |
+| `/ai`            | `POST /chat`, `/recommend`                                                                     |
+| `/admin`         | `GET /users`, `/wastes`, `/orders`, `/analytics`; `PATCH /users/:id/ban`; `DELETE /wastes/:id` |
 
 Detail alur checkout, pengiriman, dan pembayaran ada di [`docs/checkout.md`](docs/checkout.md). Skema basis data ada di [`backend/prisma/schema.prisma`](backend/prisma/schema.prisma).
 
@@ -202,12 +235,12 @@ Vercel Functions tidak mendukung koneksi Socket.IO, sehingga di produksi chat me
 
 ## Pemecahan Masalah
 
-| Gejala | Solusi |
-| --- | --- |
-| Port 5000 sudah dipakai | Hentikan proses lama atau ubah `PORT` di `backend/.env` |
-| Galat koneksi database saat `db:deploy` | Periksa `DATABASE_URL` dan pastikan database `foodilee` sudah dibuat |
-| Galat CORS di browser | Buka frontend lewat `http://localhost:5501` atau tambahkan origin ke `CORS_ORIGINS` |
-| Respons 429 "Terlalu banyak request" | Batas 100 request per 15 menit per IP; tunggu atau restart backend |
-| Reset kata sandi mengembalikan 503 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, atau `FRONTEND_URL` belum diisi |
-| Unggah gambar gagal | Kredensial `CLOUDINARY_*` belum diisi |
-| Peta atau data wilayah tidak tampil | Periksa koneksi internet |
+| Gejala                                  | Solusi                                                                              |
+| --------------------------------------- | ----------------------------------------------------------------------------------- |
+| Port 5000 sudah dipakai                 | Hentikan proses lama atau ubah `PORT` di `backend/.env`                             |
+| Galat koneksi database saat `db:deploy` | Periksa `DATABASE_URL` dan pastikan database `foodilee` sudah dibuat                |
+| Galat CORS di browser                   | Buka frontend lewat `http://localhost:5501` atau tambahkan origin ke `CORS_ORIGINS` |
+| Respons 429 "Terlalu banyak request"    | Batas 100 request per 15 menit per IP; tunggu atau restart backend                  |
+| Reset kata sandi mengembalikan 503      | `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, atau `FRONTEND_URL` belum diisi              |
+| Unggah gambar gagal                     | Kredensial `CLOUDINARY_*` belum diisi                                               |
+| Peta atau data wilayah tidak tampil     | Periksa koneksi internet                                                            |

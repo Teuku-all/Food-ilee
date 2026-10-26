@@ -1,15 +1,15 @@
 :root {
-  --fi-deep: #051F20;
+  --fi-deep: #051f20;
   --fi-green: #163832;
-  --fi-mint: #8EB69B;
-  --fi-lilac: #DAF1DE;
-  --fi-ink: #0B2B26;
+  --fi-mint: #8eb69b;
+  --fi-lilac: #daf1de;
+  --fi-ink: #0b2b26;
   --fi-muted: #56716f;
   --fi-line: #c9dfd0;
-  --fi-soft: #DAF1DE;
+  --fi-soft: #daf1de;
   --fi-card: #f5fbf6;
   --fi-blue: #235347;
-  --fi-blue-bright: #8EB69B;
+  --fi-blue-bright: #8eb69b;
   --fi-radius: 22px;
 }
 html {
@@ -17,21 +17,47 @@ html {
 }
 body {
   margin: 0;
-  background: #DAF1DE;
+  background: #daf1de;
   color: var(--fi-ink);
   font-family: Inter, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
-.fi-skeleton{position:relative;display:block;flex:none;overflow:hidden;border-radius:9px;background:#e7efeb}
-.fi-skeleton::after{position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,#ffffffaa,transparent);animation:fi-skeleton-shimmer 1.35s ease-in-out infinite;content:""}
-.fi-skeleton.circle{border-radius:50%}
-.fi-skeleton.pill{border-radius:999px}
-@keyframes fi-skeleton-shimmer{100%{transform:translateX(100%)}}
-@media(prefers-reduced-motion:reduce){.fi-skeleton::after{animation:none}}
+.fi-skeleton {
+  position: relative;
+  display: block;
+  flex: none;
+  overflow: hidden;
+  border-radius: 9px;
+  background: #e7efeb;
+}
+.fi-skeleton::after {
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, #ffffffaa, transparent);
+  animation: fi-skeleton-shimmer 1.35s ease-in-out infinite;
+  content: '';
+}
+.fi-skeleton.circle {
+  border-radius: 50%;
+}
+.fi-skeleton.pill {
+  border-radius: 999px;
+}
+@keyframes fi-skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fi-skeleton::after {
+    animation: none;
+  }
+}
 
 .fi-app {
   min-height: 100vh;
-  background: #DAF1DE;
+  background: #daf1de;
 }
 .fi-header {
   height: 76px;
@@ -41,7 +67,7 @@ body {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 20px;
-  background: linear-gradient(112deg, #051F20 0%, #0B2B26 52%, #163832 100%);
+  background: linear-gradient(112deg, #051f20 0%, #0b2b26 52%, #163832 100%);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -101,9 +127,9 @@ body {
 }
 .fi-nav-link:hover,
 .fi-nav-link.is-active {
-  background: linear-gradient(120deg, #8EB69B, #235347);
+  background: linear-gradient(120deg, #8eb69b, #235347);
   color: #fff;
-  box-shadow: 0 5px 15px #051F2038;
+  box-shadow: 0 5px 15px #051f2038;
   transform: translateY(-1px);
 }
 .fi-header-actions {
@@ -124,7 +150,10 @@ body {
   background: rgba(0, 43, 43, 0.46);
   color: #effbf5;
   text-decoration: none;
-  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
 }
 .fi-cart-link:hover {
   transform: translateY(-2px);
@@ -147,17 +176,19 @@ body {
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
-  border: 2px solid #0B2B26;
+  border: 2px solid #0b2b26;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  background: #8EB69B;
-  color: #0B2B26;
+  background: #8eb69b;
+  color: #0b2b26;
   font-size: 10px;
   font-weight: 800;
   line-height: 1;
 }
-.fi-cart-count[hidden] { display: none; }
+.fi-cart-count[hidden] {
+  display: none;
+}
 .fi-account {
   width: 212px;
   justify-self: end;
@@ -238,6 +269,8 @@ body {
 .fi-account-menu.open {
   opacity: 1;
   visibility: visible;
+  /* Opening must expose links immediately so keyboard focus can enter. */
+  transition-property: opacity, transform;
   transform: translateY(0);
   animation: fi-menu-enter 0.18s ease-out both;
 }
@@ -389,8 +422,14 @@ body {
   animation: fi-toast-enter 0.2s ease both;
 }
 @keyframes fi-toast-enter {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .fi-toast.error {
   border-color: #f1d6d3;
@@ -660,6 +699,11 @@ body {
   width: 292px;
   min-width: 0;
   max-width: min(292px, calc(100vw - 26px));
+  /* Scroll long account menus instead of letting actions leave the viewport. */
+  max-height: min(680px, calc(100dvh - 110px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   padding: 10px;
   border: 1px solid #c8ddda;
   border-radius: 19px;
@@ -729,7 +773,7 @@ body {
   color: #66807a;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: .06em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .fi-language-heading .fi-icon {
@@ -753,7 +797,10 @@ body {
   color: #536d60;
   font-size: 10px;
   font-weight: 650;
-  transition: background .16s ease, border-color .16s ease, color .16s ease;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
 }
 .fi-account-menu .fi-language-options button:hover {
   transform: none;
@@ -832,9 +879,9 @@ body {
 }
 
 .fi-nav-link[aria-current='page'] {
-  background: linear-gradient(120deg, #8EB69B, #235347);
+  background: linear-gradient(120deg, #8eb69b, #235347);
   color: #fff;
-  box-shadow: 0 5px 15px #051F2038;
+  box-shadow: 0 5px 15px #051f2038;
 }
 
 .fi-account-menu-links a[aria-current='page'] {
@@ -858,24 +905,40 @@ dialog[open]::backdrop {
   animation: fi-backdrop-enter 0.22s ease-out both;
 }
 @keyframes fi-dialog-enter {
-  from { opacity: 0; transform: translateY(12px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 @keyframes fi-backdrop-enter {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 .fi-card,
 .fi-product,
 .fi-stat {
-  transition: transform 0.24s cubic-bezier(0.2, 0.7, 0.25, 1), box-shadow 0.24s ease, border-color 0.24s ease;
+  transition:
+    transform 0.24s cubic-bezier(0.2, 0.7, 0.25, 1),
+    box-shadow 0.24s ease,
+    border-color 0.24s ease;
 }
 .fi-card:hover,
 .fi-product:hover,
 .fi-stat:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 34px #0B2B2618;
+  box-shadow: 0 14px 34px #0b2b2618;
 }
 @media (prefers-reduced-motion: reduce) {
-  dialog[open], dialog[open]::backdrop { animation: none !important; }
+  dialog[open],
+  dialog[open]::backdrop {
+    animation: none !important;
+  }
 }

@@ -1,3 +1,4 @@
+import { loadStylesheet } from '../../utils/stylesheet.js';
 import { createStore, getMyStore } from '../../services/store.js';
 import { invalidateStoreAccess } from '../../utils/store-access.js';
 import { escapeHtml } from '../../utils/html.js';
@@ -33,7 +34,8 @@ export async function renderCreateStore() {
   const form = document.getElementById('store-form');
   const regionAddress = await bindRegionAddress(form, 'store');
   const mapSection = document.createElement('div');
-  mapSection.innerHTML = '<label class="fi-label fi-map-label">Titik lokasi toko <small>Pilih titik pickup pada peta untuk menyesuaikan alamat administratif secara otomatis.</small></label><div id="store-map" class="fi-location-map" role="application" aria-label="Peta pemilih lokasi toko"></div><div class="fi-map-controls"><button type="button" class="fi-button fi-button-outline" id="store-locate">Gunakan lokasi perangkat</button><span id="store-map-status" role="status">Memuat peta…</span></div><input type="hidden" name="latitude"><input type="hidden" name="longitude">';
+  mapSection.innerHTML =
+    '<label class="fi-label fi-map-label">Titik lokasi toko <small>Pilih titik pickup pada peta untuk menyesuaikan alamat administratif secara otomatis.</small></label><div id="store-map" class="fi-location-map" role="application" aria-label="Peta pemilih lokasi toko"></div><div class="fi-map-controls"><button type="button" class="fi-button fi-button-outline" id="store-locate">Gunakan lokasi perangkat</button><span id="store-map-status" role="status">Memuat peta…</span></div><input type="hidden" name="latitude"><input type="hidden" name="longitude">';
   form.querySelector('[name="shippingOriginAddress"]').before(mapSection);
   const mapStatus = form.querySelector('#store-map-status');
   const mapPicker = await mountLocationPicker({
@@ -50,7 +52,8 @@ export async function renderCreateStore() {
   });
   const updateStoreMapArea = async () => {
     if (!mapPicker) return;
-    const value = (level) => form.querySelector(`#store-${level}`)?.selectedOptions[0]?.textContent?.trim() || '';
+    const value = (level) =>
+      form.querySelector(`#store-${level}`)?.selectedOptions[0]?.textContent?.trim() || '';
     try {
       await mapPicker.setArea({
         village: value('village'),
@@ -112,10 +115,8 @@ function createStoreLoadingSkeleton() {
 }
 
 function injectCreateStoreStyles() {
-  if (document.getElementById('create-store-style')) return;
-  const style = document.createElement('style');
-  style.id = 'create-store-style';
-  style.textContent = `.cs-page{max-width:1080px;margin:auto;padding:0 15px 15px}.cs-back{display:inline-block;margin-bottom:24px;color:#597268;text-decoration:none;font-size:12px}.cs-layout{display:grid;grid-template-columns:.9fr 1.1fr;align-items:stretch;gap:25px}.cs-story{position:relative;min-height:540px;padding:47px 39px;border-radius:27px;overflow:hidden;background:linear-gradient(158deg,#eaf5f3,#d7e9e7 57%,#c6e0dd)}.cs-kicker{margin:0 0 10px;color:#668774;font-size:9px;font-weight:700;letter-spacing:.15em}.cs-story h1{margin:0;color:#0B2B26;font-size:42px;font-weight:500;line-height:1.12;letter-spacing:-1.4px}.cs-story h1 em{color:#5f9978;font-style:normal}.cs-story>p:not(.cs-kicker){max-width:320px;margin:16px 0;color:#597369;font-size:13px;line-height:1.7}.cs-story-art{position:absolute;left:50%;top:53%;width:250px;height:250px;transform:translate(-50%,-15%);border:1px solid #588e6e3b;border-radius:50%;display:grid;place-items:center}.cs-story-art:before,.cs-story-art:after{content:'';position:absolute;inset:12%;border:1px solid #588e6e45;border-radius:50%;transform:scaleX(1.45) rotate(32deg)}.cs-story-art:after{transform:scaleX(.75) rotate(-38deg)}.cs-story-art span{width:92px;height:92px;border-radius:27px 27px 27px 7px;display:grid;place-items:center;background:#235347;color:white;font-size:44px;font-weight:600;box-shadow:0 15px 30px #17493825}.cs-story-art i,.cs-story-art b{position:absolute;width:16px;height:16px;border:4px solid #f8fff8;border-radius:50%;background:#4d936f;box-shadow:0 3px 12px #194b3530}.cs-story-art i{top:29px;right:47px}.cs-story-art b{left:30px;bottom:51px;width:11px;height:11px}.cs-story>small{position:absolute;left:39px;bottom:30px;color:#748e7e;font-size:10px}.cs-form{padding:37px 38px;border-radius:27px;box-shadow:0 12px 36px #123a2a0b}.cs-form>h2{margin:0;color:#183f32;font-size:29px;font-weight:550;letter-spacing:-.6px}.cs-form>p:not(.cs-kicker){margin:9px 0 23px;color:#78847d;font-size:12px;line-height:1.65}.cs-form label{margin-bottom:16px}.cs-form textarea.fi-input{box-sizing:border-box;height:auto;padding-top:12px;resize:vertical}.cs-muted{float:right;color:#99a39c;font-size:9px;font-weight:400}.cs-preview{display:none;width:100%;max-height:180px;margin:-5px 0 17px;border-radius:15px;object-fit:cover}.cs-preview.visible{display:block}.cs-submit{width:100%;margin-top:7px}.cs-privacy{display:block;margin-top:14px;color:#909b94;font-size:9px;text-align:center}@media(max-width:760px){.cs-layout{grid-template-columns:1fr}.cs-story{min-height:260px;padding:30px}.cs-story h1{font-size:34px}.cs-story-art{right:12px;left:auto;top:35px;width:145px;height:145px;transform:none}.cs-story-art span{width:60px;height:60px;border-radius:19px;font-size:30px}.cs-story-art i{top:14px;right:24px}.cs-story-art b{left:16px;bottom:27px}.cs-story>p:not(.cs-kicker){max-width:230px;font-size:11px}.cs-story>small{left:30px;bottom:19px;font-size:8px}.cs-form{padding:25px 20px}}`;
-  style.textContent += `.cs-pickup-section{margin:25px 0;padding:20px;border:1px solid #dce9e5;border-radius:20px;background:linear-gradient(145deg,#f7fbf9,#f1f8f5)}.cs-section-heading{display:flex;align-items:flex-start;gap:12px;margin-bottom:19px}.cs-section-heading>span{flex:none;width:31px;height:31px;border-radius:10px;display:grid;place-items:center;background:#dcefe8;color:#235347;font-size:11px;font-weight:800}.cs-section-heading h3{margin:1px 0 4px;color:#17473e;font-size:15px}.cs-section-heading p{margin:0;color:#7b8b83;font-size:11px;line-height:1.5}.cs-form-grid,.cs-region-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 13px}.cs-address-detail-grid{grid-template-columns:minmax(0,1.5fr) minmax(100px,.65fr)}.cs-pickup-section .fi-label{display:block;min-width:0;margin-bottom:12px;color:#526a60;font-size:11px;font-weight:650}.cs-pickup-section .fi-input{box-sizing:border-box;width:100%;min-height:45px;margin-top:7px;padding:0 12px;border:1px solid #d6e2dd;border-radius:12px;background:#fff;color:#26483c;font-size:12px;outline:none;transition:border-color .16s,box-shadow .16s}.cs-pickup-section .fi-input:focus{border-color:#54977d;box-shadow:0 0 0 3px #54977d20}.cs-pickup-section select.fi-input{padding-right:34px;cursor:pointer}.cs-pickup-section select:disabled{background:#edf2ef;color:#a1aca6;cursor:not-allowed}.cs-region-error{min-height:0;margin:0 0 10px;color:#a54e43;font-size:11px;line-height:1.5}.cs-region-error:empty{display:none}@media(max-width:520px){.cs-pickup-section{padding:15px;border-radius:16px}.cs-form-grid,.cs-region-grid,.cs-address-detail-grid{grid-template-columns:1fr;gap:0}.cs-section-heading{margin-bottom:15px}}`;
-  document.head.append(style);
+  loadStylesheet(
+    'create-store-style',
+    new URL('../../styles/pages/create-store.css', import.meta.url),
+  );
 }

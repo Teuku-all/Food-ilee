@@ -17,8 +17,16 @@ function coordinatesData(data, { partial = false } = {}) {
   }
   const latitude = Number(data.latitude);
   const longitude = Number(data.longitude);
-  if (!hasLatitude || !hasLongitude || !Number.isFinite(latitude) || latitude < -90 || latitude > 90
-    || !Number.isFinite(longitude) || longitude < -180 || longitude > 180)
+  if (
+    !hasLatitude ||
+    !hasLongitude ||
+    !Number.isFinite(latitude) ||
+    latitude < -90 ||
+    latitude > 90 ||
+    !Number.isFinite(longitude) ||
+    longitude < -180 ||
+    longitude > 180
+  )
     throw new Error('Koordinat lokasi toko tidak valid. Pilih ulang titik pada peta.');
   return { latitude, longitude };
 }
@@ -29,9 +37,12 @@ function storeProfileData(data, { partial = false } = {}) {
   if (!partial && SHIPPING_FIELDS.some((key) => !shipping[key]))
     throw new Error('Lengkapi nama kontak, telepon, alamat pickup, dan kode pos pengiriman toko.');
   const bank = Object.fromEntries(BANK_FIELDS.map((key) => [key, data[key]]));
-  const hasAnyBank = Object.values(bank).some((value) => value !== undefined && String(value).trim());
+  const hasAnyBank = Object.values(bank).some(
+    (value) => value !== undefined && String(value).trim(),
+  );
   if (partial && !hasAnyBank) return { ...shipping, ...coordinates };
-  if (!partial && !hasAnyBank) throw new Error('Isi nama bank, nomor rekening, dan nama pemilik rekening toko.');
+  if (!partial && !hasAnyBank)
+    throw new Error('Isi nama bank, nomor rekening, dan nama pemilik rekening toko.');
   if (hasAnyBank && BANK_FIELDS.some((key) => typeof bank[key] !== 'string' || !bank[key].trim()))
     throw new Error('Lengkapi nama bank, nomor rekening, dan nama pemilik rekening toko.');
   if (hasAnyBank && !/^\d{6,30}$/.test(bank.bankAccountNumber.replace(/[ -]/g, '')))
@@ -39,47 +50,97 @@ function storeProfileData(data, { partial = false } = {}) {
   return {
     ...shipping,
     ...coordinates,
-    ...(hasAnyBank ? {
-      bankName: bank.bankName.trim(),
-      bankAccountNumber: bank.bankAccountNumber.replace(/[ -]/g, ''),
-      bankAccountHolder: bank.bankAccountHolder.trim(),
-    } : {}),
+    ...(hasAnyBank
+      ? {
+          bankName: bank.bankName.trim(),
+          bankAccountNumber: bank.bankAccountNumber.replace(/[ -]/g, ''),
+          bankAccountHolder: bank.bankAccountHolder.trim(),
+        }
+      : {}),
   };
 }
 
 function shippingOriginData(data, { partial = false } = {}) {
   const values = Object.fromEntries(SHIPPING_FIELDS.map((key) => [key, data[key]]));
-  if (partial && SHIPPING_FIELDS.some((key) => values[key] != null && typeof values[key] !== 'string'))
+  if (
+    partial &&
+    SHIPPING_FIELDS.some((key) => values[key] != null && typeof values[key] !== 'string')
+  )
     throw new Error('Data alamat pickup toko tidak valid.');
   const hasAny = Object.values(values).some((value) => value !== undefined && String(value).trim());
   let region = data.shippingOriginRegion;
   if (typeof region === 'string' && region.trim()) {
-    try { region = JSON.parse(region); } catch { throw new Error('Alamat pickup tidak valid. Pilih ulang wilayah toko.'); }
+    try {
+      region = JSON.parse(region);
+    } catch {
+      throw new Error('Alamat pickup tidak valid. Pilih ulang wilayah toko.');
+    }
   }
   const hasRegion = region && typeof region === 'object' && !Array.isArray(region);
-  if (partial && data.shippingOriginRegion != null && String(data.shippingOriginRegion).trim() && !hasRegion)
+  if (
+    partial &&
+    data.shippingOriginRegion != null &&
+    String(data.shippingOriginRegion).trim() &&
+    !hasRegion
+  )
     throw new Error('Alamat pickup tidak valid. Pilih ulang wilayah toko.');
   if (partial && !hasAny && !hasRegion) return {};
   if (partial) {
-    if (hasRegion && ['provinceCode', 'province', 'cityCode', 'city', 'districtCode', 'district', 'villageCode', 'village', 'details']
-      .some((key) => typeof region[key] !== 'string' || !region[key].trim()))
+    if (
+      hasRegion &&
+      [
+        'provinceCode',
+        'province',
+        'cityCode',
+        'city',
+        'districtCode',
+        'district',
+        'villageCode',
+        'village',
+        'details',
+      ].some((key) => typeof region[key] !== 'string' || !region[key].trim())
+    )
       throw new Error('Pilih provinsi hingga desa/kelurahan dan isi detail alamat pickup toko.');
-    if (values.shippingOriginPostalCode?.trim() && !/^\d{5}$/.test(values.shippingOriginPostalCode.trim()))
+    if (
+      values.shippingOriginPostalCode?.trim() &&
+      !/^\d{5}$/.test(values.shippingOriginPostalCode.trim())
+    )
       throw new Error('Kode pos pickup toko harus terdiri dari 5 angka.');
     return {
-      ...Object.fromEntries(SHIPPING_FIELDS
-        .filter((key) => typeof values[key] === 'string' && values[key].trim())
-        .map((key) => [key, values[key].trim()])),
+      ...Object.fromEntries(
+        SHIPPING_FIELDS.filter((key) => typeof values[key] === 'string' && values[key].trim()).map(
+          (key) => [key, values[key].trim()],
+        ),
+      ),
       ...(hasRegion ? { shippingOriginRegion: region } : {}),
     };
   }
-  if (hasAny && SHIPPING_FIELDS.some((key) => typeof values[key] !== 'string' || !values[key].trim()))
+  if (
+    hasAny &&
+    SHIPPING_FIELDS.some((key) => typeof values[key] !== 'string' || !values[key].trim())
+  )
     throw new Error('Lengkapi nama kontak, telepon, alamat pickup, dan kode pos pengiriman toko.');
-  if (hasRegion && SHIPPING_FIELDS.some((key) => typeof values[key] !== 'string' || !values[key].trim()))
+  if (
+    hasRegion &&
+    SHIPPING_FIELDS.some((key) => typeof values[key] !== 'string' || !values[key].trim())
+  )
     throw new Error('Lengkapi alamat pickup, kode pos, dan kontak pengiriman toko.');
-  if (!partial && !hasRegion) throw new Error('Pilih provinsi hingga desa/kelurahan untuk alamat pickup toko.');
-  if (hasRegion && ['provinceCode', 'province', 'cityCode', 'city', 'districtCode', 'district', 'villageCode', 'village', 'details']
-    .some((key) => typeof region[key] !== 'string' || !region[key].trim()))
+  if (!partial && !hasRegion)
+    throw new Error('Pilih provinsi hingga desa/kelurahan untuk alamat pickup toko.');
+  if (
+    hasRegion &&
+    [
+      'provinceCode',
+      'province',
+      'cityCode',
+      'city',
+      'districtCode',
+      'district',
+      'villageCode',
+      'village',
+      'details',
+    ].some((key) => typeof region[key] !== 'string' || !region[key].trim())
+  )
     throw new Error('Pilih provinsi hingga desa/kelurahan dan isi detail alamat pickup toko.');
   if (hasAny && !/^\d{5}$/.test(values.shippingOriginPostalCode.trim()))
     throw new Error('Kode pos pickup toko harus terdiri dari 5 angka.');

@@ -14,15 +14,15 @@ async function biteship(path, body) {
     let response;
     try {
       response = await fetch(`${BITESHIP_URL}${path}`, {
-      method: 'POST',
-      headers: {
-        Authorization: process.env.BITESHIP_API_KEY.startsWith('Bearer ')
-          ? process.env.BITESHIP_API_KEY
-          : `Bearer ${process.env.BITESHIP_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
+        method: 'POST',
+        headers: {
+          Authorization: process.env.BITESHIP_API_KEY.startsWith('Bearer ')
+            ? process.env.BITESHIP_API_KEY
+            : `Bearer ${process.env.BITESHIP_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
       });
     } catch (error) {
       if (error.name === 'AbortError') throw error;
@@ -33,7 +33,8 @@ async function biteship(path, body) {
       throw new Error(result.message || 'Biteship belum dapat memproses permintaan.');
     return result;
   } catch (error) {
-    if (error.name === 'AbortError') throw new Error('Permintaan ke Biteship melewati batas waktu. Coba lagi.');
+    if (error.name === 'AbortError')
+      throw new Error('Permintaan ke Biteship melewati batas waktu. Coba lagi.');
     throw error;
   } finally {
     clearTimeout(timeout);
@@ -41,14 +42,35 @@ async function biteship(path, body) {
 }
 
 function validateAddress(address) {
-  const required = ['recipientName', 'phone', 'provinceCode', 'province', 'cityCode', 'city', 'districtCode', 'district', 'villageCode', 'village', 'postalCode', 'details'];
+  const required = [
+    'recipientName',
+    'phone',
+    'provinceCode',
+    'province',
+    'cityCode',
+    'city',
+    'districtCode',
+    'district',
+    'villageCode',
+    'village',
+    'postalCode',
+    'details',
+  ];
   for (const key of required) {
-    if (typeof address?.[key] !== 'string' || !address[key].trim()) throw new Error('Lengkapi seluruh alamat dan informasi penerima.');
+    if (typeof address?.[key] !== 'string' || !address[key].trim())
+      throw new Error('Lengkapi seluruh alamat dan informasi penerima.');
   }
   if (!/^\d{5}$/.test(address.postalCode)) throw new Error('Kode pos harus terdiri dari 5 angka.');
-  if (!/^\+?[0-9\s()-]{8,20}$/.test(address.phone)) throw new Error('Nomor telepon penerima tidak valid.');
-  if (!Number.isFinite(address.latitude) || address.latitude < -90 || address.latitude > 90
-    || !Number.isFinite(address.longitude) || address.longitude < -180 || address.longitude > 180)
+  if (!/^\+?[0-9\s()-]{8,20}$/.test(address.phone))
+    throw new Error('Nomor telepon penerima tidak valid.');
+  if (
+    !Number.isFinite(address.latitude) ||
+    address.latitude < -90 ||
+    address.latitude > 90 ||
+    !Number.isFinite(address.longitude) ||
+    address.longitude < -180 ||
+    address.longitude > 180
+  )
     throw new Error('Pilih titik lokasi alamat penerima pada peta.');
 }
 
@@ -60,26 +82,42 @@ async function validateRegion(address) {
     ['villages', address.districtCode, address.villageCode, address.village],
   ];
   for (const [resource, parent, code, name] of levels) {
-    const url = parent ? `${REGION_URL}/${resource}/${encodeURIComponent(parent)}.json` : `${REGION_URL}/provinces.json`;
+    const url = parent
+      ? `${REGION_URL}/${resource}/${encodeURIComponent(parent)}.json`
+      : `${REGION_URL}/provinces.json`;
     let response;
-    try { response = await fetch(url, { signal: AbortSignal.timeout(8000) }); }
-    catch { throw new Error('Layanan data wilayah sedang tidak dapat dihubungi. Coba lagi.'); }
+    try {
+      response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    } catch {
+      throw new Error('Layanan data wilayah sedang tidak dapat dihubungi. Coba lagi.');
+    }
     if (!response.ok) throw new Error('Data wilayah belum dapat divalidasi. Coba lagi.');
     const result = await response.json();
     const areas = result.data;
     if (!Array.isArray(areas)) throw new Error('Data wilayah belum dapat divalidasi. Coba lagi.');
     if (!areas.some((area) => String(area.id) === String(code) && area.name === name))
-      throw new Error('Urutan provinsi, kabupaten/kota, kecamatan, atau desa tidak sesuai. Pilih ulang wilayah.');
+      throw new Error(
+        'Urutan provinsi, kabupaten/kota, kecamatan, atau desa tidak sesuai. Pilih ulang wilayah.',
+      );
     if (resource === 'villages') {
       const village = areas.find((area) => String(area.id) === String(code));
       if (village.postal_code && String(village.postal_code) !== String(address.postalCode))
         throw new Error('Kode pos tidak sesuai dengan desa/kelurahan yang dipilih.');
       if (!village.postal_code) {
         let postalResponse;
-        try { postalResponse = await fetch(`${REGION_URL}/postal-codes/${encodeURIComponent(address.postalCode)}.json`, { signal: AbortSignal.timeout(8000) }); }
-        catch { throw new Error('Layanan data kode pos sedang tidak dapat dihubungi. Coba lagi.'); }
+        try {
+          postalResponse = await fetch(
+            `${REGION_URL}/postal-codes/${encodeURIComponent(address.postalCode)}.json`,
+            { signal: AbortSignal.timeout(8000) },
+          );
+        } catch {
+          throw new Error('Layanan data kode pos sedang tidak dapat dihubungi. Coba lagi.');
+        }
         const postalResult = await postalResponse.json();
-        if (!postalResponse.ok || !postalResult.data?.some((area) => String(area.id) === String(code)))
+        if (
+          !postalResponse.ok ||
+          !postalResult.data?.some((area) => String(area.id) === String(code))
+        )
           throw new Error('Kode pos tidak sesuai dengan desa/kelurahan yang dipilih.');
       }
     }
@@ -101,9 +139,16 @@ function makeItems(items) {
   }));
 }
 
-async function requestRates(origin, address, items, { codAmount, codType = '7_days', couriers } = {}) {
+async function requestRates(
+  origin,
+  address,
+  items,
+  { codAmount, codType = '7_days', couriers } = {},
+) {
   if (!origin || !/^\d{5}$/.test(String(origin.postalCode || '')))
-    throw new Error('Kode pos pickup penjual belum valid. Minta penjual memperbarui alamat tokonya.');
+    throw new Error(
+      'Kode pos pickup penjual belum valid. Minta penjual memperbarui alamat tokonya.',
+    );
   requireConfig(['BITESHIP_COURIERS']);
   const request = {
     origin_postal_code: Number(origin.postalCode),
@@ -133,7 +178,7 @@ function formatRate(rate, codAmount) {
     courierType: rate.type,
     // With COD, `price` includes the COD service fee. The buyer pays item + shipping;
     // the COD fee is recorded separately as a settlement deduction.
-    price: Number(codAmount ? rate.shipping_fee ?? rate.price : rate.price || 0),
+    price: Number(codAmount ? (rate.shipping_fee ?? rate.price) : rate.price || 0),
     biteshipPrice: Number(rate.price || 0),
     cashOnDeliveryFee: rate.cash_on_delivery_fee == null ? null : Number(rate.cash_on_delivery_fee),
     supportsCod,
@@ -150,7 +195,11 @@ async function getRates(origin, address, items, { codAmount, codType = '7_days' 
     const rates = await requestRates(origin, address, items);
     return rates.map((rate) => formatRate(rate));
   }
-  if (!Number.isSafeInteger(Number(codAmount)) || Number(codAmount) <= 0 || Number(codAmount) > 15000000)
+  if (
+    !Number.isSafeInteger(Number(codAmount)) ||
+    Number(codAmount) <= 0 ||
+    Number(codAmount) > 15000000
+  )
     throw new Error('Nilai COD harus lebih dari nol dan tidak melebihi batas Biteship.');
   if (!['3_days', '5_days', '7_days'].includes(codType))
     throw new Error('BITESHIP_COD_SETTLEMENT_DAYS harus bernilai 3_days, 5_days, atau 7_days.');
@@ -169,7 +218,9 @@ async function getRates(origin, address, items, { codAmount, codType = '7_days' 
         codType,
         couriers: baseRate.company,
       });
-      const quoted = codRates.find((rate) => rate.company === baseRate.company && rate.type === baseRate.type);
+      const quoted = codRates.find(
+        (rate) => rate.company === baseRate.company && rate.type === baseRate.type,
+      );
       if (!quoted || quoted.available_for_cash_on_delivery !== true) continue;
       output[index] = formatRate(quoted, CODAmount);
     }
@@ -180,7 +231,12 @@ async function getRates(origin, address, items, { codAmount, codType = '7_days' 
 
 async function createShipment(order, buyer, items) {
   const origin = order.sellerShippingOrigin;
-  if (!origin?.contactName || !origin?.contactPhone || !origin?.address || !/^\d{5}$/.test(String(origin?.postalCode || '')))
+  if (
+    !origin?.contactName ||
+    !origin?.contactPhone ||
+    !origin?.address ||
+    !/^\d{5}$/.test(String(origin?.postalCode || ''))
+  )
     throw new Error('Snapshot alamat pickup penjual tidak lengkap.');
   const address = order.shippingAddress;
   const codDays = process.env.BITESHIP_COD_SETTLEMENT_DAYS || '7_days';
