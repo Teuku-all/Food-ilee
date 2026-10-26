@@ -2,7 +2,7 @@
 #app .fi-header {
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 2000;
   transition:
     box-shadow 220ms ease,
     border-color 220ms ease;
@@ -205,60 +205,6 @@
   font-size: 10px;
 }
 
-/* Checkout return control: one clear arrow, generous target and calm focus state. */
-#app .co-app .co-back {
-  width: fit-content;
-  min-height: 50px;
-  padding: 6px 16px 6px 7px;
-  gap: 11px;
-  border: 1px solid #cbdccf;
-  border-radius: 15px;
-  background: #fffefa;
-  color: #214b39;
-  font-size: 13px;
-  font-weight: 650;
-  line-height: 1.3;
-  box-shadow: 0 5px 16px #173e320b;
-  transition:
-    border-color 180ms ease,
-    background 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease;
-}
-#app .co-app .co-back::before {
-  content: none;
-}
-#app .co-app .co-back-icon {
-  width: 36px;
-  height: 36px;
-  flex: none;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
-  background: #245741;
-  color: #fff;
-  transition:
-    background 180ms ease,
-    transform 180ms ease;
-}
-#app .co-app .co-back-icon svg {
-  width: 19px;
-  height: 19px;
-}
-#app .co-app .co-back:hover {
-  border-color: #8fb8a0;
-  background: #f5faf4;
-  box-shadow: 0 8px 18px #173e3214;
-}
-#app .co-app .co-back:hover .co-back-icon {
-  transform: translateX(-2px);
-  background: #1b4935;
-}
-#app .co-app .co-back:focus-visible {
-  outline: 3px solid #9cbd8e;
-  outline-offset: 3px;
-}
-
 /* Local snapshots move and resize together; the page itself never fades out. */
 html[data-language-transition]::view-transition {
   pointer-events: none;
@@ -312,7 +258,10 @@ html[data-language-transition]::view-transition-group(root) {
   white-space: nowrap;
 }
 
-/* A single viewport-anchored dock owns its icons and active state. */
+/* A viewport-level dock keeps the active icon aligned during page scrolling. */
+#app > .fi-mobile-nav {
+  display: none;
+}
 @media (max-width: 768px) {
   :root {
     --fi-bottom-space: calc(98px + env(safe-area-inset-bottom, 0px));
@@ -327,8 +276,11 @@ html[data-language-transition]::view-transition-group(root) {
     scroll-margin-top: 86px;
   }
   #app .fi-header .fi-nav {
+    display: none;
+  }
+  #app > .fi-mobile-nav {
     position: fixed;
-    z-index: 1000;
+    z-index: 2500;
     top: auto;
     right: auto;
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
@@ -337,27 +289,25 @@ html[data-language-transition]::view-transition-group(root) {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     align-items: stretch;
     box-sizing: border-box;
-    width: min(560px, calc(100% - 24px));
-    height: 74px;
-    min-height: 74px;
+    width: min(520px, calc(100% - 24px));
+    height: 60px;
+    min-height: 60px;
     margin: 0;
-    padding: 6px;
+    padding: 5px 6px;
     gap: 2px;
-    border: 1px solid #dce5dd;
-    border-radius: 24px;
-    background: #ffffffef;
-    box-shadow:
-      0 8px 28px rgb(5 31 32 / 12%),
-      0 2px 6px rgb(5 31 32 / 5%);
+    border: 1px solid #24483d;
+    border-radius: 16px;
+    background: #102b27;
+    box-shadow: 0 5px 12px rgb(5 31 32 / 18%), 0 16px 32px rgb(5 31 32 / 22%);
     overflow: visible;
+    white-space: normal;
     transform: translateX(-50%);
-    backdrop-filter: blur(16px);
   }
-  #app .fi-header .fi-nav:has(.fi-nav-store) {
+  #app > .fi-mobile-nav:has(.fi-nav-store) {
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    width: min(620px, calc(100% - 20px));
+    width: min(560px, calc(100% - 20px));
   }
-  #app .fi-header .fi-nav .fi-nav-link {
+  #app > .fi-mobile-nav .fi-nav-link {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -365,56 +315,65 @@ html[data-language-transition]::view-transition-group(root) {
     justify-content: center;
     box-sizing: border-box;
     min-width: 0;
-    height: 60px;
-    min-height: 60px;
-    padding: 5px 2px;
-    gap: 4px;
-    border-radius: 17px;
+    height: 48px;
+    min-height: 48px;
+    padding: 0;
+    gap: 0;
+    border-radius: 12px;
     background: transparent;
-    color: #65776d;
+    color: #d8e9df;
     box-shadow: none;
     transform: none;
     animation: none;
-    transition:
-      background-color 180ms ease,
-      color 180ms ease;
+    transition: color 180ms ease, background-color 180ms ease;
   }
-  #app .fi-header .fi-nav .fi-nav-link span {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 21px;
-    font-size: 9px;
-    font-weight: 500;
-    line-height: 1.15;
-    white-space: normal;
-    text-align: center;
-    overflow-wrap: normal;
+  #app > .fi-mobile-nav .fi-nav-link > span {
+    display: none;
   }
-  #app .fi-header .fi-nav .fi-nav-link .fi-icon {
+  #app > .fi-mobile-nav .fi-nav-link .fi-icon {
     width: 20px;
     height: 20px;
     margin: 0;
-    opacity: 1;
+    opacity: 0.88;
     transform: none;
     animation: none;
   }
-  #app .fi-header .fi-nav .fi-nav-link:is(.is-active, [aria-current]) {
-    background: #e6efe8;
-    color: #1d5140;
-    box-shadow: none;
+  #app > .fi-mobile-nav .fi-nav-link:is(.is-active, [aria-current]) {
+    color: #173e32;
   }
-  #app .fi-header .fi-nav .fi-nav-link:is(.is-active, [aria-current]) span {
-    font-weight: 700;
+  #app > .fi-mobile-nav .fi-nav-link:is(.is-active, [aria-current])::after {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #9bcba6;
+    transform: translateX(-50%);
+    content: '';
   }
-  #app .fi-header .fi-nav .fi-nav-link:hover {
-    background: #f0f5f0;
-    color: #1d5140;
-    transform: none;
+  #app > .fi-mobile-nav .fi-nav-link:is(.is-active, [aria-current]) .fi-icon {
+    position: absolute;
+    top: -19px;
+    left: 50%;
+    box-sizing: border-box;
+    width: 46px;
+    height: 46px;
+    padding: 11px;
+    border: 2px solid #dceadf;
+    border-radius: 50%;
+    background: #fff;
+    color: #163e32;
+    box-shadow: 0 4px 11px rgb(5 31 32 / 20%);
+    opacity: 1;
+    transform: translateX(-50%);
   }
-  #app .fi-header .fi-nav .fi-nav-link:is(.is-active, [aria-current]):hover {
-    background: #e6efe8;
+  #app > .fi-mobile-nav .fi-nav-link:hover {
+    background: #ffffff14;
+    color: #fff;
+  }
+  #app > .fi-mobile-nav .fi-nav-link:is(.is-active, [aria-current]):hover {
+    background: transparent;
   }
   #app .fi-account-menu {
     max-height: calc(100dvh - 174px - env(safe-area-inset-bottom, 0px));
@@ -424,15 +383,6 @@ html[data-language-transition]::view-transition-group(root) {
   }
   #app .pr-page .pr-identity > p {
     font-size: 12px;
-  }
-}
-@media (max-width: 380px) {
-  #app .fi-header .fi-nav .fi-nav-link {
-    padding-inline: 0;
-  }
-  #app .fi-header .fi-nav:has(.fi-nav-store) .fi-nav-link span {
-    font-size: 8px;
-    letter-spacing: -0.01em;
   }
 }
 @media (max-width: 480px) {
@@ -449,10 +399,6 @@ html[data-language-transition]::view-transition-group(root) {
   }
   #app .pr-page .pr-impact-card {
     min-height: 82px;
-  }
-  #app .co-app .co-back {
-    width: 100%;
-    justify-content: flex-start;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -478,10 +424,6 @@ html[data-language-transition]::view-transition-group(root) {
     transition: none;
   }
   #app .fi-header {
-    transition: none;
-  }
-  #app .co-app .co-back,
-  #app .co-app .co-back-icon {
     transition: none;
   }
 }

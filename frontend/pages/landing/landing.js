@@ -30,16 +30,16 @@ window.addEventListener(
         if (target && Math.abs(target.getBoundingClientRect().top - 86) > 28) return;
         clearLandingNavigationTarget();
       }
-      const links = [...document.querySelectorAll('.landing-nav .fi-nav-link')];
-      let active;
+      const links = [...document.querySelectorAll('.landing-nav .fi-nav-link, #app > .fi-mobile-nav .fi-nav-link')];
+      let activeHref;
       for (const link of links) {
         const section = document.querySelector(link.getAttribute('href'));
         if (section && section.getBoundingClientRect().top <= window.innerHeight * 0.35)
-          active = link;
+          activeHref = link.getAttribute('href');
       }
       for (const link of links) {
-        link.classList.toggle('is-active', link === active);
-        if (link === active) link.setAttribute('aria-current', 'location');
+        link.classList.toggle('is-active', link.getAttribute('href') === activeHref);
+        if (link.getAttribute('href') === activeHref) link.setAttribute('aria-current', 'location');
         else link.removeAttribute('aria-current');
       }
     });
@@ -55,21 +55,22 @@ export function renderLanding() {
   loadStylesheet('landing-style', new URL('../../styles/pages/landing.css', import.meta.url));
   bindHeaderScroll();
   bindMobileNav();
-  document.querySelectorAll('.landing-nav .fi-nav-link').forEach((link) => {
+  document.querySelectorAll('.landing-nav .fi-nav-link, #app > .fi-mobile-nav .fi-nav-link').forEach((link) => {
     link.setAttribute('aria-label', link.querySelector('span')?.textContent.trim() || 'Navigasi');
   });
   bindLandingReveal();
-  document.querySelectorAll('.landing-page a[href^="#"]').forEach((link) =>
+  document.querySelectorAll('.landing-page a[href^="#"], #app > .fi-mobile-nav a[href^="#"]').forEach((link) =>
     link.addEventListener('click', (event) => {
       const target = document.querySelector(link.getAttribute('href'));
-      if (target && link.closest('.landing-nav')) {
+      if (target && link.closest('.landing-nav, .fi-mobile-nav')) {
         event.preventDefault();
         landingNavigationTarget = link.getAttribute('href');
         clearTimeout(landingNavigationTimer);
         landingNavigationTimer = setTimeout(clearLandingNavigationTarget, 1800);
-        document.querySelectorAll('.landing-nav .fi-nav-link').forEach((item) => {
-          item.classList.toggle('is-active', item === link);
-          if (item === link) item.setAttribute('aria-current', 'location');
+        document.querySelectorAll('.landing-nav .fi-nav-link, #app > .fi-mobile-nav .fi-nav-link').forEach((item) => {
+          const active = item.getAttribute('href') === link.getAttribute('href');
+          item.classList.toggle('is-active', active);
+          if (active) item.setAttribute('aria-current', 'location');
           else item.removeAttribute('aria-current');
         });
         target.scrollIntoView({

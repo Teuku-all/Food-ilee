@@ -1248,20 +1248,6 @@ body > dialog :is(input, textarea, select) {
   }
 }
 @media (max-width: 768px) {
-  #app .fi-header .fi-nav {
-    background: #fffef9f5;
-    border-top-color: #e0e5d6;
-    border-radius: 20px 20px 0 0;
-    box-shadow: 0 -6px 24px #183e3208;
-    backdrop-filter: blur(16px);
-  }
-  #app .fi-header .fi-nav .fi-nav-link {
-    color: #7b876e;
-  }
-  #app .fi-header .fi-nav .fi-nav-link:is(.is-active, [aria-current]) {
-    background: #e8edde;
-    color: #42603c;
-  }
   #app .fi-page-heading {
     align-items: flex-start;
     gap: 14px;

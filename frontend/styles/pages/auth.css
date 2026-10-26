@@ -894,6 +894,150 @@
   }
 }
 
+/* The curved reveal follows the login reference while keeping the Food Ilee palette. */
+.auth-page.auth-enter .auth-panel {
+  overflow: hidden;
+}
+.auth-page.auth-enter .auth-panel::after {
+  position: absolute;
+  z-index: 3;
+  top: -1px;
+  left: -12%;
+  width: 124%;
+  height: calc(100% + 2px);
+  border-radius: 0 0 50% 50% / 0 0 13% 13%;
+  background: #123b31;
+  content: '';
+  pointer-events: none;
+  animation: auth-curtain 940ms cubic-bezier(0.76, 0, 0.2, 1) both;
+}
+.auth-page.auth-enter .auth-hero-copy {
+  animation: auth-rise 700ms 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.auth-page.auth-enter .auth-form-wrap,
+.auth-page.auth-switching .auth-form-wrap {
+  animation: auth-rise 600ms 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.auth-page.auth-enter .auth-form-wrap > :is(.auth-overline, h2, .auth-intro, .auth-form, .auth-divider, .auth-google, .auth-switch) {
+  animation: auth-rise 520ms calc(360ms + var(--auth-step, 0) * 65ms) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.auth-page.auth-enter .auth-form-wrap > h2 { --auth-step: 1; }
+.auth-page.auth-enter .auth-form-wrap > .auth-intro { --auth-step: 2; }
+.auth-page.auth-enter .auth-form-wrap > .auth-form { --auth-step: 3; }
+.auth-page.auth-enter .auth-form-wrap > .auth-divider { --auth-step: 4; }
+.auth-page.auth-enter .auth-form-wrap > .auth-google { --auth-step: 5; }
+.auth-page.auth-enter .auth-form-wrap > .auth-switch { --auth-step: 6; }
+
+@keyframes auth-curtain {
+  from { transform: translateY(0); }
+  to { transform: translateY(-112%); }
+}
+@keyframes auth-rise {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+html[data-auth-transition]::view-transition-old(root) {
+  animation: auth-leave 420ms ease-in both;
+}
+html[data-auth-transition]::view-transition-new(root) {
+  animation: auth-arrive 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes auth-leave {
+  to { opacity: 0; transform: translateX(-22px); }
+}
+@keyframes auth-arrive {
+  from { opacity: 0; transform: translateX(28px); }
+}
+
+/* A successful sign-in covers the form before revealing the marketplace. */
+body > .auth-success-transition {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #0b2b26;
+  color: #f4fbf6;
+  clip-path: circle(0% at 50% 75%);
+  animation: auth-success-cover 680ms cubic-bezier(0.65, 0, 0.25, 1) both;
+}
+body > .auth-success-transition > .auth-success-logo {
+  display: block;
+  width: min(76vw, 340px);
+  animation: auth-success-mark 440ms 230ms ease-out both;
+}
+body > .auth-success-transition .fi-brand-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+body > .auth-success-transition.is-revealing {
+  animation: auth-success-reveal 800ms cubic-bezier(0.65, 0, 0.25, 1) both;
+}
+body > .auth-success-transition.is-revealing > .auth-success-logo {
+  animation: auth-success-mark-leave 350ms ease-in both;
+}
+@keyframes auth-success-cover {
+  to { clip-path: circle(150% at 50% 75%); }
+}
+@keyframes auth-success-mark {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes auth-success-mark-leave {
+  to { opacity: 0; transform: translateY(-10px); }
+}
+@keyframes auth-success-reveal {
+  from { clip-path: circle(150% at 50% 75%); transform: translateY(0); border-radius: 0; }
+  to { clip-path: circle(150% at 50% 75%); transform: translateY(-110%); border-radius: 0 0 50% 50%; }
+}
+#app .mp-app.auth-arriving .mp-main {
+  animation: auth-marketplace-arrive 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+#app > .fi-mobile-nav.auth-arriving {
+  animation: auth-marketplace-nav-arrive 620ms 100ms ease-out both;
+}
+@keyframes auth-marketplace-arrive {
+  from { opacity: 0.75; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes auth-marketplace-nav-arrive {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 900px) {
+  .auth-page .auth-hero {
+    border-radius: 0 0 42% 16% / 0 0 11% 5%;
+  }
+  .register-page .auth-hero {
+    border-radius: 22px 22px 42% 16% / 22px 22px 11% 5%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-page.auth-enter .auth-panel::after {
+    display: none;
+  }
+  .auth-page.auth-enter .auth-hero-copy,
+  .auth-page.auth-enter .auth-form-wrap,
+  .auth-page.auth-switching .auth-form-wrap,
+  .auth-page.auth-enter .auth-form-wrap > * {
+    animation: none;
+  }
+  html[data-auth-transition]::view-transition-old(root),
+  html[data-auth-transition]::view-transition-new(root) {
+    animation: none;
+  }
+  body > .auth-success-transition,
+  body > .auth-success-transition > .auth-success-logo,
+  #app .mp-app.auth-arriving .mp-main,
+  #app > .fi-mobile-nav.auth-arriving {
+    animation: none;
+  }
+}
+
 #app .auth-community-icon {
   width: 28px;
   height: 28px;

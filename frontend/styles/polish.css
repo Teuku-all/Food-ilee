@@ -198,6 +198,14 @@ body > dialog :is(button, input, select, textarea, a):focus-visible {
 }
 
 /* Table containers get depth; row boundaries and hover do the rest. */
+#app .ad-page .ad-management > .ad-panel,
+#app .ca-app .ca-list-panel {
+  border-color: #cadbd0;
+  box-shadow: var(--fi-shadow-table);
+}
+#app .ad-page .ad-management .ad-table-wrap {
+  box-shadow: none;
+}
 #app :is(.ad-table-wrap, .ad-table-panel, .ad-insight, .ad-feed) {
   border-color: var(--fi-border);
   box-shadow: var(--fi-shadow-card);

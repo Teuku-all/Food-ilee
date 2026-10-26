@@ -1645,6 +1645,9 @@
   font-size: 11px;
 }
 .mp-store-map {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
   height: 350px;
   overflow: hidden;
   border-radius: 14px;
@@ -1691,6 +1694,10 @@
   }
   .mp-store-map {
     height: 300px;
+  }
+  .mp-store-map .leaflet-bottom.leaflet-right {
+    top: 0;
+    bottom: auto;
   }
   .mp-map-heading {
     align-items: flex-start;

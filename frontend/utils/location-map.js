@@ -204,7 +204,7 @@ export async function mountLocationPicker({
     const style = document.createElement('style');
     style.id = 'fi-location-map-style';
     style.textContent =
-      '.fi-location-map{height:300px;min-height:240px;overflow:hidden;border:1px solid #d4e2dc;border-radius:14px;background:#e8efeb}.fi-map-controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:10px 0 14px}.fi-map-controls>span{color:#61746a;font-size:12px}.fi-map-controls .fi-button{min-height:36px}.fi-map-label small{display:block;margin-top:4px;color:#74827b;font-weight:400}';
+      '.fi-location-map{position:relative;z-index:0;isolation:isolate;height:300px;min-height:240px;overflow:hidden;border:1px solid #d4e2dc;border-radius:14px;background:#e8efeb}.fi-map-controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:10px 0 14px}.fi-map-controls>span{color:#61746a;font-size:12px}.fi-map-controls .fi-button{min-height:36px}.fi-map-label small{display:block;margin-top:4px;color:#74827b;font-weight:400}';
     document.head.append(style);
   }
   const leaflet = await loadLeaflet();

@@ -105,7 +105,17 @@ async function router(route = location.hash || '#beranda') {
     await renderMarketplace();
     if (!isCurrentNavigation(navigationRevision)) return;
     const userId = getCachedCurrentUser()?.data?.id;
-    if (shouldShowOnboarding(userId)) renderOnboarding({ userId });
+    if (shouldShowOnboarding(userId)) {
+      const showOnboarding = () => {
+        if (isCurrentNavigation(navigationRevision) && location.hash === '#marketplace')
+          renderOnboarding({ userId });
+      };
+      if (document.documentElement.dataset.authMarketplaceArrival) {
+        window.addEventListener('foodilee:auth-marketplace-ready', showOnboarding, { once: true });
+      } else {
+        showOnboarding();
+      }
+    }
     return;
   }
   if (route === '#transaksi') {

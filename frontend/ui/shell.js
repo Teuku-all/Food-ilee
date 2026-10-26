@@ -17,6 +17,39 @@ const links = [
 export { icon };
 
 let shellRenderVersion = 0;
+let mobileNavObserver;
+let mobileNavAnimation;
+let mobileNavActiveCenter;
+let mobileNavResizeBound = false;
+
+function animateMobileNavSelection(dock) {
+  if (!window.matchMedia('(max-width: 768px)').matches) {
+    mobileNavActiveCenter = undefined;
+    return;
+  }
+  const active = dock.querySelector('.fi-nav-link[aria-current], .fi-nav-link.is-active');
+  if (!active) return;
+  const bounds = active.getBoundingClientRect();
+  const center = bounds.left + bounds.width / 2;
+  const previousCenter = mobileNavActiveCenter;
+  mobileNavActiveCenter = center;
+  if (
+    previousCenter === undefined ||
+    Math.abs(previousCenter - center) < 1 ||
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+    return;
+  const activeIcon = active.querySelector('.fi-icon');
+  if (!activeIcon?.animate) return;
+  mobileNavAnimation?.cancel();
+  mobileNavAnimation = activeIcon.animate(
+    [
+      { transform: `translateX(calc(-50% + ${previousCenter - center}px))` },
+      { transform: 'translateX(-50%)' },
+    ],
+    { duration: 420, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+  );
+}
 
 export function dashboardHeader(active = '') {
   const currentRoute = location.hash || '#marketplace';
@@ -223,13 +256,51 @@ async function syncStoreNavigation(version) {
 }
 
 export function bindMobileNav() {
-  // Keep the real icon inside the fixed dock. A detached, pixel-positioned clone
-  // drifts when mobile browser chrome changes the viewport during scrolling.
+  // Keep the dock outside sticky or clipped page containers so it stays fixed
+  // to the viewport while scrolling, including on the landing page.
   document.querySelectorAll('body > .fi-nav-indicator').forEach((indicator) => indicator.remove());
-  document.querySelectorAll('#app .fi-header .fi-nav-link').forEach((link) => {
+  const app = document.getElementById('app');
+  const source = app?.querySelector('.fi-header .fi-nav');
+  mobileNavObserver?.disconnect();
+  app?.querySelector(':scope > .fi-mobile-nav')?.remove();
+  if (!source) {
+    mobileNavActiveCenter = undefined;
+    return;
+  }
+  const dock = source.cloneNode(true);
+  dock.classList.add('fi-mobile-nav');
+  dock.setAttribute('aria-label', 'Navigasi utama mobile');
+  if (source.closest('.landing-nav')) {
+    const home = dock.querySelector('.fi-nav-link');
+    home.href = '#beranda';
+    home.innerHTML = `${icon('home')}<span>Beranda</span>`;
+    home.classList.add('is-active');
+    home.setAttribute('aria-current', 'location');
+  }
+  app.append(dock);
+  app.querySelectorAll('.fi-header .fi-nav-link, .fi-mobile-nav .fi-nav-link').forEach((link) => {
     const label = link.querySelector('span')?.textContent.trim();
     if (label) link.setAttribute('aria-label', label);
   });
+  animateMobileNavSelection(dock);
+  mobileNavObserver = new MutationObserver(() => animateMobileNavSelection(dock));
+  mobileNavObserver.observe(dock, {
+    attributes: true,
+    subtree: true,
+    attributeFilter: ['class', 'aria-current'],
+  });
+  if (!mobileNavResizeBound) {
+    window.addEventListener(
+      'resize',
+      () => {
+        const active = document.querySelector('#app > .fi-mobile-nav .fi-nav-link[aria-current]');
+        const bounds = active?.getBoundingClientRect();
+        mobileNavActiveCenter = bounds ? bounds.left + bounds.width / 2 : undefined;
+      },
+      { passive: true },
+    );
+    mobileNavResizeBound = true;
+  }
 }
 
 export function bindHeaderScroll() {

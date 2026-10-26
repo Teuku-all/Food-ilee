@@ -12,11 +12,6 @@
   margin: auto;
   padding: 38px 24px 76px;
 }
-.co-back {
-  color: #235347;
-  text-decoration: none;
-  font-size: 13px;
-}
 .co-heading {
   margin: 25px 0;
 }
@@ -335,46 +330,6 @@
   max-width: 1240px;
   padding: 36px 28px 80px;
 }
-.co-back {
-  width: max-content;
-  min-height: 40px;
-  box-sizing: border-box;
-  padding: 0 15px 0 11px;
-  border: 1px solid #bdd5c8;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  background: linear-gradient(135deg, #f8fcf9, #eaf5ef);
-  color: #17604d;
-  font-size: 12px;
-  font-weight: 700;
-  box-shadow: 0 4px 12px #1638320c;
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    border-color 180ms ease;
-}
-.co-back::before {
-  content: '←';
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: #dcefe3;
-  color: #17604d;
-  font-size: 15px;
-  transition: transform 180ms ease;
-}
-.co-back:hover {
-  transform: translateY(-2px);
-  border-color: #8fb8a0;
-  box-shadow: 0 8px 18px #16383216;
-}
-.co-back:hover::before {
-  transform: translateX(-2px);
-}
 .co-heading {
   margin: 23px 0 24px;
   padding: 0 0 22px;
@@ -648,8 +603,6 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .co-back,
-  .co-back::before,
   .co-rate,
   #co-pay {
     transition: none;

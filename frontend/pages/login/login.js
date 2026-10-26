@@ -8,18 +8,22 @@ import {
   resetPassword,
 } from '../../services/auth.js';
 import { saveToken } from '../../utils/storage.js';
-import { getStoreAccess } from '../../utils/store-access.js';
 import { escapeHtml } from '../../utils/html.js';
-import { brandLogo, icon } from '../../ui/icons.js';
+import { brandImage, brandLogo, icon } from '../../ui/icons.js';
 
 let mode = 'login';
 let googleIdentityScript;
+let nextAuthMessage = '';
+let enteringMarketplace = false;
+let marketplaceArrivalRevision = 0;
 
 export function renderLogin(initialMode = 'login') {
   mode = initialMode;
   const app = document.getElementById('app');
-  app.innerHTML = `
-    <main class="auth-page ${initialMode === 'register' ? 'register-page' : ''}">
+  const switching = Boolean(app.querySelector('.auth-page'));
+  const renderPage = () => {
+    app.innerHTML = `
+    <main class="auth-page ${initialMode === 'register' ? 'register-page' : ''} ${switching ? 'auth-switching' : 'auth-enter'}">
       <section class="auth-hero" aria-label="Tentang Food Ilee">
         <a class="auth-brand" href="#" aria-label="Food Ilee">${brandLogo()}</a>
         <div class="auth-hero-copy"><p class="auth-kicker">PANGAN LEBIH BAIK, BUMI LEBIH SEHAT</p><h1>Membangun Masa<br>Depan Sirkular.</h1><p>Bersama Food Ilee, setiap langkah kecil Anda dalam pengelolaan limbah berkontribusi pada ekosistem pangan yang lebih cerdas dan hijau.</p><div class="auth-community"><span class="auth-community-icon">${icon('community')}</span><span>Dipercaya komunitas pangan berkelanjutan</span></div></div>
@@ -27,8 +31,23 @@ export function renderLogin(initialMode = 'login') {
       </section>
       <section class="auth-panel">${languagePicker()}<div class="auth-form-wrap" id="auth-form-wrap"></div><p class="auth-copyright">© 2026 Food Ilee · Memberdayakan sirkularitas untuk Indonesia.</p></section>
     </main>`;
-  injectStyle();
-  renderAuthForm();
+    injectStyle();
+    renderAuthForm(nextAuthMessage);
+    nextAuthMessage = '';
+  };
+
+  if (
+    switching &&
+    document.startViewTransition &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  ) {
+    document.documentElement.dataset.authTransition = 'true';
+    const transition = document.startViewTransition(renderPage);
+    const clearTransition = () => delete document.documentElement.dataset.authTransition;
+    transition.finished.then(clearTransition, clearTransition);
+  } else {
+    renderPage();
+  }
 }
 
 function renderAuthForm(message = '') {
@@ -235,8 +254,7 @@ function loadGoogleIdentity() {
 async function handleGoogleCredential(response) {
   try {
     const result = await loginWithGoogle(response.credential);
-    saveToken(result.data.token);
-    location.hash = await postLoginDestination();
+    await enterMarketplace(result.data.token);
   } catch (error) {
     renderAuthForm(error.message || 'Login dengan Google belum berhasil. Silakan coba lagi.');
   }
@@ -272,12 +290,11 @@ async function submitAuth(event) {
           (mode === 'register' ? 'Pendaftaran gagal.' : 'Email atau kata sandi tidak cocok.'),
       );
     if (mode === 'register') {
-      mode = 'login';
-      renderAuthForm('Akun berhasil dibuat. Silakan masuk dengan email dan kata sandi Anda.');
+      nextAuthMessage = 'Akun berhasil dibuat. Silakan masuk dengan email dan kata sandi Anda.';
+      location.hash = '#login';
       return;
     }
-    saveToken(result.data.token);
-    location.hash = await postLoginDestination();
+    await enterMarketplace(result.data.token);
   } catch (error) {
     if (form.isConnected) {
       showAuthError(form, error.message || 'Terjadi kendala. Silakan coba lagi.');
@@ -287,11 +304,80 @@ async function submitAuth(event) {
   }
 }
 
-async function postLoginDestination() {
+function waitForOverlayAnimation(overlay, timeout) {
+  return new Promise((resolve) => {
+    const finish = () => {
+      clearTimeout(timer);
+      overlay.removeEventListener('animationend', onEnd);
+      resolve();
+    };
+    const onEnd = (event) => {
+      if (event.target === overlay) finish();
+    };
+    const timer = setTimeout(finish, timeout);
+    overlay.addEventListener('animationend', onEnd);
+  });
+}
+
+function waitForMarketplace() {
+  if (document.querySelector('#app .mp-app')) return Promise.resolve();
+  return new Promise((resolve) => {
+    const observer = new MutationObserver(() => {
+      if (!document.querySelector('#app .mp-app')) return;
+      clearTimeout(timer);
+      observer.disconnect();
+      resolve();
+    });
+    const timer = setTimeout(() => {
+      observer.disconnect();
+      resolve();
+    }, 2500);
+    observer.observe(document.getElementById('app'), { childList: true, subtree: true });
+  });
+}
+
+async function enterMarketplace(token) {
+  if (enteringMarketplace) return;
+  saveToken(token);
+  enteringMarketplace = true;
+  const arrivalRevision = ++marketplaceArrivalRevision;
+  document.documentElement.dataset.authMarketplaceArrival = 'true';
+  const finishArrival = () => {
+    if (arrivalRevision !== marketplaceArrivalRevision) return;
+    delete document.documentElement.dataset.authMarketplaceArrival;
+    window.dispatchEvent(new Event('foodilee:auth-marketplace-ready'));
+  };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    location.hash = '#marketplace';
+    enteringMarketplace = false;
+    setTimeout(finishArrival, 850);
+    return;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'auth-success-transition';
+  overlay.setAttribute('aria-hidden', 'true');
+  overlay.innerHTML = `<span class="auth-success-logo">${brandImage()}</span>`;
+  document.body.append(overlay);
+  let marketplace;
+  let mobileNav;
   try {
-    return (await getStoreAccess()) ? '#kelola-toko' : '#marketplace';
-  } catch {
-    return '#marketplace';
+    await waitForOverlayAnimation(overlay, 760);
+    location.hash = '#marketplace';
+    await waitForMarketplace();
+    marketplace = document.querySelector('#app .mp-app');
+    mobileNav = document.querySelector('#app > .fi-mobile-nav');
+    marketplace?.classList.add('auth-arriving');
+    mobileNav?.classList.add('auth-arriving');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    overlay.classList.add('is-revealing');
+    await waitForOverlayAnimation(overlay, 880);
+  } finally {
+    overlay.remove();
+    marketplace?.classList.remove('auth-arriving');
+    mobileNav?.classList.remove('auth-arriving');
+    enteringMarketplace = false;
+    setTimeout(finishArrival, 850);
   }
 }
 
