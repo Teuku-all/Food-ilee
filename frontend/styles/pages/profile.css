@@ -1080,3 +1080,25 @@
     text-align: right;
   }
 }
+
+/* Account data uses plain, contextual symbols rather than colored chips. */
+#app .pr-page .pr-impact-icon,
+#app .pr-page .pr-detail-icon {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #617568;
+  box-shadow: none;
+}
+#app .pr-page .pr-impact-card.deep .pr-impact-icon {
+  background: transparent;
+  color: #dce7da;
+}
+#app .pr-impact-icon .fi-icon {
+  width: 21px;
+  height: 21px;
+}
+#app .pr-detail-icon .fi-icon {
+  width: 19px;
+  height: 19px;
+}

@@ -69,7 +69,7 @@ export async function renderTransactions() {
 ${dashboardHeader('orders')}
 
       <main class="tx-main">
-        ${pageHeading({ title: 'Transaksi', eyebrow: 'AKTIVITAS ANDA', description: 'Pantau setiap pesanan, dari pembayaran hingga diterima.', symbol: 'orders' })}
+        ${pageHeading({ title: 'Transaksi', eyebrow: 'AKTIVITAS ANDA', description: 'Pantau setiap pesanan, dari pembayaran hingga diterima.', symbol: 'receipt' })}
         <div class="tx-filters" role="group" aria-label="Filter status transaksi">
           <button class="tx-filter active" type="button" aria-pressed="true" data-status="">Semua</button>
           <button class="tx-filter" type="button" aria-pressed="false" data-status="pending">Menunggu Pembayaran</button>
@@ -151,7 +151,7 @@ async function loadOrders(revision) {
     const list = document.getElementById('tx-order-list');
     if (list) {
       list.removeAttribute('aria-busy');
-      list.innerHTML = `<div class="tx-state"><div class="tx-state-icon">!</div><h2>Transaksi belum dapat dimuat</h2><p>${escapeHtml(error.message || 'Periksa koneksi Anda dan pastikan server berjalan.')}</p><button class="tx-button tx-button-outline" id="tx-retry" type="button">Coba lagi</button></div>`;
+      list.innerHTML = `<div class="tx-state"><div class="tx-state-icon" aria-hidden="true">${icon('info')}</div><h2>Transaksi belum dapat dimuat</h2><p>${escapeHtml(error.message || 'Periksa koneksi Anda dan pastikan server berjalan.')}</p><button class="tx-button tx-button-outline" id="tx-retry" type="button">Coba lagi</button></div>`;
     }
     document
       .getElementById('tx-retry')
@@ -190,7 +190,7 @@ function renderOrders() {
   moreWrap.hidden = visible.length >= filtered.length;
 
   if (!filtered.length) {
-    list.innerHTML = `<div class="tx-state"><div class="tx-state-icon">${activeStatus ? '⌕' : '↗'}</div><h2>${activeStatus ? 'Tidak ada transaksi di status ini' : 'Belum ada transaksi'}</h2><p>${activeStatus ? 'Coba pilih status lain untuk melihat riwayat pesanan.' : 'Pesanan Anda akan tampil di sini setelah berbelanja di marketplace.'}</p>${activeStatus ? '' : '<a class="tx-button tx-button-primary" href="#marketplace">Jelajahi Marketplace <span>→</span></a>'}</div>`;
+    list.innerHTML = `<div class="tx-state"><div class="tx-state-icon">${icon(activeStatus ? 'search' : 'receipt')}</div><h2>${activeStatus ? 'Tidak ada transaksi di status ini' : 'Belum ada transaksi'}</h2><p>${activeStatus ? 'Coba pilih status lain untuk melihat riwayat pesanan.' : 'Pesanan Anda akan tampil di sini setelah berbelanja di marketplace.'}</p>${activeStatus ? '' : '<a class="tx-button tx-button-primary" href="#marketplace">Jelajahi Marketplace <span>→</span></a>'}</div>`;
     return;
   }
 
@@ -213,12 +213,12 @@ function renderOrders() {
       const image = waste.image || FALLBACK_IMAGE;
 
       return `<article class="tx-order-card">
-      <header class="tx-order-heading"><div class="tx-order-merchant"><span class="tx-merchant-icon">${icon(shipped ? 'external' : 'leaf')}</span><div><strong>${escapeHtml(seller)}</strong><span>${escapeHtml(formatDate(order.createdAt))} <i>•</i> INV/${escapeHtml(formatInvoiceDate(order.createdAt))}/${escapeHtml(
+      <header class="tx-order-heading"><div class="tx-order-merchant"><span class="tx-merchant-icon">${icon('store')}</span><div><strong>${escapeHtml(seller)}</strong><span>${escapeHtml(formatDate(order.createdAt))} <i>•</i> INV/${escapeHtml(formatInvoiceDate(order.createdAt))}/${escapeHtml(
         String(order.id || '')
           .slice(-4)
           .toUpperCase(),
       )}</span></div></div><span class="tx-status tx-status-${status.tone}">${escapeHtml(status.label)}</span></header>
-      <div class="tx-order-content"><img class="tx-item-image" src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'"><div class="tx-item-info"><h2>${escapeHtml(title)}</h2><p>${quantity.toLocaleString('id-ID')} kg <span>×</span> ${formatRupiah(unitPrice)}</p><span class="tx-impact">${escapeHtml(PAYMENT_STATUS[order.paymentStatus] || 'Status pembayaran belum tersedia')} · Pengiriman: ${escapeHtml(SHIPPING_STATUS[order.shippingStatus] || order.shippingStatus || 'Belum tersedia')}</span><span class="tx-impact">\u267b Membantu mengurangi ${Math.round(quantity * 0.3)} kg emisi CO\u2082</span></div><div class="tx-total"><span>Total Belanja</span><strong>${formatRupiah(total)}</strong></div></div>
+      <div class="tx-order-content"><img class="tx-item-image" src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'"><div class="tx-item-info"><h2>${escapeHtml(title)}</h2><p>${quantity.toLocaleString('id-ID')} kg <span>×</span> ${formatRupiah(unitPrice)}</p><span class="tx-impact">${escapeHtml(PAYMENT_STATUS[order.paymentStatus] || 'Status pembayaran belum tersedia')} · Pengiriman: ${escapeHtml(SHIPPING_STATUS[order.shippingStatus] || order.shippingStatus || 'Belum tersedia')}</span><span class="tx-impact tx-impact-emissions"></span></div><div class="tx-total"><span>Total Belanja</span><strong>${formatRupiah(total)}</strong></div></div>
       <footer class="tx-order-actions">${order.paymentStatus === 'pending' && order.paymentMethod !== 'cod' && order.snapToken ? `<button class="tx-button tx-button-primary" type="button" data-pay-snap="${id}">Lanjutkan Pembayaran</button>` : ''}${order.paymentStatus === 'pending' && order.paymentMethod !== 'cod' ? `<button class="tx-button tx-button-outline" type="button" data-payment-status="${id}">Periksa Pembayaran</button>` : ''}${order.status === 'pending' && order.paymentStatus === 'pending' && order.paymentMethod === 'midtrans' ? `<button class="tx-button tx-button-outline" type="button" data-cancel-order="${id}">Batalkan Pesanan</button>` : ''}${shipped && order.trackingUrl ? `<a class="tx-button tx-button-outline" target="_blank" rel="noopener" href="${escapeHtml(order.trackingUrl)}">Lacak Paket</a>` : ''}<button class="tx-button tx-button-outline" type="button" data-detail="${id}">Lihat Detail</button>${completed ? `<button class="tx-button tx-button-primary" type="button" data-review="${id}">Beri Ulasan</button>` : ''}</footer>
     </article>`;
     })
@@ -239,10 +239,12 @@ function renderOrders() {
         `${Number(order.quantity || 0).toLocaleString('id-ID')} unit × ${formatRupiah(orderItems[0]?.unitPrice ?? (Number(order.quantity) ? Number(order.total) / Number(order.quantity) : order.total))}`,
       );
     const impact = card?.querySelectorAll('.tx-item-info .tx-impact')[1];
-    if (impact)
-      impact.textContent = translate(
-        `♻ Membantu mengurangi ${Math.round((weightGrams / 1000) * 0.3)} kg emisi CO₂`,
+    if (impact) {
+      const emissionText = translate(
+        `Membantu mengurangi ${Math.round((weightGrams / 1000) * 0.3)} kg emisi CO\u2082`,
       );
+      impact.innerHTML = `${icon('cycle')}<span>${escapeHtml(emissionText)}</span>`;
+    }
     if (!['cash', 'cod'].includes(order.paymentMethod) && order.courier !== 'pickup') return;
     const paymentLine = list.querySelectorAll('.tx-order-card .tx-item-info .tx-impact')[index * 2];
     const paymentText =

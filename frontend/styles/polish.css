@@ -40,6 +40,40 @@
   box-shadow: 0 8px 24px rgb(24 62 50 / 12%);
 }
 
+/* Utility icons use quiet, open backgrounds instead of decorative badge tiles. */
+#app
+  :is(
+    .mp-guidance-icon,
+    .mp-empty-mark,
+    .tx-merchant-icon,
+    .ca-empty > span,
+    .st-empty > span,
+    .wa-impact-icon,
+    .db-activity-icon,
+    .db-focus-check
+  ) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #627367;
+}
+#app .mp-guidance-icon {
+  width: 28px;
+  height: 28px;
+}
+#app .mp-guidance-icon .fi-icon {
+  width: 24px;
+  height: 24px;
+}
+#app .db-focus-item.is-done .db-focus-check {
+  background: transparent;
+  color: var(--fi-green);
+}
+#app .db-activity-card .db-activity-icon {
+  background: transparent;
+}
+
 /* Comfortable controls, with one visible keyboard focus treatment. */
 #app :is(.fi-button, .tx-button, .mp-card-action, .auth-submit, .cs-submit, .wa-submit) {
   min-height: 44px;

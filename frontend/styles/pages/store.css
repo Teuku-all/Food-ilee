@@ -417,15 +417,19 @@
   padding: 28px;
 }
 .st-empty > span {
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
   margin-bottom: 13px;
-  border-radius: 16px;
+  border-radius: 0;
   display: grid;
   place-items: center;
-  background: #d8eeeb;
-  color: var(--fi-deep);
+  background: transparent;
+  color: #66766b;
   font-size: 23px;
+}
+.st-empty > span .fi-icon {
+  width: 28px;
+  height: 28px;
 }
 .st-orders {
   display: grid;

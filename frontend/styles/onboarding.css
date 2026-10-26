@@ -169,7 +169,7 @@
   min-width: 0;
   flex-direction: column;
   padding: 63px 54px 42px;
-  background: radial-gradient(circle at 100% 0%, rgb(218 241 222 / 70%), transparent 50%), #f8fbf8;
+  background: #f8fbf8;
 }
 
 .fi-onboard-close {
@@ -192,7 +192,6 @@
 }
 
 .fi-onboard-close:hover {
-  transform: rotate(90deg);
   background: #fff;
 }
 .fi-onboard-close .fi-icon {

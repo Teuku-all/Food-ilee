@@ -141,7 +141,7 @@ function renderCartItems() {
             <button type="button" data-delta="1" data-index="${index}" aria-label="Tambah jumlah" ${!available || item.quantity >= Number(item.stock) ? 'disabled' : ''}>+</button>
           </div>
           <strong class="ca-item-total">${!available ? '&mdash;' : formatPrice(Number(item.price) * Number(item.quantity))}</strong>
-          <button class="ca-remove" type="button" data-remove="${index}" aria-label="Hapus ${escapeHtml(item.title || 'produk')} dari keranjang">${trashIcon()}</button>
+          <button class="ca-remove" type="button" data-remove="${index}" aria-label="Hapus ${escapeHtml(item.title || 'produk')} dari keranjang">${icon('trash')}</button>
         </article>`;
     })
     .join('');
@@ -211,8 +211,4 @@ function updateCartSummary() {
     selected.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0),
   );
   document.getElementById('ca-checkout').disabled = selected.length === 0;
-}
-
-function trashIcon() {
-  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 14h12l1-14M9 7V4h6v3"/></svg>';
 }

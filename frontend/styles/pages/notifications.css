@@ -162,3 +162,23 @@
     font-size: 12px;
   }
 }
+
+/* Read status is explicit; the icon does not need a decorative badge. */
+#app .nt-mark,
+#app .nt-empty-icon {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #748277;
+}
+#app .nt-item.unread .nt-mark {
+  color: #2d5a45;
+}
+#app .nt-mark .fi-icon {
+  width: 21px;
+  height: 21px;
+}
+#app .nt-empty-icon .fi-icon {
+  width: 27px;
+  height: 27px;
+}

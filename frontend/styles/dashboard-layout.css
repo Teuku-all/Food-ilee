@@ -1258,20 +1258,6 @@
   background: #222923;
   box-shadow: 0 14px 30px #2027221c;
 }
-#app .db-overall::after {
-  position: absolute;
-  right: -78px;
-  bottom: -145px;
-  width: 260px;
-  height: 260px;
-  border: 1px solid #ffffff16;
-  border-radius: 50%;
-  box-shadow:
-    0 0 0 26px #ffffff08,
-    0 0 0 54px #ffffff05;
-  content: '';
-  pointer-events: none;
-}
 #app .st-dashboard .db-panel-head {
   position: relative;
   z-index: 1;
@@ -2465,9 +2451,9 @@
   place-items: center;
   width: 32px;
   height: 32px;
-  border-radius: 11px;
-  background: #f0f1e9;
-  color: #596f52;
+  border-radius: 0;
+  background: transparent;
+  color: #617166;
 }
 #app .ad-stat-icon .fi-icon {
   width: 16px;
@@ -2488,26 +2474,6 @@
   letter-spacing: -0.035em;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-#app .ad-stats > .ad-stat:nth-child(2) .ad-stat-icon {
-  background: #eef1e9;
-  color: #728164;
-}
-#app .ad-stats > .ad-stat:nth-child(3) .ad-stat-icon {
-  background: #f4eee1;
-  color: #9b7842;
-}
-#app .ad-stats > .ad-stat:nth-child(4) .ad-stat-icon {
-  background: #edf0f5;
-  color: #687997;
-}
-#app .ad-stats > .ad-stat:nth-child(5) .ad-stat-icon {
-  background: #f8eee5;
-  color: #a16e43;
-}
-#app .ad-stats > .ad-stat:nth-child(6) .ad-stat-icon {
-  background: #eaf1ea;
-  color: #4c7555;
 }
 #app .ad-overview-grid {
   display: grid;

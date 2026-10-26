@@ -209,10 +209,6 @@ body,
   background: rgb(255 255 255 / 72%);
 }
 
-#app .landing-page .landing-ai-visual {
-  background: linear-gradient(143deg, var(--fi-mist), var(--fi-sage));
-}
-
 #app .landing-page .landing-story {
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
@@ -588,7 +584,7 @@ body,
 
 #app :where(.fi-icon) {
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 1.65;
   stroke-linecap: round;
   stroke-linejoin: round;
 }

@@ -324,6 +324,7 @@ const dynamicTranslations = [
     (_, payment, shipping) =>
       `${translate(payment, 'en')} · Shipping: ${translate(shipping, 'en')}`,
   ],
+  [/^Membantu mengurangi (.+) kg emisi CO₂$/, 'Helping reduce $1 kg of CO₂ emissions'],
   [/^♻ Membantu mengurangi (.+) kg emisi CO₂$/, '♻ Helping reduce $1 kg of CO₂ emissions'],
 
   [/^(\d+) pilihan tersedia$/, '$1 options available'],

@@ -6,6 +6,7 @@ Food Ilee memakai JavaScript ES Module dan CSS biasa. Perubahan UI tidak memerlu
 
 - `frontend/styles/variables.css`: palet, warna permukaan, radius, dan tiga tingkat shadow untuk kartu, menu, dan dialog.
 - `frontend/styles/global.css`: reset, aturan elemen tersembunyi, dan perilaku dasar dokumen.
+- `frontend/ui/icons.js`: satu kumpulan ikon SVG untuk seluruh aplikasi. Pilih ikon sesuai fungsi (`package`, `receipt`, `calendar`, `assistant`, `book`), bukan ornamen. Ketebalan garis 1.65 dan `data-icon` memudahkan pemeriksaan; logo tetap berupa aset merek terpisah.
 - `frontend/styles/shell.css` dan `frontend/ui/shell.js`: header, menu akun, footer, dan komponen bersama.
 - `frontend/styles/finish.css`: penyelesaian komponen dan satu definisi navbar mobile. Ikon aktif tetap berada di dalam tautan navbar; jangan memindahkannya ke elemen mengambang terpisah.
 - `frontend/styles/layout.css`, `editorial.css`, dan `dashboard-layout.css`: grid, hierarki halaman, serta layout dashboard.

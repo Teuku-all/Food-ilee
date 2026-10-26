@@ -55,7 +55,7 @@ function renderChatView(revision) {
   const selected = chats.find((chat) => chat.id === selectedChatId);
   renderShell(
     'chat',
-    `<section class="ch-page"><div class="ch-layout fi-card${selected ? ' ch-has-selection' : ''}"><aside class="ch-inbox" aria-label="Daftar percakapan"><header class="ch-inbox-head"><div><strong>Percakapan</strong><small>Ruang koordinasi Anda</small></div><span>${chats.length}</span></header><label class="ch-search"><span aria-hidden="true">${icon('search')}</span><input type="search" data-chat-search placeholder="Cari percakapan" aria-label="Cari percakapan"></label><div class="ch-chat-list">${chats.length ? chats.map(chatItem).join('') : `<div class="ch-inbox-empty"><span aria-hidden="true">${icon('chat')}</span><strong>Mulai percakapan</strong><p>Hubungi penjual langsung dari detail produk yang menarik bagi Anda.</p></div>`}</div></aside><section class="ch-conversation" aria-label="Isi percakapan">${selected ? `<header class="ch-person"><button class="ch-mobile-back" type="button" data-chat-back aria-label="Kembali ke daftar percakapan">${icon('arrow')}</button><span class="ch-avatar">${escapeHtml(initials(otherUser(selected)))}</span><div><strong>${escapeHtml(displayName(otherUser(selected)))}</strong><small>Diskusi transaksi Food Ilee</small></div></header><div class="ch-messages" data-chat-messages role="log" aria-label="Riwayat pesan" aria-live="polite" aria-relevant="additions"><div class="ch-empty">Memuat pesan…</div></div><form class="ch-compose"><input name="text" maxlength="4000" autocomplete="off" placeholder="Tulis pesan…" aria-label="Tulis pesan"><button class="fi-button" type="submit">Kirim</button></form>` : `<div class="ch-welcome"><span>${icon('sparkles')}</span><h2>Percakapan Anda</h2><p>Pilih percakapan untuk melihat pesan, atau mulai chat melalui detail produk.</p><a class="fi-button" href="#marketplace">Buka marketplace</a></div>`}</section></div></section>`,
+    `<section class="ch-page"><div class="ch-layout fi-card${selected ? ' ch-has-selection' : ''}"><aside class="ch-inbox" aria-label="Daftar percakapan"><header class="ch-inbox-head"><div><strong>Percakapan</strong><small>Ruang koordinasi Anda</small></div><span>${chats.length}</span></header><label class="ch-search"><span aria-hidden="true">${icon('search')}</span><input type="search" data-chat-search placeholder="Cari percakapan" aria-label="Cari percakapan"></label><div class="ch-chat-list">${chats.length ? chats.map(chatItem).join('') : `<div class="ch-inbox-empty"><span aria-hidden="true">${icon('chat')}</span><strong>Mulai percakapan</strong><p>Hubungi penjual langsung dari detail produk yang menarik bagi Anda.</p></div>`}</div></aside><section class="ch-conversation" aria-label="Isi percakapan">${selected ? `<header class="ch-person"><button class="ch-mobile-back" type="button" data-chat-back aria-label="Kembali ke daftar percakapan">${icon('arrow')}</button><span class="ch-avatar">${escapeHtml(initials(otherUser(selected)))}</span><div><strong>${escapeHtml(displayName(otherUser(selected)))}</strong><small>Diskusi transaksi Food Ilee</small></div></header><div class="ch-messages" data-chat-messages role="log" aria-label="Riwayat pesan" aria-live="polite" aria-relevant="additions"><div class="ch-empty">Memuat pesan…</div></div><form class="ch-compose"><input name="text" maxlength="4000" autocomplete="off" placeholder="Tulis pesan…" aria-label="Tulis pesan"><button class="fi-button" type="submit">Kirim</button></form>` : `<div class="ch-welcome"><span>${icon('chat')}</span><h2>Percakapan Anda</h2><p>Pilih percakapan untuk melihat pesan, atau mulai chat melalui detail produk.</p><a class="fi-button" href="#marketplace">Buka marketplace</a></div>`}</section></div></section>`,
   );
   injectStyles();
   document.querySelectorAll('[data-chat-select]').forEach((button) =>
@@ -378,14 +378,20 @@ function appendMessage(box, message, statusOverride) {
 
 function statusMarkup(message, override = '') {
   const state = override || (message.readAt ? 'read' : message.deliveredAt ? 'delivered' : 'sent');
-  const icon = state === 'pending' ? '◷' : state === 'read' || state === 'delivered' ? '✓✓' : '✓';
+  const statusIcon = icon(
+    state === 'pending'
+      ? 'clock'
+      : state === 'read' || state === 'delivered'
+        ? 'checkDouble'
+        : 'check',
+  );
   const label = {
     pending: 'Menunggu terkirim',
     sent: 'Terkirim ke server',
     delivered: 'Terkirim ke penerima',
     read: 'Sudah dibaca',
   }[state];
-  return `<span class="ch-message-status ${state}" data-message-status aria-label="${label}" title="${label}">${icon}</span>`;
+  return `<span class="ch-message-status ${state}" data-message-status aria-label="${label}" title="${label}">${statusIcon}</span>`;
 }
 
 function updateMessageStatus(message) {

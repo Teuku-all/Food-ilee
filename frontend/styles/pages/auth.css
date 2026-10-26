@@ -893,3 +893,16 @@
     animation: none;
   }
 }
+
+#app .auth-community-icon {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+}
+#app .auth-community-icon .fi-icon {
+  width: 23px;
+  height: 23px;
+}

@@ -4,6 +4,7 @@ import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js
 import { renderShell, showToast } from '../../ui/shell.js';
 import { getNotifications, markNotificationRead } from '../../services/notification.js';
 import { skeleton } from '../../ui/skeleton.js';
+import { icon } from '../../ui/icons.js';
 
 export async function renderNotifications() {
   const revision = getNavigationRevision();
@@ -17,7 +18,7 @@ export async function renderNotifications() {
     const unread = items.filter((item) => !item.isRead).length;
     const content = items.length
       ? items.map(notificationCard).join('')
-      : '<div class="nt-state fi-card"><span class="nt-empty-icon">✓</span><h2>Anda sudah mendapatkan kabar terbaru</h2><p>Notifikasi baru akan muncul di halaman ini.</p></div>';
+      : `<div class="nt-state fi-card"><span class="nt-empty-icon" aria-hidden="true">${icon('bell')}</span><h2>Anda sudah mendapatkan kabar terbaru</h2><p>Notifikasi baru akan muncul di halaman ini.</p></div>`;
     renderShell(
       '',
       '<section class="nt-page"><header class="nt-heading"><div><p class="nt-kicker">PEMBARUAN AKUN</p><h1>Notifikasi</h1><p>Informasi pesanan dan aktivitas penting akun Anda.</p></div><span class="nt-count">' +
@@ -74,8 +75,8 @@ function notificationCard(item) {
   return (
     '<article class="nt-item fi-card' +
     (item.isRead ? '' : ' unread') +
-    '"><span class="nt-mark">' +
-    (item.isRead ? '✓' : '•') +
+    '"><span class="nt-mark" aria-hidden="true">' +
+    icon(item.isRead ? 'check' : 'bell') +
     '</span><div><h2>' +
     escapeHtml(item.title || 'Pembaruan Food Ilee') +
     '</h2><p>' +

@@ -295,27 +295,7 @@
   box-shadow: 0 12px 24px #0b2b2610;
 }
 .ad-stats article:after {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #78ae83;
-  box-shadow: 0 0 0 5px #78ae831a;
-  content: '';
-}
-.ad-stats article:nth-child(2):after {
-  background: #63a59a;
-  box-shadow: 0 0 0 5px #63a59a1a;
-}
-.ad-stats article:nth-child(3):after {
-  background: #7e9dc0;
-  box-shadow: 0 0 0 5px #7e9dc01a;
-}
-.ad-stats article:nth-child(4):after {
-  background: #d3a653;
-  box-shadow: 0 0 0 5px #d3a6531a;
+  content: none;
 }
 .ad-stats small {
   font-size: 11px;

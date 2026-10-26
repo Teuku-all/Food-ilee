@@ -1,4 +1,13 @@
 export const additionalEnglish = {
+  'CONTOH PERCAKAPAN': 'EXAMPLE CONVERSATION',
+  Pertanyaan: 'Question',
+  'Saran pemanfaatan': 'Reuse suggestions',
+  'Contoh percakapan dengan AI Food Ilee': 'Example conversation with Food Ilee AI',
+  'Pisahkan sisa sayuran dari plastik dan bahan lain.':
+    'Separate vegetable scraps from plastic and other materials.',
+  'Potong bahan menjadi bagian kecil sebelum diolah.':
+    'Cut the materials into small pieces before processing.',
+  'Campurkan dengan bahan kering untuk kompos.': 'Mix with dry materials to make compost.',
   'PILIHAN ANDA': 'YOUR SELECTION',
   'Periksa jumlah dan pilih produk sebelum melanjutkan pembayaran.':
     'Check quantities and select products before continuing to payment.',

@@ -342,14 +342,14 @@
   text-align: center;
 }
 .mp-empty-mark {
-  width: 55px;
-  height: 55px;
+  width: 32px;
+  height: 32px;
   margin-bottom: 15px;
-  border-radius: 18px;
+  border-radius: 0;
   display: grid;
   place-items: center;
-  background: #edf5f1;
-  color: var(--mp-deep);
+  background: transparent;
+  color: #66766b;
   font-size: 25px;
 }
 .mp-empty h2 {
@@ -805,9 +805,9 @@
   background: radial-gradient(ellipse at 50% 0, #f0f7f0, transparent 65%), #fbfdfb;
 }
 .mp-empty-mark {
-  border: 1px solid #d9e9db;
-  background: #edf6ee;
-  animation: mp-empty-drift 4s ease-in-out infinite;
+  border: 0;
+  background: transparent;
+  animation: none;
 }
 .mp-empty p {
   max-width: 480px;
@@ -1527,13 +1527,13 @@
   color: #55705d;
 }
 .mp-app .mp-sort-icon {
-  width: 34px;
-  height: 34px;
+  width: 20px;
+  height: 20px;
   display: grid;
   place-items: center;
-  border-radius: 11px;
-  background: #eaf4e9;
-  color: #326c45;
+  border-radius: 0;
+  background: transparent;
+  color: #627168;
 }
 .mp-app .mp-sort-icon .fi-icon {
   width: 17px;

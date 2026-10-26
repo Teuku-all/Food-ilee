@@ -93,13 +93,13 @@ function storeLoadingSkeleton() {
 
 function renderProducts(products) {
   if (!products.length)
-    return `<div class="st-empty fi-card"><span>${icon('box')}</span><h2>Belum ada produk</h2><p>Tambahkan penawaran limbah pertama ke etalase toko.</p><a class="fi-button" href="#tambah-limbah">Tambah produk pertama</a></div>`;
+    return `<div class="st-empty fi-card"><span>${icon('package')}</span><h2>Belum ada produk</h2><p>Tambahkan penawaran limbah pertama ke etalase toko.</p><a class="fi-button" href="#tambah-limbah">Tambah produk pertama</a></div>`;
   return `<div class="st-products">${products.map((product) => `<article class="st-product fi-card"><img src="${escapeHtml(product.image || '')}" alt="${escapeHtml(product.title)}"><div class="st-product-main"><span class="st-category ${product.category === 'Kompos' ? 'compost' : ''}">${escapeHtml(product.category || 'Organik')}</span><h3>${escapeHtml(product.title)}</h3><p>${escapeHtml(product.description || '')}</p><div class="st-product-data"><span>${Number(product.stock || 0)} kg tersedia</span><strong>${formatRupiah(product.price)} / kg</strong></div><div class="st-product-actions"><button type="button" data-product-edit="${escapeHtml(product.id)}">Edit</button><button type="button" data-product-delete="${escapeHtml(product.id)}">Hapus</button></div></div></article>`).join('')}</div>`;
 }
 
 function renderOrders(sales) {
   if (!sales.length)
-    return `<div class="st-empty fi-card"><span>${icon('box')}</span><h2>Belum ada pesanan</h2><p>Pesanan calon pembeli akan muncul di sini setelah mereka memesan produk Anda.</p></div>`;
+    return `<div class="st-empty fi-card"><span>${icon('receipt')}</span><h2>Belum ada pesanan</h2><p>Pesanan calon pembeli akan muncul di sini setelah mereka memesan produk Anda.</p></div>`;
   return `<div class="st-orders">${sales
     .map((order) => {
       const name = order.waste?.title || 'Produk organik';
@@ -127,7 +127,7 @@ function renderOrders(sales) {
 
 function renderReviews(reviews) {
   if (!reviews.length)
-    return `<div class="st-empty fi-card"><span>${icon('edit')}</span><h2>Belum ada ulasan</h2><p>Ulasan pembeli akan muncul di sini setelah transaksi selesai.</p></div>`;
+    return `<div class="st-empty fi-card"><span>${icon('chat')}</span><h2>Belum ada ulasan</h2><p>Ulasan pembeli akan muncul di sini setelah transaksi selesai.</p></div>`;
   return `<div class="st-reviews">${reviews.map((review) => `<article class="st-review fi-card"><div class="st-review-stars">${'★'.repeat(Math.max(0, Math.min(5, Number(review.rating))))}${'☆'.repeat(5 - Math.max(0, Math.min(5, Number(review.rating))))}</div><p>${escapeHtml(review.comment)}</p><small>${new Date(review.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</small></article>`).join('')}</div>`;
 }
 

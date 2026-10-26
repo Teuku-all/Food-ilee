@@ -970,3 +970,30 @@
     transform: none;
   }
 }
+
+/* Assistant and category marks stay secondary to the form labels. */
+#app .wa-aside-heading > span {
+  width: 29px;
+  height: 29px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #526c5c;
+  box-shadow: none;
+}
+#app .wa-aside-heading > span .fi-icon {
+  width: 23px;
+  height: 23px;
+}
+#app .wa-category-icon,
+#app .wa-category-icon.compost {
+  background: transparent;
+  color: #516d5a;
+  border-radius: 0;
+}
+#app .wa-impact-card > .wa-impact-header > .wa-impact-icon {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: #667d6c;
+}

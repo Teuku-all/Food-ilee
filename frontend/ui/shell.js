@@ -86,8 +86,8 @@ export function dashboardFooter() {
   return `<footer class="fi-footer"><div class="fi-footer-grid"><div class="fi-footer-brand"><a href="#beranda" aria-label="Food Ilee">${brandImage({ tone: 'dark' })}</a><p>Membangun jembatan antara limbah pangan dan inovasi berkelanjutan untuk masa depan bumi.</p></div><div><h3>Jelajahi</h3><a href="#marketplace">Marketplace</a><a href="#tambah-limbah">Tambah Limbah</a><a href="#tanya-ai">Tanya AI</a></div><div><h3>Akun</h3><a href="#profil">Profil Anda</a><a href="#transaksi">Riwayat Transaksi</a><a href="#kelola-toko">Kelola Toko</a></div><div><h3>Bantuan</h3><a href="#panduan">Panduan Food Ilee</a><a href="mailto:halo@foodilee.id">Hubungi Kami</a><span>Indonesia</span></div></div><div class="fi-footer-bottom">© 2026 Food Ilee · Memberdayakan sirkularitas untuk Indonesia hijau.</div></footer>`;
 }
 
-export function pageHeading({ title, description, eyebrow = 'FOOD ILEE', symbol = 'leaf' }) {
-  return `<header class="fi-page-heading"><span class="fi-page-heading-mark" aria-hidden="true">${icon(symbol)}</span><div><p class="fi-page-eyebrow">${escapeHtml(eyebrow)}</p><h1>${escapeHtml(title)}</h1><p>${escapeHtml(description)}</p></div></header>`;
+export function pageHeading({ title, description, eyebrow = 'FOOD ILEE' }) {
+  return `<header class="fi-page-heading"><p class="fi-page-eyebrow">${escapeHtml(eyebrow)}</p><h1>${escapeHtml(title)}</h1><p>${escapeHtml(description)}</p></header>`;
 }
 
 const pageIntroductions = {
@@ -95,19 +95,16 @@ const pageIntroductions = {
     title: 'Tambah Limbah',
     eyebrow: 'MULAI BERJUAL DI FOOD ILEE',
     description: 'Bagikan foto, jumlah, dan lokasi agar orang yang tepat bisa menemukannya.',
-    symbol: 'add',
   },
   '#tanya-ai': {
     title: 'Tanya AI',
     eyebrow: 'AI ASSIST',
     description: 'Tanyakan tentang kategori, penyimpanan, harga, atau pemanfaatan bahan organik.',
-    symbol: 'sparkles',
   },
   '#chat': {
     title: 'Pesan',
     eyebrow: 'KOMUNITAS FOOD ILEE',
     description: 'Terhubung, berdiskusi, dan temukan peluang bersama.',
-    symbol: 'chat',
   },
 };
 

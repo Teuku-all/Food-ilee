@@ -236,9 +236,13 @@
 .tx-merchant-icon {
   width: 19px;
   flex: none;
-  color: #416950;
+  color: #627168;
   font-size: 21px;
   text-align: center;
+}
+#app .tx-order-merchant .tx-merchant-icon > .fi-icon {
+  width: 18px;
+  height: 18px;
 }
 .tx-order-merchant > div {
   display: grid;
@@ -445,15 +449,30 @@
   text-align: center;
 }
 .tx-state-icon {
-  width: 52px;
-  height: 52px;
+  width: 32px;
+  height: 32px;
   margin-bottom: 17px;
-  border-radius: 18px;
+  border-radius: 0;
   display: grid;
   place-items: center;
-  background: #edf5f1;
-  color: #163832;
+  background: transparent;
+  color: #66766b;
   font-size: 23px;
+}
+.tx-state-icon .fi-icon {
+  width: 28px;
+  height: 28px;
+}
+.tx-impact.tx-impact-emissions {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: #627168;
+}
+.tx-impact-emissions > .fi-icon {
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
 }
 .tx-state h2 {
   margin: 0 0 8px;

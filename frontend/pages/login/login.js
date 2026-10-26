@@ -22,7 +22,7 @@ export function renderLogin(initialMode = 'login') {
     <main class="auth-page ${initialMode === 'register' ? 'register-page' : ''}">
       <section class="auth-hero" aria-label="Tentang Food Ilee">
         <a class="auth-brand" href="#" aria-label="Food Ilee">${brandLogo()}</a>
-        <div class="auth-hero-copy"><p class="auth-kicker">PANGAN LEBIH BAIK, BUMI LEBIH SEHAT</p><h1>Membangun Masa<br>Depan Sirkular.</h1><p>Bersama Food Ilee, setiap langkah kecil Anda dalam pengelolaan limbah berkontribusi pada ekosistem pangan yang lebih cerdas dan hijau.</p><div class="auth-community"><span class="auth-community-icon">${icon('sparkles')}</span><span>Dipercaya komunitas pangan berkelanjutan</span></div></div>
+        <div class="auth-hero-copy"><p class="auth-kicker">PANGAN LEBIH BAIK, BUMI LEBIH SEHAT</p><h1>Membangun Masa<br>Depan Sirkular.</h1><p>Bersama Food Ilee, setiap langkah kecil Anda dalam pengelolaan limbah berkontribusi pada ekosistem pangan yang lebih cerdas dan hijau.</p><div class="auth-community"><span class="auth-community-icon">${icon('community')}</span><span>Dipercaya komunitas pangan berkelanjutan</span></div></div>
         <span class="auth-hero-caption">Dari sisa menjadi sumber daya.</span>
       </section>
       <section class="auth-panel">${languagePicker()}<div class="auth-form-wrap" id="auth-form-wrap"></div><p class="auth-copyright">© 2026 Food Ilee · Memberdayakan sirkularitas untuk Indonesia.</p></section>

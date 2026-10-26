@@ -117,7 +117,7 @@ function renderAdminActivityChart() {
 function renderPendingOrders(orders) {
   const pending = orders.filter(isPendingOrder);
   if (!pending.length)
-    return `<div class="ad-pending-empty">${icon('shield')}<strong>Tidak ada pesanan tertunda</strong></div>`;
+    return `<div class="ad-pending-empty">${icon('checkCircle')}<strong>Tidak ada pesanan tertunda</strong></div>`;
   return pending
     .slice(0, 4)
     .map((order) => {
@@ -141,12 +141,12 @@ function renderAdminDashboard(analytics, currentUser, revision) {
     .join('')
     .toLocaleUpperCase('id-ID');
   const stats = [
-    ['Pengguna terdaftar', Number(analytics.totalUsers || 0), 'profile'],
+    ['Pengguna terdaftar', Number(analytics.totalUsers || 0), 'community'],
     ['Toko aktif', Number(analytics.totalStores || 0), 'store'],
-    ['Produk tayang', Number(analytics.totalWastes || 0), 'box'],
-    ['Total pesanan', Number(analytics.totalOrders || 0), 'orders'],
+    ['Produk tayang', Number(analytics.totalWastes || 0), 'package'],
+    ['Total pesanan', Number(analytics.totalOrders || 0), 'receipt'],
     ['Transaksi tertunda', pendingTotal, 'bell'],
-    ['Omzet dibayar', formatRupiah(analytics.totalRevenue || 0), 'cart'],
+    ['Omzet dibayar', formatRupiah(analytics.totalRevenue || 0), 'trend'],
   ];
   const tab = (panel, label) =>
     `<button type="button" role="tab" aria-selected="${activePanel === panel}" data-admin-panel="${panel}" class="${activePanel === panel ? 'active' : ''}">${label}</button>`;
@@ -154,7 +154,7 @@ function renderAdminDashboard(analytics, currentUser, revision) {
     '',
     `<section class="ad-page"><div class="ad-layout"><aside class="ad-sidebar" aria-label="Navigasi admin">
     <a class="ad-brand" href="#admin"><span class="ad-brand-mark">${icon('leaf')}</span><span>Food Ilee</span></a>
-    <nav class="ad-side-nav"><a class="is-current" aria-current="location" href="#admin-overview" data-admin-scroll-target="admin-overview">${icon('home')}<span>Ringkasan</span></a><button type="button" data-admin-panel="users">${icon('profile')}<span>Pengguna</span></button><button type="button" data-admin-panel="wastes">${icon('box')}<span>Produk</span></button><button type="button" data-admin-panel="orders">${icon('orders')}<span>Pesanan</span></button><a href="#admin-chart" data-admin-scroll-target="admin-chart">${icon('guide')}<span>Statistik</span></a></nav>
+    <nav class="ad-side-nav"><a class="is-current" aria-current="location" href="#admin-overview" data-admin-scroll-target="admin-overview">${icon('home')}<span>Ringkasan</span></a><button type="button" data-admin-panel="users">${icon('community')}<span>Pengguna</span></button><button type="button" data-admin-panel="wastes">${icon('package')}<span>Produk</span></button><button type="button" data-admin-panel="orders">${icon('orders')}<span>Pesanan</span></button><a href="#admin-chart" data-admin-scroll-target="admin-chart">${icon('trend')}<span>Statistik</span></a></nav>
     <div class="ad-sidebar-profile"><span class="ad-sidebar-avatar">${escapeHtml(initials || 'A')}</span><strong>${escapeHtml(currentUser.name || currentUser.username || 'Administrator')}</strong></div>
   </aside><main class="ad-main">
     <header class="ad-heading"><h1>Dashboard admin</h1></header>

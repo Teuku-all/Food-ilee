@@ -850,3 +850,30 @@
     transform: none;
   }
 }
+
+/* Functional conversation and delivery symbols share the same SVG family. */
+#app .ch-welcome {
+  background: transparent;
+}
+#app .ch-welcome > span {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #65776a;
+  box-shadow: none;
+}
+#app .ch-welcome > span .fi-icon {
+  width: 30px;
+  height: 30px;
+}
+.ch-message-status {
+  display: inline-flex;
+  vertical-align: middle;
+}
+.ch-message-status .fi-icon {
+  width: 14px;
+  height: 14px;
+}
