@@ -31,8 +31,9 @@
   letter-spacing: -0.6px;
 }
 .auth-brand img {
-  width: 44px;
-  height: 34px;
+  display: block;
+  width: clamp(145px, 13vw, 172px);
+  height: auto;
   object-fit: contain;
 }
 .auth-hero-copy {
@@ -111,8 +112,9 @@
   font-weight: 700;
 }
 .auth-wordmark img {
-  width: 40px;
-  height: 30px;
+  display: block;
+  width: 145px;
+  height: auto;
   object-fit: contain;
 }
 .auth-overline {
@@ -894,42 +896,34 @@
   }
 }
 
-/* The curved reveal follows the login reference while keeping the Food Ilee palette. */
-.auth-page.auth-enter .auth-panel {
-  overflow: hidden;
+/* Keep the form visible while the curved background sweeps upward. */
+.auth-page.auth-enter .auth-panel > * {
+  position: relative;
+  z-index: 1;
 }
 .auth-page.auth-enter .auth-panel::after {
   position: absolute;
-  z-index: 3;
+  z-index: 0;
   top: -1px;
   left: -12%;
   width: 124%;
   height: calc(100% + 2px);
   border-radius: 0 0 50% 50% / 0 0 13% 13%;
-  background: #123b31;
+  background: linear-gradient(160deg, #e7f2e8, #d1e6d7);
   content: '';
   pointer-events: none;
-  animation: auth-curtain 940ms cubic-bezier(0.76, 0, 0.2, 1) both;
+  animation: auth-curtain 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .auth-page.auth-enter .auth-hero-copy {
-  animation: auth-rise 700ms 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: auth-rise 560ms 50ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .auth-page.auth-enter .auth-form-wrap {
-  animation: auth-rise 600ms 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: auth-rise 520ms 90ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.auth-page.auth-enter .auth-form-wrap > :is(.auth-overline, h2, .auth-intro, .auth-form, .auth-divider, .auth-google, .auth-switch) {
-  animation: auth-rise 520ms calc(360ms + var(--auth-step, 0) * 65ms) cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.auth-page.auth-enter .auth-form-wrap > h2 { --auth-step: 1; }
-.auth-page.auth-enter .auth-form-wrap > .auth-intro { --auth-step: 2; }
-.auth-page.auth-enter .auth-form-wrap > .auth-form { --auth-step: 3; }
-.auth-page.auth-enter .auth-form-wrap > .auth-divider { --auth-step: 4; }
-.auth-page.auth-enter .auth-form-wrap > .auth-google { --auth-step: 5; }
-.auth-page.auth-enter .auth-form-wrap > .auth-switch { --auth-step: 6; }
 
 @keyframes auth-curtain {
   from { transform: translateY(0); }
-  to { transform: translateY(-112%); }
+  to { opacity: 0; transform: translateY(-105%); }
 }
 @keyframes auth-rise {
   from { opacity: 0; transform: translateY(22px); }
@@ -952,7 +946,7 @@
 .auth-page > .auth-panel {
   grid-row: 1;
   min-width: 0;
-  transition: transform 720ms cubic-bezier(0.77, 0, 0.175, 1);
+  transition: transform 680ms cubic-bezier(0.76, 0, 0.24, 1);
   will-change: transform;
 }
 .auth-page > .auth-hero {
@@ -987,10 +981,10 @@
   border-radius: 0 26px 26px 0;
 }
 .auth-page.auth-switching .auth-form-wrap.auth-content-leaving {
-  animation: auth-form-content-out 150ms ease-in both;
+  animation: auth-form-content-out 130ms ease-in both;
 }
 .auth-page.auth-switching .auth-form-wrap.auth-content-entering {
-  animation: auth-form-content-in 430ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: auth-form-content-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 @keyframes auth-form-content-out {
   to { opacity: 0; transform: translateY(12px); }
@@ -998,6 +992,80 @@
 @keyframes auth-form-content-in {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@media (min-width: 901px) and (max-height: 800px) {
+  #app .auth-panel,
+  #app .register-page .auth-panel {
+    gap: 10px;
+    padding-block: 12px;
+  }
+  #app .auth-form-wrap {
+    padding: 28px 36px;
+  }
+  #app .register-page .auth-form-wrap {
+    padding: 0;
+  }
+  .auth-intro {
+    margin-bottom: 18px;
+  }
+  .auth-switch {
+    margin-top: 12px;
+  }
+  .register-page .auth-intro {
+    margin-bottom: 12px;
+  }
+  .register-page .auth-form {
+    gap: 5px;
+  }
+  .register-page .auth-copyright {
+    margin-top: 0;
+  }
+}
+
+@media (min-width: 901px) and (max-height: 700px) {
+  #app .auth-panel,
+  #app .register-page .auth-panel {
+    gap: 6px;
+    padding-block: 6px;
+  }
+  #app .register-page .auth-panel {
+    gap: 4px;
+    padding-block: 4px;
+  }
+  #app .auth-form-wrap {
+    padding-block: 22px;
+  }
+  #app .register-page .auth-form-wrap {
+    padding: 0;
+  }
+  .auth-intro {
+    margin-bottom: 14px;
+  }
+  .auth-switch,
+  .register-page .auth-switch {
+    margin-top: 8px;
+  }
+  .register-page .auth-overline {
+    margin-bottom: 6px;
+  }
+  .register-page .auth-intro {
+    margin-bottom: 8px;
+  }
+  .register-page .auth-form {
+    gap: 4px;
+  }
+  .register-page .auth-terms {
+    margin-top: 4px;
+  }
+  .register-page .auth-form > input,
+  .register-page .auth-password-wrap input {
+    height: 40px;
+  }
+  .register-page .auth-submit,
+  .register-page .auth-google {
+    height: 42px;
+  }
 }
 
 /* A successful sign-in covers the form before revealing the marketplace. */

@@ -9,7 +9,7 @@ import {
 } from '../../services/auth.js';
 import { saveToken } from '../../utils/storage.js';
 import { escapeHtml } from '../../utils/html.js';
-import { brandImage, brandLogo, icon } from '../../ui/icons.js';
+import { brandImage, icon } from '../../ui/icons.js';
 
 let mode = 'login';
 let googleIdentityScript;
@@ -17,6 +17,7 @@ let nextAuthMessage = '';
 let enteringMarketplace = false;
 let marketplaceArrivalRevision = 0;
 let authModeSwitching = false;
+let authSwitchRevision = 0;
 
 export function renderLogin(initialMode = 'login') {
   const app = document.getElementById('app');
@@ -24,13 +25,14 @@ export function renderLogin(initialMode = 'login') {
     mode = initialMode;
     return;
   }
+  authSwitchRevision += 1;
+  authModeSwitching = false;
   mode = initialMode;
-  const switching = Boolean(app.querySelector('.auth-page'));
   const renderPage = () => {
     app.innerHTML = `
-    <main class="auth-page ${initialMode === 'register' ? 'register-page' : 'login-page'} ${switching ? 'auth-switching' : 'auth-enter'}" data-auth-mode="${initialMode}">
+    <main class="auth-page ${initialMode === 'register' ? 'register-page' : 'login-page'} auth-enter" data-auth-mode="${initialMode}">
       <section class="auth-hero" aria-label="Tentang Food Ilee">
-        <a class="auth-brand" href="#" aria-label="Food Ilee">${brandLogo()}</a>
+        <a class="auth-brand" href="#" aria-label="Food Ilee">${brandImage()}</a>
         <div class="auth-hero-copy"><p class="auth-kicker">PANGAN LEBIH BAIK, BUMI LEBIH SEHAT</p><h1>Membangun Masa<br>Depan Sirkular.</h1><p>Bersama Food Ilee, setiap langkah kecil Anda dalam pengelolaan limbah berkontribusi pada ekosistem pangan yang lebih cerdas dan hijau.</p><div class="auth-community"><span class="auth-community-icon">${icon('community')}</span><span>Dipercaya komunitas pangan berkelanjutan</span></div></div>
         <span class="auth-hero-caption">Dari sisa menjadi sumber daya.</span>
       </section>
@@ -52,7 +54,7 @@ function renderAuthForm(message = '') {
   }
   const registering = mode === 'register';
   wrap.innerHTML = `
-    <a class="auth-wordmark" href="#" aria-label="Food Ilee">${brandLogo()}</a>
+    <a class="auth-wordmark" href="#" aria-label="Food Ilee">${brandImage({ tone: 'dark' })}</a>
     <p class="auth-overline">${registering ? 'MULAI PERJALANAN ANDA' : 'SELAMAT DATANG KEMBALI'}</p>
     <h2>${registering ? 'Buat akun Anda' : 'Masuk ke akun Anda'}</h2>
     <p class="auth-intro">${registering ? 'Bergabung untuk mengubah limbah pangan menjadi peluang.' : 'Masuk untuk melanjutkan perjalanan ekonomi sirkular Anda.'}</p>
@@ -81,7 +83,12 @@ function renderAuthForm(message = '') {
     }
 
     authModeSwitching = true;
+    const switchRevision = ++authSwitchRevision;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isCurrentSwitch = () =>
+      switchRevision === authSwitchRevision &&
+      page.isConnected &&
+      page.dataset.authMode === nextMode;
     page.classList.remove('auth-enter');
     page.dataset.authMode = nextMode;
     page.classList.toggle('register-page', nextMode === 'register');
@@ -103,17 +110,19 @@ function renderAuthForm(message = '') {
     wrap.classList.remove('auth-content-entering');
     wrap.classList.add('auth-content-leaving');
     window.setTimeout(() => {
+      if (!isCurrentSwitch()) return;
       renderAuthForm();
       wrap.classList.remove('auth-content-leaving');
       wrap.classList.add('auth-content-entering');
       window.setTimeout(() => {
-        wrap.classList.remove('auth-content-entering');
-      }, 480);
-    }, 170);
+        if (isCurrentSwitch()) wrap.classList.remove('auth-content-entering');
+      }, 440);
+    }, 140);
     window.setTimeout(() => {
+      if (!isCurrentSwitch()) return;
       page.classList.remove('auth-switching', 'auth-switch-to-register', 'auth-switch-to-login');
       authModeSwitching = false;
-    }, 760);
+    }, 700);
   });
   document.getElementById('auth-toggle-password').addEventListener('click', (event) => {
     const input = document.getElementById('auth-password');
