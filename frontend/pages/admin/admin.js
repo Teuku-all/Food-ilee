@@ -261,7 +261,7 @@ function renderPanel(currentUser) {
             (user.isBanned ? 'Dinonaktifkan' : 'Aktif') +
             '</span></td><td>' +
             (user.role === 'admin' || user.id === currentUser.id || user.isBanned
-              ? '—'
+              ? '&mdash;'
               : '<button type="button" class="ad-action danger" data-admin-ban="' +
                 escapeHtml(user.id) +
                 '">Nonaktifkan</button>') +
@@ -278,20 +278,23 @@ function renderPanel(currentUser) {
       adminData.wastes
         .map(
           (waste) =>
-            '<tr><td><strong>' +
-            escapeHtml(waste.title || 'Produk organik') +
-            '</strong><small>' +
-            escapeHtml(waste.category || 'Organik') +
-            ' · ' +
-            Number(waste.stock || 0) +
-            ' ' +
-            translate(`unit · ${formatProductWeight(productWeightGrams(waste))}/unit`) +
-            '</small></td><td>' +
+            '<tr><td>' +
+            renderAdminProductCell({
+              image: waste.image,
+              title: waste.title || 'Produk organik',
+              details:
+                escapeHtml(waste.category || 'Organik') +
+                ' · ' +
+                Number(waste.stock || 0) +
+                ' ' +
+                translate('unit · ' + formatProductWeight(productWeightGrams(waste)) + '/unit'),
+            }) +
+            '</td><td>' +
             escapeHtml(
               waste.store?.name || waste.seller?.name || waste.seller?.email || 'Penjual',
             ) +
             '</td><td>' +
-            translate(`${formatRupiah(waste.price)} / unit`) +
+            translate(formatRupiah(waste.price) + ' / unit') +
             '</td><td><button type="button" class="ad-action danger" data-admin-delete="' +
             escapeHtml(waste.id) +
             '">Hapus</button></td></tr>',
@@ -306,11 +309,13 @@ function renderPanel(currentUser) {
     adminData.orders
       .map(
         (order) =>
-          '<tr><td><strong>' +
-          escapeHtml(order.waste?.title || 'Produk organik') +
-          '</strong><small>' +
-          Number(order.quantity || 0) +
-          ' unit</small></td><td>' +
+          '<tr><td>' +
+          renderAdminProductCell({
+            image: order.waste?.image,
+            title: order.waste?.title || 'Produk organik',
+            details: Number(order.quantity || 0) + ' unit',
+          }) +
+          '</td><td>' +
           escapeHtml(order.buyer?.name || order.buyer?.email || 'Pembeli') +
           '</td><td><span class="ad-status">' +
           escapeHtml(order.status || 'pending') +
@@ -320,6 +325,20 @@ function renderPanel(currentUser) {
       )
       .join('') +
     '</tbody></table></div>'
+  );
+}
+
+function renderAdminProductCell({ image, title, details }) {
+  const fallback = './assets/landing-food-demo.jpg';
+  const source = escapeHtml(image || fallback);
+  return (
+    '<div class="ad-product-cell"><img src="' +
+    source +
+    '" alt="" loading="lazy" onerror="this.onerror=null;this.src=\'./assets/landing-food-demo.jpg\'"><span><strong>' +
+    escapeHtml(title) +
+    '</strong><small>' +
+    details +
+    '</small></span></div>'
   );
 }
 

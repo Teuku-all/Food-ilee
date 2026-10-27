@@ -217,6 +217,31 @@ body > dialog :is(button, input, select, textarea, a):focus-visible {
 #app .ad-table-wrap table {
   font-size: 13px;
 }
+#app .ad-product-cell {
+  display: flex;
+  align-items: center;
+  min-width: 210px;
+  gap: 12px;
+}
+#app .ad-product-cell img {
+  display: block;
+  width: 54px;
+  height: 54px;
+  flex: none;
+  border: 1px solid #dce5d9;
+  border-radius: 10px;
+  background: #edf2e8;
+  object-fit: cover;
+}
+#app .ad-product-cell > span {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+#app .ad-product-cell strong,
+#app .ad-product-cell small {
+  white-space: normal;
+}
 #app .ad-table-wrap th {
   padding-block: 15px;
   color: #52664f;
