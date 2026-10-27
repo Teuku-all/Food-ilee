@@ -732,3 +732,15 @@
     padding-inline: 15px;
   }
 }
+
+@media (max-width: 768px) {
+  #app .ai-chat {
+    min-height: 480px;
+  }
+  #app .ai-messages {
+    min-height: 300px;
+  }
+  #app .ai-welcome {
+    min-height: 260px;
+  }
+}

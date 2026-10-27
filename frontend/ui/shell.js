@@ -21,6 +21,59 @@ let mobileNavObserver;
 let mobileNavAnimation;
 let mobileNavActiveCenter;
 let mobileNavResizeBound = false;
+let desktopNavGeometry;
+
+function updateDesktopNavIndicator(nav, { animate = true } = {}) {
+  const desktop = window.matchMedia('(min-width: 769px)').matches;
+  const active = nav?.querySelector('.fi-nav-link[aria-current], .fi-nav-link.is-active');
+  if (!desktop || nav?.closest('.landing-nav') || !active) {
+    nav?.querySelector(':scope > .fi-nav-indicator')?.remove();
+    nav?.classList.remove('has-active-indicator');
+    desktopNavGeometry = undefined;
+    return;
+  }
+
+  let indicator = nav.querySelector(':scope > .fi-nav-indicator');
+  if (!indicator) {
+    indicator = document.createElement('span');
+    indicator.className = 'fi-nav-indicator';
+    indicator.setAttribute('aria-hidden', 'true');
+    nav.append(indicator);
+  }
+  nav.classList.add('has-active-indicator');
+
+  const target = {
+    x: active.offsetLeft,
+    y: active.offsetTop,
+    width: active.offsetWidth,
+    height: active.offsetHeight,
+  };
+  const previous = desktopNavGeometry;
+  const moved =
+    previous &&
+    (Math.abs(previous.x - target.x) > 1 || Math.abs(previous.width - target.width) > 1);
+  const setGeometry = (geometry) => {
+    indicator.style.setProperty('--fi-nav-x', `${geometry.x}px`);
+    indicator.style.setProperty('--fi-nav-y', `${geometry.y}px`);
+    indicator.style.setProperty('--fi-nav-width', `${geometry.width}px`);
+    indicator.style.setProperty('--fi-nav-height', `${geometry.height}px`);
+  };
+
+  if (animate && moved && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    setGeometry(previous);
+    indicator.classList.add('is-ready');
+    requestAnimationFrame(() => {
+      if (nav.isConnected && indicator.isConnected) requestAnimationFrame(() => setGeometry(target));
+    });
+  } else {
+    indicator.classList.remove('is-ready');
+    setGeometry(target);
+    requestAnimationFrame(() => {
+      if (nav.isConnected && indicator.isConnected) indicator.classList.add('is-ready');
+    });
+  }
+  desktopNavGeometry = target;
+}
 
 function animateMobileNavSelection(dock) {
   if (!window.matchMedia('(max-width: 768px)').matches) {
@@ -268,6 +321,8 @@ export function bindMobileNav() {
     return;
   }
   const dock = source.cloneNode(true);
+  dock.querySelector(':scope > .fi-nav-indicator')?.remove();
+  dock.classList.remove('has-active-indicator');
   dock.classList.add('fi-mobile-nav');
   dock.setAttribute('aria-label', 'Navigasi utama mobile');
   if (source.closest('.landing-nav')) {
@@ -278,6 +333,10 @@ export function bindMobileNav() {
     home.setAttribute('aria-current', 'location');
   }
   app.append(dock);
+  updateDesktopNavIndicator(source);
+  requestAnimationFrame(() => {
+    if (source.isConnected) updateDesktopNavIndicator(source, { animate: false });
+  });
   app.querySelectorAll('.fi-header .fi-nav-link, .fi-mobile-nav .fi-nav-link').forEach((link) => {
     const label = link.querySelector('span')?.textContent.trim();
     if (label) link.setAttribute('aria-label', label);
@@ -296,6 +355,9 @@ export function bindMobileNav() {
         const active = document.querySelector('#app > .fi-mobile-nav .fi-nav-link[aria-current]');
         const bounds = active?.getBoundingClientRect();
         mobileNavActiveCenter = bounds ? bounds.left + bounds.width / 2 : undefined;
+        updateDesktopNavIndicator(document.querySelector('#app .fi-header .fi-nav'), {
+          animate: false,
+        });
       },
       { passive: true },
     );

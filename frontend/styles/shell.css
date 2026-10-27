@@ -132,6 +132,44 @@ body {
   box-shadow: 0 5px 15px #051f2038;
   transform: translateY(-1px);
 }
+@media (min-width: 769px) {
+  #app .fi-header .fi-nav.has-active-indicator {
+    position: relative;
+    isolation: isolate;
+  }
+  #app .fi-header .fi-nav-indicator {
+    position: absolute;
+    z-index: 0;
+    top: 0;
+    left: 0;
+    width: var(--fi-nav-width, 0px);
+    height: var(--fi-nav-height, 38px);
+    border-radius: 10px;
+    background: #e4eadb;
+    box-shadow: 0 5px 14px #051f2014, inset 0 1px #ffffffb8;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate3d(var(--fi-nav-x, 0px), var(--fi-nav-y, 0px), 0);
+    transition:
+      transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+      width 360ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 160ms ease;
+    will-change: transform, width;
+  }
+  #app .fi-header .fi-nav-indicator.is-ready {
+    opacity: 1;
+  }
+  #app .fi-header .fi-nav.has-active-indicator > .fi-nav-link {
+    position: relative;
+    z-index: 1;
+  }
+  #app .fi-header .fi-nav.has-active-indicator .fi-nav-link:is(.is-active, [aria-current]) {
+    background: transparent;
+    box-shadow: none;
+    color: #244638;
+    transform: none;
+  }
+}
 .fi-header-actions {
   display: flex;
   align-items: center;
@@ -864,6 +902,10 @@ body {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .fi-nav-indicator {
+    transition: none !important;
+    will-change: auto;
+  }
   .fi-account-menu.open {
     animation: none !important;
   }
