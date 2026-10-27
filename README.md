@@ -1,6 +1,6 @@
 # Food Ilee
 
-Marketplace pengelolaan limbah makanan. Food Ilee menghubungkan toko (penjual) dengan pembeli agar limbah makanan yang masih bernilai guna dapat dimanfaatkan kembali, lengkap dengan pembayaran online, pengiriman kurir, chat real-time, dan asisten AI.
+Food Ilee adalah marketplace sirkular yang menghubungkan penjual dan pembeli untuk memanfaatkan kembali limbah pangan yang masih bernilai. Aplikasi ini menyediakan pengelolaan toko dan produk, checkout dengan pilihan pengiriman dan pembayaran, chat, serta asisten AI.
 
 Repositori: https://github.com/Teuku-all/Food-ilee
 
@@ -16,6 +16,9 @@ Repositori: https://github.com/Teuku-all/Food-ilee
 - **Ulasan produk dan notifikasi.**
 - **Panel admin:** pantau pengguna, produk, pesanan, dan analitik; blokir pengguna.
 - **Antarmuka dua bahasa:** Indonesia dan Inggris.
+- **Tampilan responsif:** halaman menyesuaikan perangkat desktop dan mobile, dengan navbar desktop yang menandai halaman aktif dan navbar mobile berbentuk dock ikon yang tetap di viewport saat halaman discroll.
+- **Transisi antarmuka:** animasi untuk perpindahan login dan registrasi, tampilan setelah login, serta navigasi; animasi mengikuti preferensi `prefers-reduced-motion` perangkat.
+- **Panel tabel:** bayangan membantu membedakan area pengelolaan data dari latar halaman.
 
 ## Tech Stack
 
@@ -40,33 +43,35 @@ Repositori: https://github.com/Teuku-all/Food-ilee
 
 ```text
 .
-├── backend/
-│   ├── prisma/              # Skema Prisma dan migrasi database
-│   └── src/
-│       ├── config/          # Prisma, Cloudinary, Midtrans, Multer
-│       ├── controllers/     # Penanganan request HTTP
-│       ├── middlewares/     # Auth, admin, upload, validasi, error
-│       ├── routes/          # Endpoint /api/*
-│       ├── services/        # Logika bisnis dan akses data
-│       ├── validations/     # Skema Joi
-│       ├── app.js           # Aplikasi Express (diekspor ke Vercel)
-│       └── server.js        # HTTP server + Socket.IO (lokal)
-├── frontend/
-│   ├── pages/               # Renderer halaman, satu folder per rute
-│   ├── services/            # Klien API dan realtime
-│   ├── ui/                  # Komponen antarmuka bersama (shell, onboarding, ikon)
-│   ├── utils/               # Utilitas: i18n, markdown, peta, penyimpanan
-│   ├── styles/              # Stylesheet
-│   ├── assets/              # Aset aplikasi (logo, gambar)
-│   ├── scripts/             # Build dan uji
-│   ├── app.js               # Router hash dan guard autentikasi
-│   └── server.js            # Static file server lokal
-├── docs/
-│   ├── checkout.md          # Alur checkout, pengiriman, dan pembayaran
-│   ├── design-references.md # Riset dan arah desain
-│   ├── ui-review-2026-10-25.md
-│   └── reference/           # Tangkapan layar referensi dan audit UI
-└── package.json             # Skrip orkestrasi dan Prettier
+|-- backend/
+|   |-- prisma/              # Skema Prisma dan migrasi database
+|   `-- src/
+|       |-- config/          # Prisma, Cloudinary, Midtrans, Multer
+|       |-- controllers/     # Penanganan request HTTP
+|       |-- middlewares/     # Auth, admin, upload, validasi, error
+|       |-- routes/          # Endpoint /api/*
+|       |-- services/        # Logika bisnis dan akses data
+|       |-- validations/     # Skema Joi
+|       |-- app.js           # Aplikasi Express (diekspor ke Vercel)
+|       `-- server.js        # HTTP server + Socket.IO (lokal)
+|-- frontend/
+|   |-- pages/               # Renderer halaman, satu folder per rute
+|   |-- services/            # Klien API dan realtime
+|   |-- ui/                  # Komponen antarmuka bersama (shell, onboarding, ikon)
+|   |-- utils/               # Utilitas: i18n, markdown, peta, penyimpanan
+|   |-- styles/              # Style bersama dan stylesheet per halaman
+|   |-- assets/              # Aset aplikasi (logo, gambar)
+|   |-- scripts/             # Build dan uji
+|   |-- app.js               # Router hash dan guard autentikasi
+|   `-- server.js            # Static file server lokal
+|-- docs/
+|   |-- checkout.md          # Alur checkout, pengiriman, dan pembayaran
+|   |-- design-references.md # Riset dan arah desain
+|   |-- frontend-ui.md       # Panduan komponen dan interaksi UI
+|   |-- ui-review-2026-10-25.md
+|   |-- ui-review-2026-10-26.md
+|   `-- reference/           # Tangkapan layar referensi dan audit UI
+`-- package.json             # Skrip orkestrasi dan Prettier
 ```
 
 Nama folder dan berkas halaman memakai bahasa Inggris, sedangkan hash rute tetap
