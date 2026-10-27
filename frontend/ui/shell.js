@@ -42,11 +42,13 @@ function updateDesktopNavIndicator(nav, { animate = true } = {}) {
   }
   nav.classList.add('has-active-indicator');
 
+  const navBounds = nav.getBoundingClientRect();
+  const activeBounds = active.getBoundingClientRect();
   const target = {
-    x: active.offsetLeft,
-    y: active.offsetTop,
-    width: active.offsetWidth,
-    height: active.offsetHeight,
+    x: activeBounds.left - navBounds.left,
+    y: activeBounds.top - navBounds.top,
+    width: activeBounds.width,
+    height: activeBounds.height,
   };
   const previous = desktopNavGeometry;
   const moved =
@@ -220,7 +222,6 @@ export function injectShellStyles() {
 }
 export function bindShell(version = shellRenderVersion) {
   bindHeaderScroll();
-  bindMobileNav();
   syncStoreNavigation(version);
   updateCartBadge();
   if (!document.documentElement.dataset.fiCartBound) {
@@ -277,6 +278,7 @@ export function bindShell(version = shellRenderVersion) {
     });
   }
   applyTranslations(document.getElementById('app'), getLanguage());
+  bindMobileNav();
   hydrateAccount(version);
 }
 
@@ -334,9 +336,6 @@ export function bindMobileNav() {
   }
   app.append(dock);
   updateDesktopNavIndicator(source);
-  requestAnimationFrame(() => {
-    if (source.isConnected) updateDesktopNavIndicator(source, { animate: false });
-  });
   app.querySelectorAll('.fi-header .fi-nav-link, .fi-mobile-nav .fi-nav-link').forEach((link) => {
     const label = link.querySelector('span')?.textContent.trim();
     if (label) link.setAttribute('aria-label', label);
