@@ -73,7 +73,12 @@ async function router(route = location.hash || '#beranda') {
     });
     return;
   }
-  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  const authMode = route === '#login' ? 'login' : route === '#daftar' ? 'register' : null;
+  const switchingAuthInPlace =
+    authMode && document.querySelector('.auth-page')?.dataset.authMode === authMode;
+  if (!switchingAuthInPlace) {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }
   document.querySelectorAll('dialog').forEach((dialog) => {
     if (dialog.open) dialog.close();
     dialog.remove();

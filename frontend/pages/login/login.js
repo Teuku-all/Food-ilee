@@ -32,11 +32,11 @@ export function renderLogin(initialMode = 'login') {
     app.innerHTML = `
     <main class="auth-page ${initialMode === 'register' ? 'register-page' : 'login-page'} auth-enter" data-auth-mode="${initialMode}">
       <section class="auth-hero" aria-label="Tentang Food Ilee">
-        <a class="auth-brand" href="#" aria-label="Food Ilee">${brandImage()}</a>
+        <div class="auth-hero-header"><a class="auth-brand" href="#" aria-label="Food Ilee">${brandImage()}</a>${languagePicker()}</div>
         <div class="auth-hero-copy"><p class="auth-kicker">PANGAN LEBIH BAIK, BUMI LEBIH SEHAT</p><h1>Membangun Masa<br>Depan Sirkular.</h1><p>Bersama Food Ilee, setiap langkah kecil Anda dalam pengelolaan limbah berkontribusi pada ekosistem pangan yang lebih cerdas dan hijau.</p><div class="auth-community"><span class="auth-community-icon">${icon('community')}</span><span>Dipercaya komunitas pangan berkelanjutan</span></div></div>
         <span class="auth-hero-caption">Dari sisa menjadi sumber daya.</span>
       </section>
-      <section class="auth-panel">${languagePicker()}<div class="auth-form-wrap" id="auth-form-wrap"></div><p class="auth-copyright">© 2026 Food Ilee · Memberdayakan sirkularitas untuk Indonesia.</p></section>
+      <section class="auth-panel"><div class="auth-form-wrap" id="auth-form-wrap"></div><p class="auth-copyright">© 2026 Food Ilee · Memberdayakan sirkularitas untuk Indonesia.</p></section>
     </main>`;
     injectStyle();
     renderAuthForm(nextAuthMessage);
@@ -54,9 +54,10 @@ function renderAuthForm(message = '') {
   }
   const registering = mode === 'register';
   wrap.innerHTML = `
+    <div class="auth-form-content">
     <a class="auth-wordmark" href="#" aria-label="Food Ilee">${brandImage({ tone: 'dark' })}</a>
     <p class="auth-overline">${registering ? 'MULAI PERJALANAN ANDA' : 'SELAMAT DATANG KEMBALI'}</p>
-    <h2>${registering ? 'Buat akun Anda' : 'Masuk ke akun Anda'}</h2>
+    <h2 tabindex="-1">${registering ? 'Buat akun Anda' : 'Masuk ke akun Anda'}</h2>
     <p class="auth-intro">${registering ? 'Bergabung untuk mengubah limbah pangan menjadi peluang.' : 'Masuk untuk melanjutkan perjalanan ekonomi sirkular Anda.'}</p>
     ${message ? `<div class="auth-message" role="status">${escapeHtml(message)}</div>` : ''}
     <form class="auth-form" id="auth-form">
@@ -69,71 +70,12 @@ function renderAuthForm(message = '') {
     </form>
     <div class="auth-divider"><span>${registering ? 'ATAU DAFTAR DENGAN' : 'ATAU MASUK DENGAN'}</span></div>
     <div class="auth-google is-loading" id="auth-google" aria-live="polite">Memuat Google Sign-In…</div>
-    <p class="auth-switch">${registering ? 'Sudah punya akun?' : 'Belum punya akun?'} <button type="button" id="auth-switch">${registering ? 'Masuk' : 'Daftar Sekarang'}</button></p>`;
+    <p class="auth-switch">${registering ? 'Sudah punya akun?' : 'Belum punya akun?'} <button type="button" id="auth-switch">${registering ? 'Masuk' : 'Daftar Sekarang'}</button></p>
+    </div>`;
 
   document.getElementById('auth-form').addEventListener('submit', submitAuth);
   document.getElementById('auth-switch').addEventListener('click', () => {
-    if (authModeSwitching) return;
-    const nextMode = registering ? 'login' : 'register';
-    const nextRoute = nextMode === 'register' ? '#daftar' : '#login';
-    const page = document.querySelector('.auth-page');
-    if (!page) {
-      location.hash = nextRoute;
-      return;
-    }
-
-    authModeSwitching = true;
-    const switchRevision = ++authSwitchRevision;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const startHeight = page.getBoundingClientRect().height;
-    const isCurrentSwitch = () =>
-      switchRevision === authSwitchRevision &&
-      page.isConnected &&
-      page.dataset.authMode === nextMode;
-    page.classList.remove('auth-enter');
-    if (!reduceMotion) page.style.height = `${startHeight}px`;
-    page.dataset.authMode = nextMode;
-    page.classList.toggle('register-page', nextMode === 'register');
-    page.classList.toggle('login-page', nextMode === 'login');
-    page.classList.add('auth-switching');
-    page.classList.toggle('auth-switch-to-register', nextMode === 'register');
-    page.classList.toggle('auth-switch-to-login', nextMode === 'login');
-    mode = nextMode;
-    location.hash = nextRoute;
-
-    const wrap = page.querySelector('.auth-form-wrap');
-    if (!wrap || reduceMotion) {
-      renderAuthForm();
-      page.classList.remove('auth-switching', 'auth-switch-to-register', 'auth-switch-to-login');
-      page.style.removeProperty('height');
-      authModeSwitching = false;
-      return;
-    }
-
-    wrap.classList.remove('auth-content-entering');
-    wrap.classList.add('auth-content-leaving');
-    window.setTimeout(() => {
-      if (!isCurrentSwitch()) return;
-      renderAuthForm();
-      wrap.classList.remove('auth-content-leaving');
-      wrap.classList.add('auth-content-entering');
-      page.style.height = 'auto';
-      const targetHeight = Math.ceil(page.getBoundingClientRect().height);
-      page.style.height = `${startHeight}px`;
-      page.getBoundingClientRect();
-      window.requestAnimationFrame(() => {
-        if (isCurrentSwitch()) page.style.height = `${targetHeight}px`;
-      });
-      window.setTimeout(() => {
-        if (isCurrentSwitch()) wrap.classList.remove('auth-content-entering');
-      }, 440);
-    }, 140);
-    window.setTimeout(() => {
-      if (!isCurrentSwitch()) return;
-      page.classList.remove('auth-switching', 'auth-switch-to-register', 'auth-switch-to-login');
-      page.style.removeProperty('height');
-      authModeSwitching = false;
-    }, 700);
+    switchAuthMode(registering ? 'login' : 'register');
   });
   document.getElementById('auth-toggle-password').addEventListener('click', (event) => {
     const input = document.getElementById('auth-password');
@@ -150,6 +92,118 @@ function renderAuthForm(message = '') {
     renderAuthForm();
   });
   configureGoogleButton(registering);
+}
+
+async function switchAuthMode(nextMode) {
+  if (authModeSwitching) return;
+  const page = document.querySelector('.auth-page');
+  const wrap = page?.querySelector('.auth-form-wrap');
+  if (!wrap) return;
+
+  authModeSwitching = true;
+  const revision = ++authSwitchRevision;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const mobile = window.matchMedia('(max-width: 900px)').matches;
+  const isCurrent = () => revision === authSwitchRevision && page.isConnected;
+  const startHeight = page.getBoundingClientRect().height;
+  const startCardHeight = wrap.getBoundingClientRect().height;
+  const animations = [];
+  let scrollGuard;
+  let resized = false;
+  const stopOnResize = () => {
+    resized = true;
+    animations.forEach((animation) => animation.cancel());
+  };
+  const showNextForm = () => {
+    page.classList.toggle('register-page', nextMode === 'register');
+    page.classList.toggle('login-page', nextMode === 'login');
+    renderAuthForm();
+  };
+
+  // The route drives the slider immediately; form styles change only while hidden.
+  page.classList.add('auth-switching');
+  page.setAttribute('aria-busy', 'true');
+  wrap.inert = true;
+  if (!reduceMotion) page.style.height = `${startHeight}px`;
+  page.dataset.authMode = nextMode;
+  mode = nextMode;
+  location.hash = nextMode === 'register' ? '#daftar' : '#login';
+
+  const formTop = Math.max(0, wrap.getBoundingClientRect().top + window.scrollY - 20);
+  if (mobile && window.scrollY > formTop) {
+    window.scrollTo({ top: formTop, behavior: reduceMotion ? 'instant' : 'smooth' });
+  }
+
+  window.addEventListener('resize', stopOnResize, { once: true });
+  try {
+    if (reduceMotion) {
+      showNextForm();
+    } else {
+      const outgoingContent = mobile ? wrap.querySelector('.auth-form-content') : wrap;
+      const current = getComputedStyle(outgoingContent);
+      const leaving = outgoingContent.animate(
+        [
+          { opacity: current.opacity, transform: current.transform },
+          { opacity: 0, transform: 'translateY(-8px)' },
+        ],
+        { duration: 160, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' },
+      );
+      animations.push(leaving);
+      const sliding = [
+        ...page.querySelectorAll(':scope > .auth-hero, :scope > .auth-panel'),
+      ].flatMap((panel) => panel.getAnimations());
+      animations.push(...sliding);
+      await leaving.finished.catch(() => {});
+      if (!isCurrent()) return;
+      showNextForm();
+
+      if (!resized) {
+        // Preserve the scroll range while measuring the shorter form's natural size.
+        scrollGuard = document.createElement('div');
+        scrollGuard.style.height = `${startHeight}px`;
+        scrollGuard.setAttribute('aria-hidden', 'true');
+        page.after(scrollGuard);
+        page.style.height = 'auto';
+        const resizingElement = mobile ? wrap : page;
+        const targetHeight = resizingElement.getBoundingClientRect().height;
+        const resizing = resizingElement.animate(
+          [
+            { height: `${mobile ? startCardHeight : startHeight}px` },
+            { height: `${targetHeight}px` },
+          ],
+          { duration: 440, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'both' },
+        );
+        const incomingContent = mobile ? wrap.querySelector('.auth-form-content') : wrap;
+        const entering = incomingContent.animate(
+          [
+            { opacity: 0, transform: 'translateY(10px)' },
+            { opacity: 1, transform: 'translateY(0)' },
+          ],
+          { duration: 400, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'both' },
+        );
+        animations.push(resizing, entering);
+        leaving.cancel();
+        scrollGuard.remove();
+        await Promise.allSettled([
+          resizing.finished,
+          entering.finished,
+          ...sliding.map((a) => a.finished),
+        ]);
+      }
+    }
+  } finally {
+    window.removeEventListener('resize', stopOnResize);
+    scrollGuard?.remove();
+    animations.forEach((animation) => animation.cancel());
+    page.style.removeProperty('height');
+    page.classList.remove('auth-enter', 'auth-switching');
+    page.removeAttribute('aria-busy');
+    wrap.inert = false;
+    if (isCurrent()) {
+      authModeSwitching = false;
+      wrap.querySelector('h2')?.focus({ preventScroll: true });
+    }
+  }
 }
 
 // Keep the user's entries intact when a request needs to be retried.
