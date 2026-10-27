@@ -19,12 +19,16 @@ let marketplaceArrivalRevision = 0;
 let authModeSwitching = false;
 
 export function renderLogin(initialMode = 'login') {
-  mode = initialMode;
   const app = document.getElementById('app');
+  if (app.querySelector('.auth-page')?.dataset.authMode === initialMode) {
+    mode = initialMode;
+    return;
+  }
+  mode = initialMode;
   const switching = Boolean(app.querySelector('.auth-page'));
   const renderPage = () => {
     app.innerHTML = `
-    <main class="auth-page ${initialMode === 'register' ? 'register-page' : ''} ${switching ? `auth-switching auth-switch-enter-${initialMode}` : 'auth-enter'}">
+    <main class="auth-page ${initialMode === 'register' ? 'register-page' : 'login-page'} ${switching ? 'auth-switching' : 'auth-enter'}" data-auth-mode="${initialMode}">
       <section class="auth-hero" aria-label="Tentang Food Ilee">
         <a class="auth-brand" href="#" aria-label="Food Ilee">${brandLogo()}</a>
         <div class="auth-hero-copy"><p class="auth-kicker">PANGAN LEBIH BAIK, BUMI LEBIH SEHAT</p><h1>Membangun Masa<br>Depan Sirkular.</h1><p>Bersama Food Ilee, setiap langkah kecil Anda dalam pengelolaan limbah berkontribusi pada ekosistem pangan yang lebih cerdas dan hijau.</p><div class="auth-community"><span class="auth-community-icon">${icon('community')}</span><span>Dipercaya komunitas pangan berkelanjutan</span></div></div>
@@ -68,23 +72,48 @@ function renderAuthForm(message = '') {
   document.getElementById('auth-form').addEventListener('submit', submitAuth);
   document.getElementById('auth-switch').addEventListener('click', () => {
     if (authModeSwitching) return;
-    const nextRoute = registering ? '#login' : '#daftar';
+    const nextMode = registering ? 'login' : 'register';
+    const nextRoute = nextMode === 'register' ? '#daftar' : '#login';
     const page = document.querySelector('.auth-page');
-    if (
-      !page ||
-      !page.animate ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
+    if (!page) {
       location.hash = nextRoute;
       return;
     }
 
     authModeSwitching = true;
-    page.classList.add(registering ? 'auth-leave-to-login' : 'auth-leave-to-register');
-    window.setTimeout(() => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    page.classList.remove('auth-enter');
+    page.dataset.authMode = nextMode;
+    page.classList.toggle('register-page', nextMode === 'register');
+    page.classList.toggle('login-page', nextMode === 'login');
+    page.classList.add('auth-switching');
+    page.classList.toggle('auth-switch-to-register', nextMode === 'register');
+    page.classList.toggle('auth-switch-to-login', nextMode === 'login');
+    mode = nextMode;
+    location.hash = nextRoute;
+
+    const wrap = page.querySelector('.auth-form-wrap');
+    if (!wrap || reduceMotion) {
+      renderAuthForm();
+      page.classList.remove('auth-switching', 'auth-switch-to-register', 'auth-switch-to-login');
       authModeSwitching = false;
-      location.hash = nextRoute;
-    }, 210);
+      return;
+    }
+
+    wrap.classList.remove('auth-content-entering');
+    wrap.classList.add('auth-content-leaving');
+    window.setTimeout(() => {
+      renderAuthForm();
+      wrap.classList.remove('auth-content-leaving');
+      wrap.classList.add('auth-content-entering');
+      window.setTimeout(() => {
+        wrap.classList.remove('auth-content-entering');
+      }, 480);
+    }, 170);
+    window.setTimeout(() => {
+      page.classList.remove('auth-switching', 'auth-switch-to-register', 'auth-switch-to-login');
+      authModeSwitching = false;
+    }, 760);
   });
   document.getElementById('auth-toggle-password').addEventListener('click', (event) => {
     const input = document.getElementById('auth-password');

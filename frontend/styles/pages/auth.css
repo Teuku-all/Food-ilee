@@ -936,58 +936,68 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* The hero and form slide in opposite directions like the double-slider reference. */
-.auth-page.auth-leave-to-register .auth-hero-copy {
-  animation: auth-hero-slide-out 190ms cubic-bezier(0.65, 0, 0.35, 1) both;
+/* A double-slider card: the hero and form travel across each other on desktop. */
+.auth-page {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border-radius: 26px;
+  background: #f5f8f5;
 }
-.auth-page.auth-leave-to-register .auth-form-wrap {
-  animation: auth-form-slide-out 190ms cubic-bezier(0.65, 0, 0.35, 1) both;
+.auth-page > .auth-hero,
+.auth-page > .auth-panel {
+  grid-row: 1;
+  min-width: 0;
+  transition: transform 720ms cubic-bezier(0.77, 0, 0.175, 1);
+  will-change: transform;
 }
-.auth-page.auth-leave-to-login .auth-hero-copy {
-  animation: auth-hero-slide-out-right 190ms cubic-bezier(0.65, 0, 0.35, 1) both;
+.auth-page > .auth-hero {
+  grid-column: 1;
+  z-index: 2;
+  border-radius: 26px 0 0 26px;
 }
-.auth-page.auth-leave-to-login .auth-form-wrap {
-  animation: auth-form-slide-out-left 190ms cubic-bezier(0.65, 0, 0.35, 1) both;
+.auth-page > .auth-panel {
+  grid-column: 2;
+  z-index: 1;
+  border-radius: 0 26px 26px 0;
 }
-.auth-page.auth-switch-enter-register .auth-hero-copy {
-  animation: auth-hero-slide-in 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+.auth-page.login-page > .auth-hero {
+  transform: translateX(100%);
 }
-.auth-page.auth-switch-enter-register .auth-form-wrap {
-  animation: auth-form-slide-in 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+.auth-page.login-page > .auth-panel {
+  transform: translateX(-100%);
 }
-.auth-page.auth-switch-enter-login .auth-hero-copy {
-  animation: auth-hero-slide-in-left 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+.auth-page.register-page {
+  padding: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: stretch;
+  justify-content: stretch;
+  gap: 0;
 }
-.auth-page.auth-switch-enter-login .auth-form-wrap {
-  animation: auth-form-slide-in-right 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+.auth-page.register-page > .auth-hero,
+.auth-page.login-page > .auth-panel {
+  border-radius: 26px 0 0 26px;
 }
-@keyframes auth-hero-slide-out {
-  to { opacity: 0; transform: translateX(-36px); }
+.auth-page.register-page > .auth-panel,
+.auth-page.login-page > .auth-hero {
+  border-radius: 0 26px 26px 0;
 }
-@keyframes auth-hero-slide-in {
-  from { opacity: 0; transform: translateX(36px); }
-  to { opacity: 1; transform: translateX(0); }
+.auth-page.auth-switching .auth-form-wrap.auth-content-leaving {
+  animation: auth-form-content-out 150ms ease-in both;
 }
-@keyframes auth-form-slide-out {
-  to { opacity: 0; transform: translateX(36px); }
+.auth-page.auth-switching .auth-form-wrap.auth-content-entering {
+  animation: auth-form-content-in 430ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-@keyframes auth-form-slide-in {
-  from { opacity: 0; transform: translateX(-36px); }
-  to { opacity: 1; transform: translateX(0); }
+@keyframes auth-form-content-out {
+  to { opacity: 0; transform: translateY(12px); }
 }
-@keyframes auth-hero-slide-out-right {
-  to { opacity: 0; transform: translateX(36px); }
-}
-@keyframes auth-hero-slide-in-left {
-  from { opacity: 0; transform: translateX(-36px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-@keyframes auth-form-slide-out-left {
-  to { opacity: 0; transform: translateX(-36px); }
-}
-@keyframes auth-form-slide-in-right {
-  from { opacity: 0; transform: translateX(36px); }
-  to { opacity: 1; transform: translateX(0); }
+@keyframes auth-form-content-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* A successful sign-in covers the form before revealing the marketplace. */
@@ -1049,29 +1059,44 @@ body > .auth-success-transition.is-revealing > .auth-success-logo {
 }
 
 @media (max-width: 900px) {
-  .auth-page.auth-leave-to-register .auth-hero-copy {
-    animation-name: auth-hero-slide-out-mobile;
+  .auth-page,
+  .auth-page.register-page {
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    border-radius: 0;
+    grid-template-columns: 1fr;
   }
-  .auth-page.auth-leave-to-register .auth-form-wrap {
-    animation-name: auth-form-slide-out-mobile;
+  .auth-page > .auth-hero,
+  .auth-page > .auth-panel,
+  .auth-page.login-page > .auth-hero,
+  .auth-page.login-page > .auth-panel {
+    grid-column: auto;
+    grid-row: auto;
+    transform: none;
+    transition: none;
   }
-  .auth-page.auth-leave-to-login .auth-hero-copy {
-    animation-name: auth-hero-slide-out-mobile-reverse;
+  .auth-page.login-page > .auth-hero {
+    border-radius: 0 0 42% 16% / 0 0 11% 5%;
   }
-  .auth-page.auth-leave-to-login .auth-form-wrap {
-    animation-name: auth-form-slide-out-mobile-reverse;
+  .auth-page.login-page > .auth-panel {
+    min-height: 0;
+    border-radius: 0;
   }
-  .auth-page.auth-switch-enter-register .auth-hero-copy {
-    animation-name: auth-hero-slide-in-mobile;
+  .auth-page.auth-switching.auth-switch-to-register .auth-hero-copy {
+    animation: auth-hero-content-from-down 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
-  .auth-page.auth-switch-enter-register .auth-form-wrap {
-    animation-name: auth-form-slide-in-mobile;
+  .auth-page.auth-switching.auth-switch-to-login .auth-hero-copy {
+    animation: auth-hero-content-from-up 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
-  .auth-page.auth-switch-enter-login .auth-hero-copy {
-    animation-name: auth-hero-slide-in-mobile-reverse;
+  .auth-page.auth-switching.auth-switch-to-register .auth-form-wrap.auth-content-entering {
+    animation-name: auth-form-content-from-up;
   }
-  .auth-page.auth-switch-enter-login .auth-form-wrap {
-    animation-name: auth-form-slide-in-mobile-reverse;
+  .auth-page.auth-switching.auth-switch-to-login .auth-form-wrap.auth-content-entering {
+    animation-name: auth-form-content-from-down;
   }
   .auth-page .auth-hero {
     border-radius: 0 0 42% 16% / 0 0 11% 5%;
@@ -1080,32 +1105,20 @@ body > .auth-success-transition.is-revealing > .auth-success-logo {
     border-radius: 22px 22px 42% 16% / 22px 22px 11% 5%;
   }
 }
-@keyframes auth-hero-slide-out-mobile {
-  to { opacity: 0; transform: translateY(-24px); }
-}
-@keyframes auth-hero-slide-in-mobile {
-  from { opacity: 0; transform: translateY(24px); }
+@keyframes auth-hero-content-from-down {
+  from { opacity: 0; transform: translateY(26px); }
   to { opacity: 1; transform: translateY(0); }
 }
-@keyframes auth-form-slide-out-mobile {
-  to { opacity: 0; transform: translateY(24px); }
-}
-@keyframes auth-form-slide-in-mobile {
-  from { opacity: 0; transform: translateY(-24px); }
+@keyframes auth-hero-content-from-up {
+  from { opacity: 0; transform: translateY(-26px); }
   to { opacity: 1; transform: translateY(0); }
 }
-@keyframes auth-hero-slide-out-mobile-reverse {
-  to { opacity: 0; transform: translateY(24px); }
-}
-@keyframes auth-form-slide-out-mobile-reverse {
-  to { opacity: 0; transform: translateY(-24px); }
-}
-@keyframes auth-hero-slide-in-mobile-reverse {
-  from { opacity: 0; transform: translateY(-24px); }
+@keyframes auth-form-content-from-up {
+  from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
 }
-@keyframes auth-form-slide-in-mobile-reverse {
-  from { opacity: 0; transform: translateY(24px); }
+@keyframes auth-form-content-from-down {
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1120,15 +1133,14 @@ body > .auth-success-transition.is-revealing > .auth-success-logo {
   .auth-page.auth-enter .auth-form-wrap > * {
     animation: none;
   }
-  .auth-page.auth-leave-to-register .auth-hero-copy,
-  .auth-page.auth-leave-to-register .auth-form-wrap,
-  .auth-page.auth-leave-to-login .auth-hero-copy,
-  .auth-page.auth-leave-to-login .auth-form-wrap,
-  .auth-page.auth-switch-enter-login .auth-hero-copy,
-  .auth-page.auth-switch-enter-login .auth-form-wrap,
-  .auth-page.auth-switch-enter-register .auth-hero-copy,
-  .auth-page.auth-switch-enter-register .auth-form-wrap {
+  .auth-page.auth-switching .auth-hero-copy,
+  .auth-page.auth-switching .auth-content-leaving,
+  .auth-page.auth-switching .auth-content-entering {
     animation: none;
+  }
+  .auth-page > .auth-hero,
+  .auth-page > .auth-panel {
+    transition: none;
   }
   body > .auth-success-transition,
   body > .auth-success-transition > .auth-success-logo,
