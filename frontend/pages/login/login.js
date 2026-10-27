@@ -16,6 +16,7 @@ let googleIdentityScript;
 let nextAuthMessage = '';
 let enteringMarketplace = false;
 let marketplaceArrivalRevision = 0;
+let authModeSwitching = false;
 
 export function renderLogin(initialMode = 'login') {
   mode = initialMode;
@@ -23,7 +24,7 @@ export function renderLogin(initialMode = 'login') {
   const switching = Boolean(app.querySelector('.auth-page'));
   const renderPage = () => {
     app.innerHTML = `
-    <main class="auth-page ${initialMode === 'register' ? 'register-page' : ''} ${switching ? 'auth-switching' : 'auth-enter'}">
+    <main class="auth-page ${initialMode === 'register' ? 'register-page' : ''} ${switching ? `auth-switching auth-switch-enter-${initialMode}` : 'auth-enter'}">
       <section class="auth-hero" aria-label="Tentang Food Ilee">
         <a class="auth-brand" href="#" aria-label="Food Ilee">${brandLogo()}</a>
         <div class="auth-hero-copy"><p class="auth-kicker">PANGAN LEBIH BAIK, BUMI LEBIH SEHAT</p><h1>Membangun Masa<br>Depan Sirkular.</h1><p>Bersama Food Ilee, setiap langkah kecil Anda dalam pengelolaan limbah berkontribusi pada ekosistem pangan yang lebih cerdas dan hijau.</p><div class="auth-community"><span class="auth-community-icon">${icon('community')}</span><span>Dipercaya komunitas pangan berkelanjutan</span></div></div>
@@ -35,19 +36,7 @@ export function renderLogin(initialMode = 'login') {
     renderAuthForm(nextAuthMessage);
     nextAuthMessage = '';
   };
-
-  if (
-    switching &&
-    document.startViewTransition &&
-    !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  ) {
-    document.documentElement.dataset.authTransition = 'true';
-    const transition = document.startViewTransition(renderPage);
-    const clearTransition = () => delete document.documentElement.dataset.authTransition;
-    transition.finished.then(clearTransition, clearTransition);
-  } else {
-    renderPage();
-  }
+  renderPage();
 }
 
 function renderAuthForm(message = '') {
@@ -78,7 +67,24 @@ function renderAuthForm(message = '') {
 
   document.getElementById('auth-form').addEventListener('submit', submitAuth);
   document.getElementById('auth-switch').addEventListener('click', () => {
-    location.hash = registering ? '#login' : '#daftar';
+    if (authModeSwitching) return;
+    const nextRoute = registering ? '#login' : '#daftar';
+    const page = document.querySelector('.auth-page');
+    if (
+      !page ||
+      !page.animate ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      location.hash = nextRoute;
+      return;
+    }
+
+    authModeSwitching = true;
+    page.classList.add(registering ? 'auth-leave-to-login' : 'auth-leave-to-register');
+    window.setTimeout(() => {
+      authModeSwitching = false;
+      location.hash = nextRoute;
+    }, 210);
   });
   document.getElementById('auth-toggle-password').addEventListener('click', (event) => {
     const input = document.getElementById('auth-password');
