@@ -983,6 +983,9 @@
 .auth-page.auth-switching .auth-form-wrap.auth-content-leaving {
   animation: auth-form-content-out 130ms ease-in both;
 }
+.auth-page.auth-switching {
+  transition: height 480ms cubic-bezier(0.16, 1, 0.3, 1);
+}
 .auth-page.auth-switching .auth-form-wrap.auth-content-entering {
   animation: auth-form-content-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -1137,6 +1140,9 @@ body > .auth-success-transition.is-revealing > .auth-success-logo {
     overflow: visible;
     border-radius: 0;
     grid-template-columns: 1fr;
+  }
+  .auth-page.auth-switching {
+    overflow: hidden;
   }
   .auth-page > .auth-hero,
   .auth-page > .auth-panel,

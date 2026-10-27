@@ -85,11 +85,13 @@ function renderAuthForm(message = '') {
     authModeSwitching = true;
     const switchRevision = ++authSwitchRevision;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const startHeight = page.getBoundingClientRect().height;
     const isCurrentSwitch = () =>
       switchRevision === authSwitchRevision &&
       page.isConnected &&
       page.dataset.authMode === nextMode;
     page.classList.remove('auth-enter');
+    if (!reduceMotion) page.style.height = `${startHeight}px`;
     page.dataset.authMode = nextMode;
     page.classList.toggle('register-page', nextMode === 'register');
     page.classList.toggle('login-page', nextMode === 'login');
@@ -103,6 +105,7 @@ function renderAuthForm(message = '') {
     if (!wrap || reduceMotion) {
       renderAuthForm();
       page.classList.remove('auth-switching', 'auth-switch-to-register', 'auth-switch-to-login');
+      page.style.removeProperty('height');
       authModeSwitching = false;
       return;
     }
@@ -114,6 +117,13 @@ function renderAuthForm(message = '') {
       renderAuthForm();
       wrap.classList.remove('auth-content-leaving');
       wrap.classList.add('auth-content-entering');
+      page.style.height = 'auto';
+      const targetHeight = Math.ceil(page.getBoundingClientRect().height);
+      page.style.height = `${startHeight}px`;
+      page.getBoundingClientRect();
+      window.requestAnimationFrame(() => {
+        if (isCurrentSwitch()) page.style.height = `${targetHeight}px`;
+      });
       window.setTimeout(() => {
         if (isCurrentSwitch()) wrap.classList.remove('auth-content-entering');
       }, 440);
@@ -121,6 +131,7 @@ function renderAuthForm(message = '') {
     window.setTimeout(() => {
       if (!isCurrentSwitch()) return;
       page.classList.remove('auth-switching', 'auth-switch-to-register', 'auth-switch-to-login');
+      page.style.removeProperty('height');
       authModeSwitching = false;
     }, 700);
   });
