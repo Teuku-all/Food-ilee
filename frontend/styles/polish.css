@@ -513,8 +513,8 @@ body:has(> dialog[open]) {
     justify-self: center;
     width: max-content;
     max-width: 100%;
-    padding: 5px;
-    gap: 3px;
+    padding: 6px;
+    gap: 7px;
     border: 1px solid rgb(234 245 230 / 12%);
     border-radius: 999px;
     background: rgb(255 255 255 / 4%);
@@ -522,7 +522,7 @@ body:has(> dialog[open]) {
   }
   #app .fi-header:not(.landing-nav) .fi-nav-link {
     height: 42px;
-    padding: 0 14px;
+    padding: 0 16px;
     gap: 8px;
     border-radius: 999px;
     color: #cfddd1;
@@ -571,6 +571,21 @@ body:has(> dialog[open]) {
     box-shadow:
       0 3px 10px rgb(4 24 18 / 16%),
       inset 0 1px #fff;
+    transition:
+      background 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+  #app .fi-header:not(.landing-nav) .fi-nav.is-nav-moving .fi-nav-indicator {
+    border-color: rgb(218 236 218 / 34%);
+    background: linear-gradient(145deg, rgb(126 161 137 / 72%), rgb(84 128 100 / 78%));
+    box-shadow: 0 3px 10px rgb(4 24 18 / 10%);
+  }
+  #app
+    .fi-header:not(.landing-nav)
+    .fi-nav.has-active-indicator.is-nav-moving
+    .fi-nav-link:is(.is-active, [aria-current]) {
+    color: #f7fbf5;
   }
   #app .fi-header:not(.landing-nav) .fi-header-actions {
     gap: 10px;
@@ -670,9 +685,12 @@ body:has(> dialog[open]) {
     width: 144px;
   }
   #app .fi-header:not(.landing-nav) .fi-nav-link {
-    padding-inline: 10px;
+    padding-inline: 11px;
     gap: 6px;
     font-size: 11px;
+  }
+  #app .fi-header:not(.landing-nav) .fi-nav {
+    gap: 5px;
   }
   #app .fi-header:not(.landing-nav) .fi-account {
     width: 46px;

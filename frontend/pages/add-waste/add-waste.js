@@ -7,6 +7,7 @@ import { getToken } from '../../utils/storage.js';
 import { escapeHtml } from '../../utils/html.js';
 import { formatRupiah, renderShell, showToast } from '../../ui/shell.js';
 import { icon } from '../../ui/icons.js';
+import { storeSetupCard } from '../../ui/store-setup-card.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { translate } from '../../utils/i18n.js';
@@ -36,10 +37,7 @@ export async function renderAddWaste() {
     const storeResult = await getMyStore();
     if (!isRouteCurrent('#tambah-limbah', navigationRevision)) return;
     if (!storeResult.success || !storeResult.data) {
-      renderShell(
-        'add',
-        `<section class="wa-page"><div class="wa-store-required fi-card"><span aria-hidden="true">${icon('home')}</span><p class="wa-kicker">TOKO DIPERLUKAN</p><h1>Buat toko sebelum menjual produk</h1><p>Produk yang Anda unggah akan ditampilkan atas nama toko. Lengkapi toko terlebih dahulu untuk mulai menawarkan limbah organik.</p><a class="fi-button" href="#buat-toko">Buat toko <span>→</span></a></div></section>`,
-      );
+      renderShell('add', storeSetupCard());
       injectWasteStyles();
       return;
     }

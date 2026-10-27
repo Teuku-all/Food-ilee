@@ -7,6 +7,7 @@ import { escapeHtml } from '../../utils/html.js';
 import { formatRupiah, renderShell, showToast } from '../../ui/shell.js';
 import { renderStoreOverview } from './store-overview.js';
 import { icon } from '../../ui/icons.js';
+import { storeSetupCard } from '../../ui/store-setup-card.js';
 import { getNavigationRevision, isRouteCurrent } from '../../utils/navigation.js';
 import { skeleton } from '../../ui/skeleton.js';
 import { bindRegionAddress } from '../../utils/region-address.js';
@@ -46,10 +47,7 @@ export async function renderStore() {
     if (!storeResult.success) throw new Error(storeResult.message || 'Toko belum dapat dimuat.');
     const store = storeResult.data;
     if (!store) {
-      renderShell(
-        '',
-        `<section class="st-no-store fi-card"><div><p class="st-kicker">MULAI BERJUAL DI FOOD ILEE</p><h1>Buka ruang bagi produk Anda.</h1><p>Buat toko untuk menampilkan penawaran organik dan mulai menjangkau calon pemanfaat.</p><a class="fi-button" href="#buat-toko">Buat toko <span>→</span></a></div><span class="st-store-mark">${icon('store')}</span></section>`,
-      );
+      renderShell('', storeSetupCard());
       return;
     }
     const products = Array.isArray(wasteResult.data) ? wasteResult.data : store.products || [];

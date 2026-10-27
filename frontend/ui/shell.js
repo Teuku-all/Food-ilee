@@ -26,6 +26,7 @@ let desktopNavIndicator;
 let desktopNavAnimation;
 let desktopNavResizeObserver;
 let desktopNavObserved;
+let retainedDashboardHeader;
 
 function captureDesktopNavPosition() {
   const nav = desktopNavIndicator?.parentElement;
@@ -48,7 +49,7 @@ function updateDesktopNavIndicator(nav, { animate = true } = {}) {
     desktopNavResizeObserver?.disconnect();
     desktopNavObserved = undefined;
     nav?.querySelector(':scope > .fi-nav-indicator')?.remove();
-    nav?.classList.remove('has-active-indicator');
+    nav?.classList.remove('has-active-indicator', 'is-nav-moving');
     desktopNavGeometry = undefined;
     return;
   }
@@ -90,7 +91,8 @@ function updateDesktopNavIndicator(nav, { animate = true } = {}) {
   setGeometry(target);
   indicator.classList.add('is-ready');
   if (animate && moved && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    desktopNavAnimation = indicator.animate(
+    nav.classList.add('is-nav-moving');
+    const animation = indicator.animate(
       [previous, target].map((geometry) => ({
         transform: `translate3d(${geometry.x}px, ${geometry.y}px, 0)`,
         width: `${geometry.width}px`,
@@ -98,6 +100,16 @@ function updateDesktopNavIndicator(nav, { animate = true } = {}) {
       })),
       { duration: 460, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
     );
+    desktopNavAnimation = animation;
+    animation.finished
+      .catch(() => {})
+      .finally(() => {
+        if (desktopNavAnimation !== animation) return;
+        desktopNavAnimation = undefined;
+        nav.classList.remove('is-nav-moving');
+      });
+  } else {
+    nav.classList.remove('is-nav-moving');
   }
   desktopNavGeometry = target;
 
@@ -147,6 +159,11 @@ function animateMobileNavSelection(dock) {
 
 export function dashboardHeader(active = '') {
   captureDesktopNavPosition();
+  const currentHeader = document.querySelector('#app .fi-header:not(.landing-nav)');
+  if (currentHeader?.isConnected) {
+    retainedDashboardHeader = currentHeader;
+    currentHeader.remove();
+  }
   const currentRoute = location.hash || '#marketplace';
   const storeAvailable = Boolean(getCachedStore());
   const navLinks = storeAvailable ? [...links, ['Kelola Toko', '#kelola-toko', 'store']] : links;
@@ -261,6 +278,7 @@ export function injectShellStyles() {
   document.head.append(stylesheet);
 }
 export function bindShell(version = shellRenderVersion) {
+  restoreDashboardHeader();
   bindHeaderScroll();
   syncStoreNavigation(version);
   updateCartBadge();
@@ -270,7 +288,9 @@ export function bindShell(version = shellRenderVersion) {
   }
   const toggle = document.querySelector('.fi-account-toggle');
   const menu = document.querySelector('.fi-account-menu');
-  if (toggle && menu) {
+  const header = toggle?.closest('.fi-header');
+  if (toggle && menu && header && !header.dataset.fiHeaderBound) {
+    header.dataset.fiHeaderBound = 'true';
     toggle.addEventListener('click', () => {
       setAccountMenuOpen(menu, toggle, !menu.classList.contains('open'));
     });
@@ -320,6 +340,46 @@ export function bindShell(version = shellRenderVersion) {
   applyTranslations(document.getElementById('app'), getLanguage());
   bindMobileNav();
   hydrateAccount(version);
+}
+
+function restoreDashboardHeader() {
+  const nextHeader = document.querySelector('#app .fi-header:not(.landing-nav)');
+  const previousHeader = retainedDashboardHeader;
+  retainedDashboardHeader = undefined;
+  if (!nextHeader || !previousHeader) return;
+
+  const linkSignature = (header) =>
+    [...header.querySelectorAll('.fi-nav > .fi-nav-link')]
+      .map((link) => link.getAttribute('href'))
+      .join('|');
+  if (linkSignature(previousHeader) !== linkSignature(nextHeader)) return;
+
+  const syncCurrentLinks = (selector) => {
+    previousHeader.querySelectorAll(selector).forEach((link) => {
+      const href = link.getAttribute('href');
+      const next = [...nextHeader.querySelectorAll(selector)].find(
+        (candidate) => candidate.getAttribute('href') === href,
+      );
+      const current = Boolean(next?.hasAttribute('aria-current'));
+      link.classList.toggle('is-active', current && selector.includes('fi-nav'));
+      link.classList.toggle('is-current', current && !selector.includes('fi-nav'));
+      if (current) link.setAttribute('aria-current', next.getAttribute('aria-current') || 'page');
+      else link.removeAttribute('aria-current');
+    });
+  };
+
+  syncCurrentLinks('.fi-nav > .fi-nav-link');
+  syncCurrentLinks('.fi-account-menu-links > a');
+  previousHeader
+    .querySelector('.fi-header-brand')
+    ?.setAttribute(
+      'href',
+      nextHeader.querySelector('.fi-header-brand')?.getAttribute('href') || '#marketplace',
+    );
+  const toggle = previousHeader.querySelector('.fi-account-toggle');
+  const menu = previousHeader.querySelector('.fi-account-menu');
+  if (toggle && menu) closeAccountMenu(menu, toggle);
+  nextHeader.replaceWith(previousHeader);
 }
 
 async function syncStoreNavigation(version) {

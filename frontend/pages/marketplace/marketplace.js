@@ -96,6 +96,11 @@ export async function renderMarketplace() {
       ${dashboardHeader('market')}
       <main class="mp-main">
         ${marketplacePromoBanner()}
+        <section class="mp-discovery" aria-label="Jelajahi kategori bahan organik">
+          <button type="button" class="mp-discovery-card" data-discovery-category="Semua" aria-pressed="true"><img src="./assets/landing-food-demo.jpg" alt="" loading="lazy"><span class="mp-discovery-copy"><small>JELAJAHI PILIHAN</small><strong>Semua bahan</strong><span>Temukan potensi baru.</span></span><span class="mp-discovery-arrow">${icon('arrow')}</span></button>
+          <button type="button" class="mp-discovery-card" data-discovery-category="Pakan Ternak" aria-pressed="false"><img src="./assets/demo-vegetables.jpg" alt="" loading="lazy"><span class="mp-discovery-copy"><small>DARI SISA PANEN</small><strong>Pakan ternak</strong><span>Manfaat untuk ternak Anda.</span></span><span class="mp-discovery-arrow">${icon('arrow')}</span></button>
+          <button type="button" class="mp-discovery-card" data-discovery-category="Kompos" aria-pressed="false"><img src="./assets/landing-compost-demo.jpg" alt="" loading="lazy"><span class="mp-discovery-copy"><small>KEMBALI KE TANAH</small><strong>Bahan kompos</strong><span>Awal tanah yang lebih subur.</span></span><span class="mp-discovery-arrow">${icon('arrow')}</span></button>
+        </section>
         <div class="mp-search-row"><div class="mp-search" role="search"><label class="mp-search-box"><span aria-hidden="true">${icon('search')}</span><input id="mp-search-input" type="search" placeholder="Cari nama produk, deskripsi, atau lokasi…" aria-label="Cari produk marketplace"><button id="mp-search-clear" type="button" aria-label="Hapus pencarian" hidden>×</button></label></div><div class="mp-categories" role="group" aria-label="Kategori produk"><button type="button" class="active" aria-pressed="true" data-category="Semua">Semua</button><button type="button" aria-pressed="false" data-category="Pakan Ternak">Pakan Ternak</button><button type="button" aria-pressed="false" data-category="Kompos">Kompos</button></div></div>
 
         <div class="mp-demo-banner" id="mp-demo-banner" hidden>Ini data contoh untuk pratinjau. Produk ini belum benar-benar ditawarkan dan belum bisa dipesan.</div>
@@ -106,7 +111,10 @@ export async function renderMarketplace() {
         <section class="mp-location-panel"><div><h2>Produk dan toko di sekitar</h2><p id="mp-location-status" role="status">Pilih lokasi untuk memfilter produk berdasarkan jarak.</p></div><div class="mp-location-controls"><label for="mp-radius">Jarak pencarian<select id="mp-radius"><option value="3">3 km</option><option value="5">5 km</option><option value="10" selected>10 km</option><option value="25">25 km</option><option value="0">Semua jarak</option></select></label><button type="button" class="mp-use-location" id="mp-use-location">Gunakan lokasi saya</button><button type="button" class="mp-toggle-map" id="mp-toggle-map" aria-expanded="false" aria-controls="mp-map-panel">Lihat peta toko</button></div></section>
         <section class="mp-map-panel" id="mp-map-panel" aria-label="Peta lokasi toko" hidden><div class="mp-map-heading"><h2>Lokasi toko</h2><span id="mp-map-status" role="status">Peta akan dimuat saat dibuka.</span></div><div id="mp-store-map" class="mp-store-map" role="application" aria-label="Peta toko terdekat"></div></section>
         <section class="mp-grid" id="mp-grid" aria-live="polite" aria-busy="true">${marketplaceLoadingSkeleton()}</section>
-        <aside class="mp-guidance" aria-label="Mulai berkontribusi"><span class="mp-guidance-icon" aria-hidden="true">${icon('upload')}</span><div><p>JADI BAGIAN DARI SIKLUSNYA</p><h2>Punya bahan organik yang masih bisa dimanfaatkan?</h2><span>Bagikan foto, jumlah, dan lokasi agar orang yang tepat bisa menemukannya.</span></div><a href="#tambah-limbah">Buat penawaran ${icon('arrow')}</a></aside>
+        <div class="mp-community-row">
+          <aside class="mp-guidance" aria-label="Mulai berkontribusi"><span class="mp-guidance-icon" aria-hidden="true">${icon('upload')}</span><div><p>JADI BAGIAN DARI SIKLUSNYA</p><h2>Sisa Anda bisa jadi peluang bagi yang lain.</h2><span>Bagikan bahan organik dan temukan calon pemanfaatnya.</span></div><a href="#tambah-limbah">Buat penawaran ${icon('arrow')}</a></aside>
+          <aside class="mp-inspiration"><span class="mp-inspiration-icon" aria-hidden="true">${icon('assistant')}</span><p>IDE UNTUK LANGKAH BERIKUTNYA</p><h2>Satu bahan,<br><em>banyak kemungkinan.</em></h2><span>Temukan ide mengolah bahan organik bersama asisten Food Ilee.</span><a href="#tanya-ai">Temukan inspirasi ${icon('arrow')}</a></aside>
+        </div>
       </main>
       ${dashboardFooter()}
     </div>`;
@@ -366,7 +374,27 @@ function bindMarketplaceControls() {
       button.classList.add('active');
       button.setAttribute('aria-pressed', 'true');
       activeCategory = button.dataset.category;
+      document.querySelectorAll('[data-discovery-category]').forEach((item) => {
+        item.setAttribute(
+          'aria-pressed',
+          String(item.dataset.discoveryCategory === activeCategory),
+        );
+      });
       renderProducts();
+    });
+  });
+  document.querySelectorAll('[data-discovery-category]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const category = [...document.querySelectorAll('.mp-categories button')].find(
+        (item) => item.dataset.category === button.dataset.discoveryCategory,
+      );
+      category?.click();
+      document.querySelector('.mp-search-row')?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'instant'
+          : 'smooth',
+        block: 'start',
+      });
     });
   });
 }
@@ -501,7 +529,7 @@ function renderProducts() {
         marketplaceLocation && validCoordinates(store?.latitude, store?.longitude)
           ? `${distanceInKm(marketplaceLocation, store).toFixed(1)} km`
           : '';
-      return `<article class="mp-card"><div class="mp-card-image-wrap"><img class="mp-card-image" src="${escapeHtml(product.image || './assets/landing-food-demo.jpg')}" alt="${escapeHtml(product.title)}" loading="lazy" onerror="this.onerror=null;this.src='./assets/landing-food-demo.jpg'"><span class="mp-category-tag ${category === 'Kompos' ? 'compost' : ''}">${category}</span>${product.isDemo ? '<span class="mp-demo-tag">CONTOH</span>' : ''}</div><div class="mp-card-body"><div class="mp-title-row"><h2>${escapeHtml(product.title || 'Limbah Organik')}</h2><strong>${formatPrice(product.price)}</strong></div><div class="mp-meta"><span>${icon('box')} ${Number(product.stock || 0).toLocaleString('id-ID')} kg</span><i>&#8226;</i><span>${icon('pin')} ${distance ? `${escapeHtml(distance)} · ` : ''}${escapeHtml(product.location || seller)}</span></div><p class="mp-updated">${relativeAge}</p><button class="mp-card-action" type="button" data-product-id="${escapeHtml(product.id)}">Lihat Detail <span>&rarr;</span></button></div></article>`;
+      return `<article class="mp-card"><div class="mp-card-image-wrap"><img class="mp-card-image" src="${escapeHtml(product.image || './assets/landing-food-demo.jpg')}" alt="${escapeHtml(product.title)}" loading="lazy" onerror="this.onerror=null;this.src='./assets/landing-food-demo.jpg'"><span class="mp-category-tag ${category === 'Kompos' ? 'compost' : ''}">${category}</span>${product.isDemo ? '<span class="mp-demo-tag">CONTOH</span>' : ''}</div><div class="mp-card-body"><p class="mp-seller">${icon('store')}<span>${escapeHtml(seller)}</span></p><div class="mp-title-row"><h2>${escapeHtml(product.title || 'Limbah Organik')}</h2><strong>${formatPrice(product.price)}</strong></div><div class="mp-meta"><span>${icon('box')} ${Number(product.stock || 0).toLocaleString('id-ID')} kg</span><i>&#8226;</i><span>${icon('pin')} ${distance ? `${escapeHtml(distance)} · ` : ''}${escapeHtml(product.location || seller)}</span></div><p class="mp-updated">${relativeAge}</p><button class="mp-card-action" type="button" data-product-id="${escapeHtml(product.id)}">Lihat Detail <span>&rarr;</span></button></div></article>`;
     })
     .join('');
   grid.querySelectorAll('.mp-card').forEach((card, index) => {

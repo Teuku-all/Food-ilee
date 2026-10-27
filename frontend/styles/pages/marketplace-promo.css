@@ -189,3 +189,110 @@
     transition: none;
   }
 }
+
+/* Keep the introduction lively while leaving the product catalogue easy to reach. */
+#app .mp-app .mp-promo {
+  --promo-lift: 0px;
+  --promo-zoom: 1.025;
+  margin: 0 0 20px;
+  border: 1px solid #244e3a;
+  border-radius: 26px;
+  background: #183d32;
+  box-shadow: 0 14px 36px rgb(24 62 50 / 12%);
+  transform: none;
+}
+#app .mp-app .mp-promo-copy {
+  padding: 32px 40px;
+}
+#app .mp-app .mp-promo-copy .mp-promo-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #c4d5ae;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+}
+#app .mp-app .mp-promo :is(h1, h2) {
+  margin: 16px 0 14px;
+  font-size: clamp(34px, 3.35vw, 46px);
+  line-height: 1.1;
+}
+#app .mp-app .mp-promo-copy > p:not(.mp-promo-eyebrow) {
+  max-width: 405px;
+  color: #d4e0d3;
+  font-size: 13px;
+  line-height: 1.7;
+}
+#app .mp-app .mp-promo-cta {
+  margin-top: 20px;
+  min-height: 44px;
+  background: #e9edda;
+  border-color: #e9edda;
+}
+#app .mp-promo-footnote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  color: #b6cbb3;
+  font-size: 10px;
+  line-height: 1.5;
+}
+#app .mp-app .mp-promo-visual::after {
+  background:
+    linear-gradient(90deg, #183d32, rgb(24 61 50 / 45%) 32%, transparent 75%),
+    linear-gradient(0deg, rgb(9 32 23 / 45%), transparent 65%);
+}
+#app .mp-app .mp-promo-caption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 18px;
+  border: 1px solid rgb(255 255 255 / 28%);
+  background: rgb(14 46 31 / 65%);
+  color: #e7edda;
+  font-size: 11px;
+  line-height: 1.6;
+}
+#app .mp-promo-caption > .fi-icon {
+  width: 30px;
+  height: 30px;
+  color: #cfdeb3;
+}
+#app .mp-promo-caption strong {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+}
+@media (max-width: 760px) {
+  #app .mp-app .mp-promo {
+    grid-template-columns: minmax(0, 1fr);
+    border-radius: 22px;
+  }
+  #app .mp-app .mp-promo-copy {
+    padding: 28px 25px;
+  }
+  #app .mp-app .mp-promo :is(h1, h2) {
+    font-size: clamp(29px, 7vw, 40px);
+  }
+  #app .mp-app .mp-promo-visual {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    min-height: 0;
+  }
+  #app .mp-app .mp-promo-visual::after {
+    background: linear-gradient(
+      100deg,
+      rgb(15 45 32 / 96%),
+      rgb(15 45 32 / 70%) 62%,
+      rgb(15 45 32 / 28%)
+    );
+  }
+  #app .mp-app .mp-promo-caption,
+  #app .mp-promo-footnote {
+    display: none;
+  }
+}
