@@ -22,16 +22,39 @@ let mobileNavAnimation;
 let mobileNavActiveCenter;
 let mobileNavResizeBound = false;
 let desktopNavGeometry;
+let desktopNavIndicator;
+let desktopNavAnimation;
+let desktopNavResizeObserver;
+let desktopNavObserved;
+
+function captureDesktopNavPosition() {
+  const nav = desktopNavIndicator?.parentElement;
+  if (!desktopNavIndicator?.isConnected || !nav) return;
+  const bounds = desktopNavIndicator.getBoundingClientRect();
+  const origin = nav.getBoundingClientRect();
+  desktopNavGeometry = {
+    x: bounds.left - origin.left - nav.clientLeft + nav.scrollLeft,
+    y: bounds.top - origin.top - nav.clientTop + nav.scrollTop,
+    width: bounds.width,
+    height: bounds.height,
+  };
+}
 
 function updateDesktopNavIndicator(nav, { animate = true } = {}) {
   const desktop = window.matchMedia('(min-width: 769px)').matches;
   const active = nav?.querySelector('.fi-nav-link[aria-current], .fi-nav-link.is-active');
   if (!desktop || nav?.closest('.landing-nav') || !active) {
+    desktopNavAnimation?.cancel();
+    desktopNavResizeObserver?.disconnect();
+    desktopNavObserved = undefined;
     nav?.querySelector(':scope > .fi-nav-indicator')?.remove();
     nav?.classList.remove('has-active-indicator');
     desktopNavGeometry = undefined;
     return;
   }
+
+  captureDesktopNavPosition();
+  desktopNavAnimation?.cancel();
 
   let indicator = nav.querySelector(':scope > .fi-nav-indicator');
   if (!indicator) {
@@ -41,19 +64,22 @@ function updateDesktopNavIndicator(nav, { animate = true } = {}) {
     nav.append(indicator);
   }
   nav.classList.add('has-active-indicator');
+  desktopNavIndicator = indicator;
 
   const navBounds = nav.getBoundingClientRect();
   const activeBounds = active.getBoundingClientRect();
   const target = {
-    x: activeBounds.left - navBounds.left,
-    y: activeBounds.top - navBounds.top,
+    x: activeBounds.left - navBounds.left - nav.clientLeft + nav.scrollLeft,
+    y: activeBounds.top - navBounds.top - nav.clientTop + nav.scrollTop,
     width: activeBounds.width,
     height: activeBounds.height,
   };
   const previous = desktopNavGeometry;
   const moved =
     previous &&
-    (Math.abs(previous.x - target.x) > 1 || Math.abs(previous.width - target.width) > 1);
+    (Math.abs(previous.x - target.x) > 1 ||
+      Math.abs(previous.y - target.y) > 1 ||
+      Math.abs(previous.width - target.width) > 1);
   const setGeometry = (geometry) => {
     indicator.style.setProperty('--fi-nav-x', `${geometry.x}px`);
     indicator.style.setProperty('--fi-nav-y', `${geometry.y}px`);
@@ -61,20 +87,33 @@ function updateDesktopNavIndicator(nav, { animate = true } = {}) {
     indicator.style.setProperty('--fi-nav-height', `${geometry.height}px`);
   };
 
+  setGeometry(target);
+  indicator.classList.add('is-ready');
   if (animate && moved && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    setGeometry(previous);
-    indicator.classList.add('is-ready');
-    requestAnimationFrame(() => {
-      if (nav.isConnected && indicator.isConnected) requestAnimationFrame(() => setGeometry(target));
-    });
-  } else {
-    indicator.classList.remove('is-ready');
-    setGeometry(target);
-    requestAnimationFrame(() => {
-      if (nav.isConnected && indicator.isConnected) indicator.classList.add('is-ready');
-    });
+    desktopNavAnimation = indicator.animate(
+      [previous, target].map((geometry) => ({
+        transform: `translate3d(${geometry.x}px, ${geometry.y}px, 0)`,
+        width: `${geometry.width}px`,
+        height: `${geometry.height}px`,
+      })),
+      { duration: 460, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+    );
   }
   desktopNavGeometry = target;
+
+  if (desktopNavObserved !== nav) {
+    desktopNavResizeObserver?.disconnect();
+    desktopNavObserved = nav;
+    let width = nav.clientWidth;
+    let height = nav.clientHeight;
+    desktopNavResizeObserver = new ResizeObserver(() => {
+      if (!nav.isConnected || (width === nav.clientWidth && height === nav.clientHeight)) return;
+      width = nav.clientWidth;
+      height = nav.clientHeight;
+      updateDesktopNavIndicator(nav, { animate: false });
+    });
+    desktopNavResizeObserver.observe(nav);
+  }
 }
 
 function animateMobileNavSelection(dock) {
@@ -107,6 +146,7 @@ function animateMobileNavSelection(dock) {
 }
 
 export function dashboardHeader(active = '') {
+  captureDesktopNavPosition();
   const currentRoute = location.hash || '#marketplace';
   const storeAvailable = Boolean(getCachedStore());
   const navLinks = storeAvailable ? [...links, ['Kelola Toko', '#kelola-toko', 'store']] : links;

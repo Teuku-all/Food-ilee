@@ -482,3 +482,218 @@ body:has(> dialog[open]) {
     scroll-behavior: auto !important;
   }
 }
+
+/* Desktop navigation uses one moving selection surface across dashboard routes. */
+@media (min-width: 769px) {
+  #app .fi-header:not(.landing-nav) {
+    height: 88px;
+    min-height: 88px;
+    column-gap: 24px;
+    background: linear-gradient(112deg, #0e2c27, #173d31 72%, #1c4435);
+    border-bottom: 1px solid rgb(227 240 220 / 14%);
+    box-shadow:
+      0 3px 16px rgb(5 31 32 / 10%),
+      inset 0 1px rgb(255 255 255 / 4%);
+    transition:
+      box-shadow 260ms ease,
+      border-color 260ms ease;
+  }
+  #app .fi-header:not(.landing-nav).is-scrolled {
+    border-bottom-color: rgb(227 240 220 / 24%);
+    box-shadow:
+      0 10px 28px rgb(5 31 32 / 20%),
+      inset 0 -1px rgb(255 255 255 / 5%);
+  }
+  #app .fi-header:not(.landing-nav) .fi-header-brand .fi-brand-image {
+    width: 158px;
+  }
+  #app .fi-header:not(.landing-nav) .fi-nav {
+    position: relative;
+    isolation: isolate;
+    justify-self: center;
+    width: max-content;
+    max-width: 100%;
+    padding: 5px;
+    gap: 3px;
+    border: 1px solid rgb(234 245 230 / 12%);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 4%);
+    box-shadow: inset 0 1px 4px rgb(5 31 32 / 9%);
+  }
+  #app .fi-header:not(.landing-nav) .fi-nav-link {
+    height: 42px;
+    padding: 0 14px;
+    gap: 8px;
+    border-radius: 999px;
+    color: #cfddd1;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.2;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+    transition:
+      color 180ms ease,
+      background-color 180ms ease;
+  }
+  #app .fi-header:not(.landing-nav) .fi-nav-link .fi-icon {
+    width: 16px;
+    height: 16px;
+    opacity: 0.8;
+    transition: opacity 180ms ease;
+  }
+  #app .fi-header:not(.landing-nav) .fi-nav-link:hover {
+    color: #fff;
+    background: rgb(255 255 255 / 7%);
+  }
+  #app .fi-header:not(.landing-nav) .fi-nav-link:is(.is-active, [aria-current]) {
+    color: #173d31;
+    background: #eef1e6;
+    font-weight: 500;
+  }
+  #app
+    .fi-header:not(.landing-nav)
+    .fi-nav.has-active-indicator
+    .fi-nav-link:is(.is-active, [aria-current]) {
+    background: transparent;
+  }
+  #app .fi-header:not(.landing-nav) .fi-nav-link:is(:hover, .is-active, [aria-current]) .fi-icon {
+    opacity: 1;
+  }
+  #app .fi-header:not(.landing-nav) .fi-nav-link:focus-visible {
+    outline: 2px solid #b8d2b0;
+    outline-offset: -2px;
+  }
+  #app .fi-header:not(.landing-nav) .fi-nav-indicator {
+    border: 1px solid rgb(255 255 255 / 60%);
+    border-radius: 999px;
+    background: linear-gradient(145deg, #f3f5ed, #e4eadb);
+    box-shadow:
+      0 3px 10px rgb(4 24 18 / 16%),
+      inset 0 1px #fff;
+  }
+  #app .fi-header:not(.landing-nav) .fi-header-actions {
+    gap: 10px;
+  }
+  #app .fi-header:not(.landing-nav) .fi-header-actions::before {
+    content: '';
+    width: 1px;
+    height: 28px;
+    margin-right: 6px;
+    background: rgb(234 245 230 / 16%);
+  }
+  #app .fi-header:not(.landing-nav) .fi-cart-link {
+    border-radius: 50%;
+    border-color: rgb(234 245 230 / 18%);
+    background: rgb(255 255 255 / 4%);
+    box-shadow: none;
+  }
+  #app .fi-header:not(.landing-nav) .fi-account {
+    width: 186px;
+  }
+  #app .fi-header:not(.landing-nav) .fi-account-toggle {
+    height: 46px;
+    border-color: rgb(234 245 230 / 18%);
+    background: rgb(255 255 255 / 4%);
+    box-shadow: none;
+    transform: none;
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease;
+  }
+  #app .fi-header:not(.landing-nav) :is(.fi-cart-link, .fi-account-toggle):hover {
+    border-color: rgb(234 245 230 / 35%);
+    background: rgb(255 255 255 / 9%);
+    transform: none;
+  }
+  #app .fi-header:not(.landing-nav) .fi-account-toggle[aria-expanded='true'] {
+    border-color: rgb(234 245 230 / 40%);
+    background: rgb(255 255 255 / 10%);
+  }
+  #app .fi-header:not(.landing-nav) .fi-account-menu {
+    top: calc(100% + 16px);
+    border: 1px solid #dce5d8;
+    border-radius: 22px;
+    background: #fbfcf8;
+    box-shadow:
+      0 20px 56px rgb(5 31 32 / 18%),
+      0 4px 12px rgb(5 31 32 / 6%);
+    transform-origin: top right;
+    transform: translateY(-6px) scale(0.98);
+    transition:
+      opacity 200ms ease,
+      transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 200ms;
+  }
+  #app .fi-header:not(.landing-nav) .fi-account-menu.open {
+    transform: none;
+    animation: none;
+    transition-property: opacity, transform;
+  }
+  #app .fi-header:not(.landing-nav) .fi-account-menu-avatar {
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 50%;
+    border-color: #d4dfcd;
+    background: #e5eddf;
+    color: #234b3c;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  #app .fi-header:not(.landing-nav) .fi-account-menu-links a[aria-current='page'] {
+    background: #edf1e7;
+    color: #234b3c;
+  }
+}
+@media (min-width: 1001px) {
+  #app .fi-header:not(.landing-nav) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: 1fr;
+    padding-block: 0;
+  }
+  #app .fi-header:not(.landing-nav) .fi-nav {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: center;
+  }
+  #app .fi-header:not(.landing-nav) .fi-header-actions {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+@media (min-width: 769px) and (max-width: 1280px) {
+  #app .fi-header:not(.landing-nav) {
+    column-gap: 14px;
+  }
+  #app .fi-header:not(.landing-nav) .fi-header-brand .fi-brand-image {
+    width: 144px;
+  }
+  #app .fi-header:not(.landing-nav) .fi-nav-link {
+    padding-inline: 10px;
+    gap: 6px;
+    font-size: 11px;
+  }
+  #app .fi-header:not(.landing-nav) .fi-account {
+    width: 46px;
+  }
+  #app .fi-header:not(.landing-nav) .fi-account-toggle {
+    width: 46px;
+    padding: 4px;
+    justify-content: center;
+  }
+  #app .fi-header:not(.landing-nav) :is(.fi-account-meta, .fi-account-chevron),
+  #app .fi-header:not(.landing-nav) .fi-header-actions::before {
+    display: none;
+  }
+}
+@media (min-width: 769px) and (max-width: 1000px) {
+  #app .fi-header:not(.landing-nav) {
+    height: 130px;
+    padding-block: 12px;
+    row-gap: 12px;
+  }
+  #app .fi-header:not(.landing-nav) .fi-nav {
+    justify-content: flex-start;
+  }
+}
